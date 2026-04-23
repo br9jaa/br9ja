@@ -1,0 +1,30 @@
+{
+  "name": "bayright9ja_web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node -r dotenv/config ./node_modules/next/dist/bin/next dev dotenv_config_path=.env.dev",
+    "build": "node -r dotenv/config ./node_modules/next/dist/bin/next build dotenv_config_path=.env.prod",
+    "start": "node -r dotenv/config ./node_modules/next/dist/bin/next start dotenv_config_path=.env.prod",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "framer-motion": "^12.23.24",
+    "lottie-react": "^2.4.1",
+    "lucide-react": "^0.542.0",
+    "next": "16.2.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

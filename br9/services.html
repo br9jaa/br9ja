@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja Services | Airtime, Data, Electricity, Cable TV</title>
+  <meta name="description" content="Buy cheap data in Nigeria, top up airtime, pay electricity bills, and renew cable TV on BR9ja with clear service inputs and wallet confidence.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://br9.ng/services">
+  <meta property="og:title" content="BR9ja Services">
+  <meta property="og:description" content="Explicit bill-pay actions for Airtime, Data, Electricity, Cable TV, and the Market Runner gaming benchmark.">
+  <link rel="icon" type="image/png" href="./assets/favicon.png">
+  <link rel="apple-touch-icon" href="./assets/apple_touch_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./main.css">
+  <script defer src="./main.js"></script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FinancialService",
+      "name": "BR9ja Services",
+      "provider": {
+        "@type": "Organization",
+        "name": "BayRight9ja Ltd"
+      },
+      "serviceType": [
+        "Airtime",
+        "Data",
+        "Electricity",
+        "Cable TV"
+      ],
+      "areaServed": "NG"
+    }
+  </script>
+</head>
+<body data-page="services" data-base=".">
+  <div class="site-shell">
+    <div data-site-shell></div>
+
+    <main class="section-stack">
+      <section class="section-panel page-header">
+        <span class="kicker">Services Hub</span>
+        <h1 class="page-header__title">Every service action is explicit, fast, and confidence-driven.</h1>
+        <p class="page-header__copy">
+          Airtime, data, electricity, and cable TV are the daily trust builders for BR9ja. We keep the inputs specific so every payment flow feels calm and clear.
+        </p>
+      </section>
+
+      <section class="section-panel">
+        <div class="section-header">
+          <span class="kicker">Utility Marketplace</span>
+          <h2 class="section-title">The services Nigerians actually use every day.</h2>
+        </div>
+
+        <div class="service-grid">
+          <article class="service-card" data-service-key="airtime">
+            <span class="service-icon">📱</span>
+            <h3>Airtime</h3>
+            <p class="card-copy">Top up instantly with a clear phone number path.</p>
+            <div class="field-group">
+              <label for="service-airtime-phone">Enter Phone Number</label>
+              <div class="field-shell">
+                <span class="field-prefix">+234</span>
+                <input id="service-airtime-phone" type="tel" placeholder="801 234 5678" data-validate="phone">
+              </div>
+              <span class="field-status" data-default="We use this to deliver airtime instantly.">We use this to deliver airtime instantly.</span>
+            </div>
+            <div class="field-group">
+              <label for="service-airtime-amount">Enter Amount in Naira (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="service-airtime-amount" type="number" placeholder="1000" min="100" data-validate="amount" data-service-amount>
+              </div>
+              <span class="field-status" data-default="Minimum top-up is ₦100.">Minimum top-up is ₦100.</span>
+            </div>
+            <div class="service-card__checkout">
+              <span class="service-card__total-label">Customer total</span>
+              <strong data-total-amount="airtime">₦0</strong>
+            </div>
+            <button class="action-button service-pay-button" type="button" data-pay-button="airtime" disabled>Enter amount</button>
+            <div class="service-receipt-preview" data-receipt="airtime" hidden></div>
+          </article>
+
+          <article class="service-card" data-service-key="data">
+            <span class="service-icon">🌐</span>
+            <h3>Data Bundles</h3>
+            <p class="card-copy">Buy cheap data Nigeria users can understand in one glance.</p>
+            <div class="field-group">
+              <label for="service-data-phone">Enter Phone Number</label>
+              <div class="field-shell">
+                <span class="field-prefix">+234</span>
+                <input id="service-data-phone" type="tel" placeholder="803 456 7890" data-validate="phone">
+              </div>
+              <span class="field-status" data-default="This number receives the bundle instantly.">This number receives the bundle instantly.</span>
+            </div>
+            <div class="field-group">
+              <label for="service-data-amount">Enter Amount in Naira (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="service-data-amount" type="number" placeholder="2500" min="100" data-validate="amount" data-service-amount>
+              </div>
+              <span class="field-status" data-default="Use exact amount for your selected network plan.">Use exact amount for your selected network plan.</span>
+            </div>
+            <div class="service-card__checkout">
+              <span class="service-card__total-label">Customer total</span>
+              <strong data-total-amount="data">₦0</strong>
+            </div>
+            <button class="action-button service-pay-button" type="button" data-pay-button="data" disabled>Enter amount</button>
+            <div class="service-receipt-preview" data-receipt="data" hidden></div>
+          </article>
+
+          <article class="service-card" data-service-key="electricity">
+            <span class="service-icon">⚡</span>
+            <h3>Electricity Bills</h3>
+            <p class="card-copy">Meter-first validation keeps the payment flow calm.</p>
+            <div class="field-group">
+              <label for="service-meter">Enter Meter Number</label>
+              <div class="field-shell">
+                <input id="service-meter" type="text" placeholder="01234567890" data-validate="meter">
+              </div>
+              <span class="field-status" data-default="We verify the customer before payment.">We verify the customer before payment.</span>
+            </div>
+            <div class="field-group">
+              <label for="service-electricity-amount">Enter Amount in Naira (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="service-electricity-amount" type="number" placeholder="5000" min="100" data-validate="amount" data-service-amount>
+              </div>
+              <span class="field-status" data-default="Use the amount you want to vend.">Use the amount you want to vend.</span>
+            </div>
+            <div class="service-card__checkout">
+              <span class="service-card__total-label">Customer total</span>
+              <strong data-total-amount="electricity">₦0</strong>
+            </div>
+            <button class="action-button service-pay-button" type="button" data-pay-button="electricity" disabled>Enter amount</button>
+            <div class="service-receipt-preview" data-receipt="electricity" hidden></div>
+          </article>
+
+          <article class="service-card" data-service-key="cableTv">
+            <span class="service-icon">📺</span>
+            <h3>Cable TV</h3>
+            <p class="card-copy">Decoder number first, bouquet clarity second.</p>
+            <div class="field-group">
+              <label for="service-decoder">Enter Decoder Number</label>
+              <div class="field-shell">
+                <input id="service-decoder" type="text" placeholder="1234 5678 9012" data-validate="decoder">
+              </div>
+              <span class="field-status" data-default="We confirm the active bouquet before checkout.">We confirm the active bouquet before checkout.</span>
+            </div>
+            <div class="field-group">
+              <label for="service-cable-amount">Enter Amount in Naira (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="service-cable-amount" type="number" placeholder="7200" min="100" data-validate="amount" data-service-amount>
+              </div>
+              <span class="field-status" data-default="Use the listed bouquet amount for the provider.">Use the listed bouquet amount for the provider.</span>
+            </div>
+            <div class="service-card__checkout">
+              <span class="service-card__total-label">Customer total</span>
+              <strong data-total-amount="cableTv">₦0</strong>
+            </div>
+            <button class="action-button service-pay-button" type="button" data-pay-button="cableTv" disabled>Enter amount</button>
+            <div class="service-receipt-preview" data-receipt="cableTv" hidden></div>
+          </article>
+
+          <article class="service-card" data-service-key="education">
+            <span class="service-icon">🎓</span>
+            <h3>Education Pins</h3>
+            <p class="card-copy">WAEC, JAMB, NECO, and other exam surfaces with one visible total.</p>
+            <div class="field-group">
+              <label for="service-education-type">Enter Exam Type</label>
+              <div class="field-shell">
+                <input id="service-education-type" type="text" placeholder="WAEC Result Checker">
+              </div>
+              <span class="field-status" data-default="Use the exam surface you want to purchase today.">Use the exam surface you want to purchase today.</span>
+            </div>
+            <div class="field-group">
+              <label for="service-education-amount">Enter Amount in Naira (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="service-education-amount" type="number" placeholder="6500" min="100" data-validate="amount" data-service-amount>
+              </div>
+              <span class="field-status" data-default="Use the current vendor price for the selected education product.">Use the current vendor price for the selected education product.</span>
+            </div>
+            <div class="service-card__checkout">
+              <span class="service-card__total-label">Customer total</span>
+              <strong data-total-amount="education">₦0</strong>
+            </div>
+            <button class="action-button service-pay-button" type="button" data-pay-button="education" disabled>Enter amount</button>
+            <div class="service-receipt-preview" data-receipt="education" hidden></div>
+          </article>
+
+          <article class="service-card" data-service-key="transport">
+            <span class="service-icon">🚌</span>
+            <h3>Transport</h3>
+            <p class="card-copy">LCC top-ups and interstate bookings keep the wallet loop active.</p>
+            <div class="field-group">
+              <label for="service-transport-id">Enter eTag or Route Reference</label>
+              <div class="field-shell">
+                <input id="service-transport-id" type="text" placeholder="LCC-ETAG-0091">
+              </div>
+              <span class="field-status" data-default="Use your toll or booking reference to keep support clean.">Use your toll or booking reference to keep support clean.</span>
+            </div>
+            <div class="field-group">
+              <label for="service-transport-amount">Enter Amount in Naira (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="service-transport-amount" type="number" placeholder="4000" min="100" data-validate="amount" data-service-amount>
+              </div>
+              <span class="field-status" data-default="Use the top-up or booking amount you want BR9ja to process.">Use the top-up or booking amount you want BR9ja to process.</span>
+            </div>
+            <div class="service-card__checkout">
+              <span class="service-card__total-label">Customer total</span>
+              <strong data-total-amount="transport">₦0</strong>
+            </div>
+            <button class="action-button service-pay-button" type="button" data-pay-button="transport" disabled>Enter amount</button>
+            <div class="service-receipt-preview" data-receipt="transport" hidden></div>
+          </article>
+
+          <article class="service-card" data-service-key="government">
+            <span class="service-icon">🏛️</span>
+            <h3>Government Bills</h3>
+            <p class="card-copy">Pay RRRs and civic obligations with one unified checkout total.</p>
+            <div class="field-group">
+              <label for="service-government-rrr">Enter RRR or Bill Reference</label>
+              <div class="field-shell">
+                <input id="service-government-rrr" type="text" placeholder="1234 5678 9012">
+              </div>
+              <span class="field-status" data-default="Use the official RRR or civic bill reference.">Use the official RRR or civic bill reference.</span>
+            </div>
+            <div class="field-group">
+              <label for="service-government-amount">Enter Amount in Naira (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="service-government-amount" type="number" placeholder="15000" min="100" data-validate="amount" data-service-amount>
+              </div>
+              <span class="field-status" data-default="Use the bill amount you were issued by the government portal.">Use the bill amount you were issued by the government portal.</span>
+            </div>
+            <div class="service-card__checkout">
+              <span class="service-card__total-label">Customer total</span>
+              <strong data-total-amount="government">₦0</strong>
+            </div>
+            <button class="action-button service-pay-button" type="button" data-pay-button="government" disabled>Enter amount</button>
+            <div class="service-receipt-preview" data-receipt="government" hidden></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel">
+        <div class="section-header">
+          <span class="kicker">Gaming Hub</span>
+          <h2 class="section-title">Market Runner is the weekly benchmark now.</h2>
+          <p class="section-copy">
+            Football prediction is gone. BR9ja now pushes Market Runner as the primary BR9 Gold engine, supported by verified bill payments and rewarded activity.
+          </p>
+        </div>
+
+        <div class="benchmark">
+          <div class="progress-meta">
+            <strong data-config="benchmarkGold">1,000 BR9 Gold</strong>
+            <span class="card-copy">Unlocks <span data-config="benchmarkNaira">₦100</span> on Monday morning once you complete <span data-config="payoutRequirements">10 ads + 1 service transaction</span>.</span>
+          </div>
+          <div class="progress-track" aria-label="Market Runner benchmark">
+            <div class="progress-fill" style="width: 72%;"></div>
+          </div>
+          <div class="progress-legend">
+            <span>0 BR9 Gold</span>
+            <span>500 BR9 Gold</span>
+            <span>1,000 BR9 Gold</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div data-site-footer></div>
+  </div>
+
+  <a class="floating-whatsapp" href="#" data-config-link="whatsappHelp">WhatsApp Help</a>
+</body>
+</html>

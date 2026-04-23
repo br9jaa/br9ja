@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja Directory</title>
+  <meta name="description" content="Private BR9ja user directory with search, spend insight, and manual credit controls.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/apple_touch_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../main.css">
+  <script defer src="../main.js"></script>
+</head>
+<body data-page="admin-directory" data-base=".." data-authenticated="true" data-admin-room="directory">
+  <div class="admin-layout">
+    <div data-admin-shell></div>
+
+    <main class="section-stack admin-room">
+      <section class="section-panel admin-console">
+        <div class="section-header">
+          <span class="kicker">Directory</span>
+          <h1 class="section-title">Search people fast, credit winners instantly.</h1>
+          <p class="section-copy">Find any BR9ja user by phone number or username, review their spend posture, and push a manual credit with a logged reason.</p>
+        </div>
+
+        <form class="admin-filter-form" data-form="directory-search">
+          <div class="field-group admin-field-grid__full">
+            <label for="directory-search">Search by Username or Phone Number</label>
+            <div class="field-shell">
+              <input id="directory-search" name="search" type="text" placeholder="@username or 08012345678">
+            </div>
+          </div>
+          <button class="action-button" type="submit">Search Directory</button>
+        </form>
+
+        <p class="mini-note" data-users-summary>0 users loaded</p>
+
+        <div class="admin-table-shell">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Phone</th>
+                <th>Signup Date</th>
+                <th>Total Spent</th>
+                <th>Wallet</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody data-users-table>
+              <tr>
+                <td colspan="6">Unlock the Directory to load user records.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Manual Credit</span>
+            <h2>Push giveaway funds or fixes instantly</h2>
+          </div>
+          <p class="section-copy">Use this when you need to reward a winner, issue a correction, or keep a promotion moving without delay.</p>
+        </div>
+
+        <form class="admin-field-grid" data-form="manual-credit">
+          <input name="userId" type="hidden">
+
+          <div class="field-group admin-field-grid__full">
+            <label for="credit-user-label">Selected User</label>
+            <div class="field-shell">
+              <input id="credit-user-label" name="userLabel" type="text" placeholder="Choose a user from the table above" readonly>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="credit-amount">Credit Amount (₦)</label>
+            <div class="field-shell">
+              <span class="field-prefix">₦</span>
+              <input id="credit-amount" name="amount" type="number" min="1" step="1" placeholder="5000">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="credit-reason">Reason</label>
+            <div class="field-shell">
+              <input id="credit-reason" name="reason" type="text" placeholder="Giveaway Winner">
+            </div>
+          </div>
+
+          <div class="admin-submit-row admin-field-grid__full">
+            <p class="success-banner" aria-live="polite"></p>
+            <button class="action-button" type="submit">Credit User</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div data-admin-gate></div>
+</body>
+</html>

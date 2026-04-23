@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja Admin Dashboard</title>
+  <meta name="description" content="Private BR9ja operations dashboard for daily volume, active users, P2P movement, and silent-profit visibility.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/apple_touch_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../main.css">
+  <script defer src="../main.js"></script>
+</head>
+<body data-page="admin-dashboard" data-base=".." data-authenticated="true" data-admin-room="dashboard">
+  <div class="admin-layout">
+    <div data-admin-shell></div>
+
+    <main class="section-stack admin-room">
+      <section class="section-panel admin-console">
+        <div class="section-header">
+          <span class="kicker">Dashboard</span>
+          <h1 class="section-title">The BR9ja headquarters at a glance.</h1>
+          <p class="section-copy">See how much volume moved today, how strong the P2P loop is, and which service lines are creating the cleanest silent margin.</p>
+        </div>
+
+        <div class="admin-kpi-grid">
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Platform Mode</span>
+            <strong data-admin-metric="platformMode">Live</strong>
+            <p class="mini-note">Current public launch posture.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Users</span>
+            <strong data-admin-metric="userCount">0</strong>
+            <p class="mini-note">Accounts currently inside the BR9ja loop.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Today Volume</span>
+            <strong data-admin-metric="todayVolume">₦0</strong>
+            <p class="mini-note">Completed transaction volume since midnight.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Silent Profit</span>
+            <strong data-admin-metric="silentProfitTotal">₦0</strong>
+            <p class="mini-note">Projected realized markup from completed service volume.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Pulse</span>
+            <h2>Core movement</h2>
+          </div>
+          <p class="section-copy">The dashboard keeps the high-signal numbers visible without forcing you to scan the entire suite.</p>
+        </div>
+
+        <div class="admin-mini-grid">
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">P2P Volume</span>
+            <strong data-admin-metric="p2pVolume">₦0</strong>
+            <span class="mini-note">Buddy transfers strengthen retention inside BR9ja.</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Active Today</span>
+            <strong data-admin-metric="activeToday">0</strong>
+            <span class="mini-note">Users who touched the platform today.</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">All Transactions</span>
+            <strong data-admin-metric="transactionCount">0</strong>
+            <span class="mini-note">Completed records in the ledger right now.</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Funding Rail Expense</span>
+            <strong data-admin-metric="operationalExpenseToday">₦0</strong>
+            <span class="mini-note">0.1% provider cost absorbed today for zero-fee deposits.</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Security Events</span>
+            <strong data-admin-metric="securityEventCount">0</strong>
+            <span class="mini-note"><span data-admin-metric="pinFailureCount">0</span> transaction PIN failures today.</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Weekly Benchmark</span>
+            <strong><span data-config="benchmarkGold">1,000 BR9 Gold</span> → <span data-config="benchmarkNaira">₦100</span></strong>
+            <span class="mini-note">Visible Monday target for player messaging.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Security Watch</span>
+            <h2>Recent risky attempts</h2>
+          </div>
+          <p class="section-copy">Incorrect or missing transaction PIN attempts appear here so admin can spot suspicious activity before it becomes a wallet problem.</p>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Risk</th>
+                <th>Route</th>
+                <th>Device</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody data-security-events-table>
+              <tr><td colspan="5">Unlocking this room loads recent security events.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Profit Spotlight</span>
+            <h2>Which category is carrying the margin today?</h2>
+          </div>
+          <p class="section-copy">Finance, Utilities, Gov & Edu, and Lifestyle are grouped here so you know where to lean into campaigns, promos, and partner conversations.</p>
+        </div>
+
+        <div class="admin-mini-grid" data-admin-profit-spotlight>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Loading</span>
+            <strong>Fetching live service spread...</strong>
+            <span class="mini-note">Unlocking this room loads the latest realized view.</span>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div data-admin-gate></div>
+</body>
+</html>

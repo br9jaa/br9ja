@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "ABCDE12345.com.bayright9ja.bayright9ja_mobile",
+        "paths": [
+          "/",
+          "/dashboard/*",
+          "/games/*",
+          "/marketplace/*"
+        ]
+      }
+    ]
+  }
+}

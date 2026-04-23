@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja App Settings</title>
+  <meta name="description" content="Private BR9ja app settings for routing, store links, game posture, trust settings, and social controls.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../../assets/apple_touch_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../main.css">
+  <script defer src="../../main.js"></script>
+</head>
+<body data-page="admin-settings" data-base="../.." data-authenticated="true" data-admin-room="settings">
+  <div class="admin-layout">
+    <div data-admin-shell></div>
+
+    <main class="section-stack admin-room">
+      <section class="section-panel admin-console">
+        <div class="section-header">
+          <span class="kicker">App Settings</span>
+          <h1 class="section-title">Control the brand, trust, growth, and game posture.</h1>
+          <p class="section-copy">This room handles the distribution links, support routing, admin social controls, and the game settings that shape the public BR9ja story.</p>
+        </div>
+
+        <div class="admin-kpi-grid">
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Platform Mode</span>
+            <strong data-summary="platformModeLabel">Live</strong>
+            <p class="mini-note">Public site and storefront posture.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Service Surface</span>
+            <strong data-summary="activeServices">0/10 active</strong>
+            <p class="mini-note">Counts services pushed live or soft-launch.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Games Control</span>
+            <strong data-summary="gamesState">Live</strong>
+            <p class="mini-note">Market Runner, Sunday Live, and Trivia state.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Weekly Cashout</span>
+            <strong data-summary="cashoutTarget">1,000 BR9 Gold → ₦100</strong>
+            <p class="mini-note">Current benchmark and target copy.</p>
+          </article>
+        </div>
+      </section>
+
+      <form class="admin-form admin-console-form" data-form="admin-settings">
+        <input name="adminToken" type="hidden">
+
+        <section class="section-panel admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">Support Routing</span>
+              <h2>Brand, support, and WhatsApp control</h2>
+            </div>
+            <p class="section-copy">Keep the public support paths clean and the admin receiver values up to date across the whole site.</p>
+          </div>
+
+          <div class="admin-field-grid">
+            <div class="field-group">
+              <label for="admin-ops-email">Admin Notification Email</label>
+              <div class="field-shell"><input id="admin-ops-email" name="opsEmail" type="email" placeholder="ops@br9.ng"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-support-email">Support Email</label>
+              <div class="field-shell"><input id="admin-support-email" name="supportEmail" type="email" placeholder="support@br9.ng"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-whatsapp">Contact WhatsApp Number</label>
+              <div class="field-shell"><input id="admin-whatsapp" name="whatsappNumber" type="text" placeholder="2348012345678"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-whatsapp-prefill">WhatsApp Prefill Text</label>
+              <div class="field-shell"><input id="admin-whatsapp-prefill" name="whatsappPrefill" type="text" placeholder="Hi i need help with"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-panel admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">Distribution</span>
+              <h2>Store links, launch posture, and site routing</h2>
+            </div>
+            <p class="section-copy">Change where the public site points people, and shift launch posture without touching code.</p>
+          </div>
+
+          <div class="admin-field-grid">
+            <div class="field-group">
+              <label for="admin-platform-mode">Platform Mode</label>
+              <div class="field-shell">
+                <select id="admin-platform-mode" name="platformMode">
+                  <option value="live">Live</option>
+                  <option value="featured">Featured Push</option>
+                  <option value="soft-launch">Soft Launch</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="paused">Paused</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="admin-site-url">Primary Site URL</label>
+              <div class="field-shell"><input id="admin-site-url" name="siteUrl" type="url" placeholder="https://br9.ng"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-play-store-url">Play Store URL</label>
+              <div class="field-shell"><input id="admin-play-store-url" name="playStoreUrl" type="url" placeholder="https://play.google.com/store/apps/details?id=com.bayright9ja.bayright9ja_mobile"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-app-store-url">App Store URL</label>
+              <div class="field-shell"><input id="admin-app-store-url" name="appStoreUrl" type="url" placeholder="https://apps.apple.com/app/id0000000000"></div>
+            </div>
+            <div class="field-group admin-field-grid__full">
+              <label for="admin-maintenance-notice">Ops Notice</label>
+              <div class="field-shell"><textarea id="admin-maintenance-notice" name="maintenanceNotice" placeholder="Share any short note for launch or service oversight."></textarea></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-panel admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">Games & Rewards</span>
+              <h2>Control the BR9 Gold engine</h2>
+            </div>
+            <p class="section-copy">Keep games app-only, adjust benchmark copy, and align Monday payout language with current economics.</p>
+          </div>
+
+          <div class="admin-field-grid">
+            <div class="field-group">
+              <label for="admin-market-runner-status">Market Runner Status</label>
+              <div class="field-shell"><select id="admin-market-runner-status" name="marketRunnerStatus"><option value="live">Live</option><option value="warmup">Warmup</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-trivia-status">Trivia Rush Status</label>
+              <div class="field-shell"><select id="admin-trivia-status" name="triviaRushStatus"><option value="live">Live</option><option value="warmup">Warmup</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-sunday-live-status">Sunday Live Status</label>
+              <div class="field-shell"><select id="admin-sunday-live-status" name="sundayLiveStatus"><option value="live">Live</option><option value="warmup">Warmup</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-game-access-mode">Game Access Policy</label>
+              <div class="field-shell"><select id="admin-game-access-mode" name="gameAccessMode"><option value="app-only">App Only</option><option value="paused">Paused</option></select></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-benchmark-gold">Weekly Benchmark BR9 Gold</label>
+              <div class="field-shell"><input id="admin-benchmark-gold" name="mondayBenchmarkGold" type="number" min="0" step="1" placeholder="1000"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-benchmark-naira">Weekly Benchmark Naira</label>
+              <div class="field-shell"><input id="admin-benchmark-naira" name="mondayBenchmarkNaira" type="number" min="0" step="1" placeholder="100"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-payout-mode">Payout Processor Mode</label>
+              <div class="field-shell"><select id="admin-payout-mode" name="payoutProcessorMode"><option value="automatic">Automatic</option><option value="manual">Manual</option><option value="paused">Paused</option></select></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-live-reward-pool">Live Reward Pool Copy</label>
+              <div class="field-shell"><input id="admin-live-reward-pool" name="liveRewardPool" type="text" placeholder="50 BR9 Gold for the first 500 valid Sunday live winners"></div>
+            </div>
+            <div class="field-group admin-field-grid__full">
+              <label for="admin-payout-requirements">Payout Requirements</label>
+              <div class="field-shell"><input id="admin-payout-requirements" name="payoutRequirements" type="text" placeholder="10 ads + 1 service transaction"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-panel admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">Trust & Growth</span>
+              <h2>Identity posture and social routing</h2>
+            </div>
+            <p class="section-copy">Keep the account trust story aligned with phone verification, passport uploads, quick login methods, and public social distribution.</p>
+          </div>
+
+          <div class="admin-field-grid">
+            <div class="field-group">
+              <label for="admin-phone-verification-required">Phone Verification</label>
+              <div class="field-shell"><select id="admin-phone-verification-required" name="phoneVerificationRequired"><option value="required">Required</option><option value="optional">Optional</option><option value="disabled">Disabled</option></select></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-passport-photo-required">Passport Photo Upload</label>
+              <div class="field-shell"><select id="admin-passport-photo-required" name="passportPhotoRequired"><option value="enabled">Enabled</option><option value="review-only">Review Only</option><option value="disabled">Disabled</option></select></div>
+            </div>
+            <div class="field-group admin-field-grid__full">
+              <label for="admin-quick-login-modes">Quick Login Modes</label>
+              <div class="field-shell"><input id="admin-quick-login-modes" name="quickLoginModes" type="text" placeholder="6-digit PIN, Face ID, fingerprint, device PIN, and pattern"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-social-tiktok">TikTok URL</label>
+              <div class="field-shell"><input id="admin-social-tiktok" name="socialTikTokUrl" type="url" placeholder="https://www.tiktok.com/@br9ja"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-social-instagram">Instagram URL</label>
+              <div class="field-shell"><input id="admin-social-instagram" name="socialInstagramUrl" type="url" placeholder="https://www.instagram.com/br9ja/"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-social-x">X URL</label>
+              <div class="field-shell"><input id="admin-social-x" name="socialXUrl" type="url" placeholder="https://x.com/br9ja"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-social-youtube">YouTube URL</label>
+              <div class="field-shell"><input id="admin-social-youtube" name="socialYouTubeUrl" type="url" placeholder="https://www.youtube.com/@BR9ja"></div>
+            </div>
+            <div class="field-group admin-field-grid__full">
+              <label for="admin-social-facebook">Facebook URL</label>
+              <div class="field-shell"><input id="admin-social-facebook" name="socialFacebookUrl" type="url" placeholder="https://www.facebook.com/br9ja"></div>
+            </div>
+          </div>
+
+          <div class="admin-submit-row">
+            <p class="success-banner" aria-live="polite"></p>
+            <button class="action-button" type="submit">Save App Settings</button>
+          </div>
+        </section>
+      </form>
+    </main>
+  </div>
+
+  <div data-admin-gate></div>
+</body>
+</html>

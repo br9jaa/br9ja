@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja Provider Pulse</title>
+  <meta name="description" content="Private BR9ja provider routing room for API failover, funding rails, and service provider switching.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/apple_touch_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../main.css">
+  <script defer src="../main.js"></script>
+</head>
+<body data-page="admin-providers" data-base=".." data-authenticated="true" data-admin-room="providers">
+  <div class="admin-layout">
+    <div data-admin-shell></div>
+
+    <main class="section-stack admin-room">
+      <section class="section-panel admin-console">
+        <div class="section-header">
+          <span class="kicker">Provider Pulse</span>
+          <h1 class="section-title">Change service APIs and failover routes without redeploying.</h1>
+          <p class="section-copy">This room controls the primary and backup provider for funding, utilities, education, transport, government, betting, and marketplace checkout. Users only see a smooth transaction while BR9ja silently switches provider if a primary route goes down.</p>
+        </div>
+
+        <div class="admin-kpi-grid">
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Funding Rail</span>
+            <strong data-provider-funding>Squad primary • Monnify backup</strong>
+            <p class="mini-note">Dedicated virtual accounts are assigned at signup.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Failover Rule</span>
+            <strong>500 / Timeout / Down</strong>
+            <p class="mini-note">These conditions trigger backup routing automatically.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">User Experience</span>
+            <strong>Silent Recovery</strong>
+            <p class="mini-note">The customer is not interrupted when fallback succeeds.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Deposit Fee</span>
+            <strong>0.1% Squad baseline</strong>
+            <p class="mini-note">Can be absorbed as operational expense for zero-fee wallet funding.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">API Routing Matrix</span>
+            <h2>Primary provider, backup provider, and endpoint controls</h2>
+          </div>
+          <p class="section-copy">Keep secrets in environment variables. This page stores routing choices and base URLs only, so operations can switch providers quickly without exposing keys in the browser.</p>
+        </div>
+
+        <form class="admin-form" data-form="provider-config">
+          <div class="admin-section-card__header admin-section-card__header--sub">
+            <div>
+              <span class="kicker">Funding Rails</span>
+              <h2>Squad / Monnify virtual account control</h2>
+            </div>
+            <p class="section-copy">Zero-fee mode credits users the full deposit while BR9ja records the 0.1% provider charge as operational expense.</p>
+          </div>
+
+          <div class="admin-field-grid">
+            <div class="field-group">
+              <label for="funding-primary">Primary Virtual Account Provider</label>
+              <div class="field-shell">
+                <select id="funding-primary" name="funding.primaryProvider">
+                  <option value="squad">Squad (GTCO)</option>
+                  <option value="monnify">Monnify</option>
+                  <option value="demo">Demo / Manual</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="funding-backup">Backup Virtual Account Provider</label>
+              <div class="field-shell">
+                <select id="funding-backup" name="funding.backupProvider">
+                  <option value="monnify">Monnify</option>
+                  <option value="squad">Squad (GTCO)</option>
+                  <option value="demo">Demo / Manual</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="funding-fee-bps">Provider Fee Basis Points</label>
+              <div class="field-shell">
+                <input id="funding-fee-bps" name="funding.providerFeeBps" type="number" min="0" step="1" placeholder="10">
+              </div>
+              <span class="field-status" data-default="10 bps equals 0.1%.">10 bps equals 0.1%.</span>
+            </div>
+
+            <div class="field-group">
+              <label for="funding-bank-label">Default Bank Label</label>
+              <div class="field-shell">
+                <input id="funding-bank-label" name="funding.defaultBankLabel" type="text" placeholder="GTBank">
+              </div>
+            </div>
+
+            <label class="admin-check admin-field-grid__full">
+              <input type="checkbox" name="funding.zeroFeeBalance">
+              <span>Credit users the full deposit and book provider fee as Operational Expense.</span>
+            </label>
+          </div>
+
+          <div class="admin-section-card__header admin-section-card__header--sub">
+            <div>
+              <span class="kicker">Provider Endpoints</span>
+              <h2>Base URLs used by the backend service clients</h2>
+            </div>
+            <p class="section-copy">Keys stay in .env. These URLs let you move between sandbox, live, or a backup aggregator fast.</p>
+          </div>
+
+          <div class="admin-field-grid">
+            <div class="field-group"><label for="endpoint-peyflex">Peyflex Base URL</label><div class="field-shell"><input id="endpoint-peyflex" name="endpoints.peyflexBaseUrl" type="url" placeholder="https://api.peyflex.com"></div></div>
+            <div class="field-group"><label for="endpoint-vtpass">VTpass Base URL</label><div class="field-shell"><input id="endpoint-vtpass" name="endpoints.vtpassBaseUrl" type="url" placeholder="https://vtpass.com/api"></div></div>
+            <div class="field-group"><label for="endpoint-squad">Squad Base URL</label><div class="field-shell"><input id="endpoint-squad" name="endpoints.squadBaseUrl" type="url" placeholder="https://sandbox-api-d.squadco.com"></div></div>
+            <div class="field-group"><label for="endpoint-monnify">Monnify Base URL</label><div class="field-shell"><input id="endpoint-monnify" name="endpoints.monnifyBaseUrl" type="url" placeholder="https://sandbox.monnify.com"></div></div>
+            <div class="field-group"><label for="endpoint-remita">Remita Base URL</label><div class="field-shell"><input id="endpoint-remita" name="endpoints.remitaBaseUrl" type="url" placeholder="https://remitademo.net/remita/exapp/api/v1"></div></div>
+            <div class="field-group"><label for="endpoint-billpay">Bill Pay Base URL</label><div class="field-shell"><input id="endpoint-billpay" name="endpoints.billPayBaseUrl" type="url" placeholder="https://api.billpay-provider.com"></div></div>
+            <div class="field-group"><label for="endpoint-flutterwave">Flutterwave Base URL</label><div class="field-shell"><input id="endpoint-flutterwave" name="endpoints.flutterwaveBaseUrl" type="url" placeholder="https://api.flutterwave.com/v3"></div></div>
+          </div>
+
+          <div class="admin-section-card__header admin-section-card__header--sub">
+            <div>
+              <span class="kicker">Service Failover</span>
+              <h2>Provider routing for each service line</h2>
+            </div>
+            <p class="section-copy">If the primary provider returns 500, times out, or reports Down, BR9ja moves to the backup provider and continues the transaction.</p>
+          </div>
+
+          <div class="admin-service-grid">
+            <article class="admin-service-card">
+              <div class="admin-service-card__header"><span class="admin-service-card__icon">AT</span><div><h3>Airtime</h3><p class="mini-note" data-provider-route="airtime">Peyflex → VTpass</p></div></div>
+              <div class="admin-field-grid"><div class="field-group"><label for="route-airtime-primary">Primary</label><div class="field-shell"><select id="route-airtime-primary" name="services.airtime.primaryProvider"><option value="peyflex">Peyflex</option><option value="vtpass">VTpass</option><option value="demo">Demo</option></select></div></div><div class="field-group"><label for="route-airtime-backup">Backup</label><div class="field-shell"><select id="route-airtime-backup" name="services.airtime.backupProvider"><option value="vtpass">VTpass</option><option value="peyflex">Peyflex</option><option value="demo">Demo</option></select></div></div></div>
+              <label class="admin-check"><input type="checkbox" name="services.airtime.failoverEnabled"> <span>Enable failover</span></label>
+            </article>
+
+            <article class="admin-service-card">
+              <div class="admin-service-card__header"><span class="admin-service-card__icon">DT</span><div><h3>Data Bundles</h3><p class="mini-note" data-provider-route="data">Peyflex → VTpass</p></div></div>
+              <div class="admin-field-grid"><div class="field-group"><label for="route-data-primary">Primary</label><div class="field-shell"><select id="route-data-primary" name="services.data.primaryProvider"><option value="peyflex">Peyflex</option><option value="vtpass">VTpass</option><option value="demo">Demo</option></select></div></div><div class="field-group"><label for="route-data-backup">Backup</label><div class="field-shell"><select id="route-data-backup" name="services.data.backupProvider"><option value="vtpass">VTpass</option><option value="peyflex">Peyflex</option><option value="demo">Demo</option></select></div></div></div>
+              <label class="admin-check"><input type="checkbox" name="services.data.failoverEnabled"> <span>Enable failover</span></label>
+            </article>
+
+            <article class="admin-service-card">
+              <div class="admin-service-card__header"><span class="admin-service-card__icon">EL</span><div><h3>Electricity</h3><p class="mini-note" data-provider-route="electricity">Peyflex → VTpass</p></div></div>
+              <div class="admin-field-grid"><div class="field-group"><label for="route-electricity-primary">Primary</label><div class="field-shell"><select id="route-electricity-primary" name="services.electricity.primaryProvider"><option value="peyflex">Peyflex</option><option value="vtpass">VTpass</option><option value="demo">Demo</option></select></div></div><div class="field-group"><label for="route-electricity-backup">Backup</label><div class="field-shell"><select id="route-electricity-backup" name="services.electricity.backupProvider"><option value="vtpass">VTpass</option><option value="peyflex">Peyflex</option><option value="demo">Demo</option></select></div></div></div>
+              <label class="admin-check"><input type="checkbox" name="services.electricity.failoverEnabled"> <span>Enable failover</span></label>
+            </article>
+
+            <article class="admin-service-card">
+              <div class="admin-service-card__header"><span class="admin-service-card__icon">TV</span><div><h3>Cable TV & Internet</h3><p class="mini-note" data-provider-route="cableTv">Peyflex → VTpass</p></div></div>
+              <div class="admin-field-grid"><div class="field-group"><label for="route-cable-primary">Primary</label><div class="field-shell"><select id="route-cable-primary" name="services.cableTv.primaryProvider"><option value="peyflex">Peyflex</option><option value="vtpass">VTpass</option><option value="demo">Demo</option></select></div></div><div class="field-group"><label for="route-cable-backup">Backup</label><div class="field-shell"><select id="route-cable-backup" name="services.cableTv.backupProvider"><option value="vtpass">VTpass</option><option value="peyflex">Peyflex</option><option value="demo">Demo</option></select></div></div></div>
+              <label class="admin-check"><input type="checkbox" name="services.cableTv.failoverEnabled"> <span>Enable failover</span></label>
+            </article>
+
+            <article class="admin-service-card">
+              <div class="admin-service-card__header"><span class="admin-service-card__icon">ED</span><div><h3>Education Pins</h3><p class="mini-note" data-provider-route="education">Peyflex → VTpass</p></div></div>
+              <div class="admin-field-grid"><div class="field-group"><label for="route-education-primary">Primary</label><div class="field-shell"><select id="route-education-primary" name="services.education.primaryProvider"><option value="peyflex">Peyflex</option><option value="vtpass">VTpass</option><option value="demo">Demo</option></select></div></div><div class="field-group"><label for="route-education-backup">Backup</label><div class="field-shell"><select id="route-education-backup" name="services.education.backupProvider"><option value="vtpass">VTpass</option><option value="peyflex">Peyflex</option><option value="demo">Demo</option></select></div></div></div>
+              <label class="admin-check"><input type="checkbox" name="services.education.failoverEnabled"> <span>Enable failover</span></label>
+            </article>
+
+            <article class="admin-service-card">
+              <div class="admin-service-card__header"><span class="admin-service-card__icon">TR</span><div><h3>Transport</h3><p class="mini-note" data-provider-route="transport">VTpass → Demo</p></div></div>
+              <div class="admin-field-grid"><div class="field-group"><label for="route-transport-primary">Primary</label><div class="field-shell"><select id="route-transport-primary" name="services.transport.primaryProvider"><option value="vtpass">VTpass</option><option value="peyflex">Peyflex</option><option value="demo">Demo</option></select></div></div><div class="field-group"><label for="route-transport-backup">Backup</label><div class="field-shell"><select id="route-transport-backup" name="services.transport.backupProvider"><option value="demo">Demo</option><option value="vtpass">VTpass</option><option value="peyflex">Peyflex</option></select></div></div></div>
+              <label class="admin-check"><input type="checkbox" name="services.transport.failoverEnabled"> <span>Enable failover</span></label>
+            </article>
+
+            <article class="admin-service-card">
+              <div class="admin-service-card__header"><span class="admin-service-card__icon">GV</span><div><h3>Government / RRR</h3><p class="mini-note" data-provider-route="government">Remita → Demo</p></div></div>
+              <div class="admin-field-grid"><div class="field-group"><label for="route-government-primary">Primary</label><div class="field-shell"><select id="route-government-primary" name="services.government.primaryProvider"><option value="remita">Remita</option><option value="vtpass">VTpass</option><option value="demo">Demo</option></select></div></div><div class="field-group"><label for="route-government-backup">Backup</label><div class="field-shell"><select id="route-government-backup" name="services.government.backupProvider"><option value="demo">Demo</option><option value="remita">Remita</option><option value="vtpass">VTpass</option></select></div></div></div>
+              <label class="admin-check"><input type="checkbox" name="services.government.failoverEnabled"> <span>Enable failover</span></label>
+            </article>
+
+            <article class="admin-service-card">
+              <div class="admin-service-card__header"><span class="admin-service-card__icon">BT</span><div><h3>Betting</h3><p class="mini-note" data-provider-route="betting">BillPay → Demo</p></div></div>
+              <div class="admin-field-grid"><div class="field-group"><label for="route-betting-primary">Primary</label><div class="field-shell"><select id="route-betting-primary" name="services.betting.primaryProvider"><option value="billpay">BillPay</option><option value="flutterwave">Flutterwave</option><option value="monnify">Monnify</option><option value="demo">Demo</option></select></div></div><div class="field-group"><label for="route-betting-backup">Backup</label><div class="field-shell"><select id="route-betting-backup" name="services.betting.backupProvider"><option value="demo">Demo</option><option value="billpay">BillPay</option><option value="flutterwave">Flutterwave</option><option value="monnify">Monnify</option></select></div></div></div>
+              <label class="admin-check"><input type="checkbox" name="services.betting.failoverEnabled"> <span>Enable failover</span></label>
+            </article>
+
+            <article class="admin-service-card">
+              <div class="admin-service-card__header"><span class="admin-service-card__icon">MP</span><div><h3>Marketplace</h3><p class="mini-note" data-provider-route="marketplace">Demo only</p></div></div>
+              <div class="admin-field-grid"><div class="field-group"><label for="route-marketplace-primary">Primary</label><div class="field-shell"><select id="route-marketplace-primary" name="services.marketplace.primaryProvider"><option value="demo">Demo</option><option value="peyflex">Peyflex</option><option value="vtpass">VTpass</option></select></div></div><div class="field-group"><label for="route-marketplace-backup">Backup</label><div class="field-shell"><select id="route-marketplace-backup" name="services.marketplace.backupProvider"><option value="demo">Demo</option><option value="peyflex">Peyflex</option><option value="vtpass">VTpass</option></select></div></div></div>
+              <label class="admin-check"><input type="checkbox" name="services.marketplace.failoverEnabled"> <span>Enable failover</span></label>
+            </article>
+          </div>
+
+          <div class="admin-submit-row">
+            <p class="success-banner" aria-live="polite"></p>
+            <button class="action-button" type="submit">Save Provider Routes</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div data-admin-gate></div>
+</body>
+</html>

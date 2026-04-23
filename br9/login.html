@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | BR9ja</title>
+  <meta name="description" content="Log in to BR9ja with your username or email and step into the mobile-first rewards flow.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://br9.ng/login">
+  <link rel="icon" type="image/png" href="./assets/favicon.png">
+  <link rel="apple-touch-icon" href="./assets/apple_touch_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./main.css">
+  <script defer src="./main.js"></script>
+</head>
+<body data-page="login" data-base=".">
+  <div class="site-shell">
+    <div data-site-shell></div>
+
+    <main class="auth-shell">
+      <section class="auth-card" data-auth-card>
+        <div class="auth-card__header">
+          <span class="kicker">Login</span>
+          <h1>Welcome back to BR9ja</h1>
+          <p class="auth-card__copy">Use your username or email and password for the first login. After that, the app can unlock quick access with PIN or biometrics.</p>
+        </div>
+
+        <form class="admin-form" data-form="auth-preview" data-auth-mode="login">
+          <div class="field-group">
+            <label for="login-identity">Email or Username</label>
+            <div class="field-shell">
+              <span class="field-icon">👤</span>
+              <input id="login-identity" name="identity" type="text" placeholder="stankings@gmail.com or @stankings" data-validate="username" required>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="login-password">Password</label>
+            <div class="field-shell">
+              <span class="field-icon">🔒</span>
+              <input id="login-password" name="password" type="password" placeholder="Enter your password" data-validate="password" required>
+            </div>
+          </div>
+
+          <button class="action-button" type="submit">Login to BR9ja</button>
+
+          <div class="auth-divider"></div>
+          <p class="auth-footer-note">New here? <a href="./signup.html">Create your BR9ja account</a>.</p>
+          <div class="success-banner">Login preview ready.</div>
+        </form>
+      </section>
+    </main>
+
+    <div data-site-footer></div>
+  </div>
+
+  <a class="floating-whatsapp" href="#" data-config-link="whatsappHelp">WhatsApp Help</a>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemaBundle generatedFor="br9.ng">
+  <schema type="FinancialService"><![CDATA[
+{
+  "@context": "https://schema.org",
+  "@type": "FinancialService",
+  "name": "BR9ja",
+  "brand": "BR9ja",
+  "url": "https://br9.ng",
+  "description": "A Nigerian fintech and rewards platform for bill payment, wallet activity, and weekly BR9 Gold conversion.",
+  "areaServed": "NG",
+  "provider": {
+    "@type": "Organization",
+    "name": "BayRight9ja Ltd"
+  }
+}
+  ]]></schema>
+  <schema type="SoftwareApplication"><![CDATA[
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "BR9ja App",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Android, iOS, Web",
+  "description": "Play Market Runner, pay bills, and earn BR9 Gold toward Monday payout.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "NGN"
+  }
+}
+  ]]></schema>
+</schemaBundle>

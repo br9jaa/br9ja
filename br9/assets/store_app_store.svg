@@ -1,0 +1,7 @@
+<svg width="320" height="96" viewBox="0 0 320 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="96" rx="18" fill="#0B0B0B"/>
+  <rect x="2" y="2" width="316" height="92" rx="16" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+  <text x="46" y="58" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="700"></text>
+  <text x="98" y="34" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="500">Download on the</text>
+  <text x="98" y="66" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700">App Store</text>
+</svg>

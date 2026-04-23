@@ -1,0 +1,47 @@
+{
+    "name": "BR9ja Unified Hub",
+    "short_name": "BR9ja",
+    "start_url": "./?play=web",
+    "display": "standalone",
+    "background_color": "#051321",
+    "theme_color": "#051321",
+    "description": "Wallet, vending, BR9 Gold gaming, and Sunday live rewards in one fast hub.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": true,
+    "categories": ["finance", "games", "shopping"],
+    "related_applications": [
+        {
+            "platform": "play",
+            "id": "com.bayright9ja.bayright9ja_mobile",
+            "url": "https://play.google.com/store/apps/details?id=com.bayright9ja.bayright9ja_mobile"
+        },
+        {
+            "platform": "itunes",
+            "url": "https://apps.apple.com/app/id0000000000"
+        }
+    ],
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

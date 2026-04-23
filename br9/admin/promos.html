@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja Golden Window</title>
+  <meta name="description" content="Private BR9ja promo engine for flash sales, countdown windows, usage caps, and emergency stop control.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/apple_touch_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../main.css">
+  <script defer src="../main.js"></script>
+</head>
+<body data-page="admin-promos" data-base=".." data-authenticated="true" data-admin-room="promos">
+  <div class="admin-layout">
+    <div data-admin-shell></div>
+
+    <main class="section-stack admin-room">
+      <section class="section-panel admin-console">
+        <div class="section-header">
+          <span class="kicker">Golden Window</span>
+          <h1 class="section-title">Trigger timed promo spikes without touching code.</h1>
+          <p class="section-copy">This room schedules limited-time flash sales, tracks remaining spots, and lets you stop a live promo instantly if the margin picture changes.</p>
+        </div>
+
+        <div class="admin-kpi-grid">
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Promotion Status</span>
+            <strong data-promo-status>Idle</strong>
+            <p class="mini-note">Upcoming, Active, Finished, or Killed.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Spots Remaining</span>
+            <strong data-promo-spots>No live cap</strong>
+            <p class="mini-note">Tracks the max usage ceiling in real time.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Promo Window</span>
+            <strong data-promo-window>No promo scheduled</strong>
+            <p class="mini-note">Server-side timer controls when the window opens and closes.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Live Copy</span>
+            <strong data-promo-copy>No Golden Window is active right now.</strong>
+            <p class="mini-note">This is what the public banner echoes.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Promo Scheduler</span>
+            <h2>Build the next flash sale</h2>
+          </div>
+          <p class="section-copy">Use flat or percentage discounts, cap the total reach, and lock it to just the services you want to push tonight.</p>
+        </div>
+
+        <form class="admin-form" data-form="promo-engine">
+          <div class="admin-field-grid">
+            <div class="field-group admin-field-grid__full">
+              <label for="promo-title">Promo Title</label>
+              <div class="field-shell">
+                <input id="promo-title" name="title" type="text" placeholder="Midnight Madness">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="promo-discount-type">Discount Type</label>
+              <div class="field-shell">
+                <select id="promo-discount-type" name="discountType">
+                  <option value="flat">Flat Amount</option>
+                  <option value="percentage">Percentage</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="promo-flat-discount">Discount Amount (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="promo-flat-discount" name="discountAmount" type="number" min="0" step="1" placeholder="2000">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="promo-discount-percent">Discount %</label>
+              <div class="field-shell">
+                <input id="promo-discount-percent" name="discountPercent" type="number" min="0" max="100" step="1" placeholder="10">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="promo-max-cap">Max Discount Value (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="promo-max-cap" name="maxDiscountValue" type="number" min="0" step="1" placeholder="1000">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="promo-start">Start Time</label>
+              <div class="field-shell">
+                <input id="promo-start" name="startAt" type="datetime-local">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="promo-end">End Time</label>
+              <div class="field-shell">
+                <input id="promo-end" name="endAt" type="datetime-local">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="promo-max-uses">Max Total Usage</label>
+              <div class="field-shell">
+                <input id="promo-max-uses" name="maxUses" type="number" min="0" step="1" placeholder="50">
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="promo-user-limit">Individual User Limit</label>
+              <div class="field-shell">
+                <input id="promo-user-limit" name="individualUserLimit" type="number" min="0" step="1" placeholder="1">
+              </div>
+            </div>
+
+            <div class="field-group admin-field-grid__full">
+              <label>Target Services</label>
+              <div class="admin-checkbox-grid">
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="all" checked> <span>All Services</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="airtime"> <span>Airtime</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="data"> <span>Data Bundles</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="electricity"> <span>Electricity</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="cableTv"> <span>Cable TV & Internet</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="education"> <span>Education</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="transport"> <span>Transport</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="government"> <span>Government</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="betting"> <span>Betting</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="marketplace"> <span>Marketplace</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="virtualCards"> <span>Virtual Cards</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="fiveGData"> <span>5G Data</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="discos"> <span>11 DISCOs</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="driverLicense"> <span>Driver's License</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="netflix"> <span>Netflix</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="showmax"> <span>Showmax</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="spotify"> <span>Spotify</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="gamingCards"> <span>Gaming Cards</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="giftCards"> <span>Gift Cards</span></label>
+                <label class="admin-check"><input type="checkbox" name="targetServices" value="eventTickets"> <span>Event Tickets</span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-submit-row">
+            <p class="success-banner" aria-live="polite"></p>
+            <button class="action-button" type="submit">Go Live / Schedule Promo</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Kill Switch</span>
+            <h2>Stop the Golden Window instantly</h2>
+          </div>
+          <p class="section-copy">If the usage spike is too strong or a sponsor brief changes, this reverts pricing back to the standard silent-margin logic immediately.</p>
+        </div>
+
+        <div class="admin-submit-row">
+          <p class="success-banner" data-promo-kill-result aria-live="polite"></p>
+          <button class="ghost-button" type="button" data-promo-kill>Kill Active Promo</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div data-admin-gate></div>
+</body>
+</html>
