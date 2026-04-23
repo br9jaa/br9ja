@@ -942,7 +942,6 @@ function applyConfigToDom(config) {
           <path d="M12.04 2C6.54 2 2.08 6.4 2.08 11.84c0 1.92.56 3.79 1.63 5.39L2 22l4.94-1.62a10.1 10.1 0 0 0 5.1 1.38h.01c5.49 0 9.95-4.4 9.95-9.84S17.54 2 12.04 2Zm5.8 13.94c-.24.67-1.43 1.28-1.97 1.36-.5.08-1.12.11-1.81-.11-.42-.13-.96-.31-1.66-.6-2.92-1.25-4.83-4.18-4.98-4.38-.15-.2-1.18-1.55-1.18-2.96 0-1.41.75-2.1 1.01-2.39.27-.29.58-.36.77-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.82 1.99.89 2.13.07.14.12.31.02.5-.09.19-.14.31-.29.48-.15.17-.31.37-.45.49-.15.13-.3.27-.13.53.17.26.76 1.24 1.62 2.01 1.11.99 2.04 1.31 2.33 1.45.29.14.46.12.63-.07.17-.19.73-.84.93-1.13.19-.29.39-.24.66-.14.27.1 1.7.8 1.99.95.29.14.48.22.55.34.07.12.07.71-.17 1.38Z"/>
         </svg>
       </span>
-      <span class="sr-only">WhatsApp Help</span>
     `;
   });
 }
@@ -1121,21 +1120,17 @@ function renderSiteChrome(config) {
 }
 
 function bindWhatsAppVisibility() {
-  const node = document.querySelector('.floating-whatsapp');
-  if (!node) {
-    return;
-  }
-
-  if (!shouldExposeWhatsApp()) {
-    document.body.classList.add('whatsapp-hidden');
-    document.body.classList.remove('public-whatsapp', 'whatsapp-visible');
+  const nodes = [...document.querySelectorAll('.floating-whatsapp')];
+  if (!nodes.length) {
     return;
   }
 
   const updateVisibility = () => {
-    document.body.classList.add('public-whatsapp');
-    document.body.classList.remove('whatsapp-hidden');
-    document.body.classList.add('whatsapp-visible');
+    const shouldShow = shouldExposeWhatsApp();
+    document.body.classList.toggle('whatsapp-hidden', !shouldShow);
+    document.body.classList.toggle('public-whatsapp', shouldShow);
+    document.body.classList.toggle('whatsapp-visible', shouldShow);
+    nodes.forEach((node) => node.classList.toggle('is-hidden', !shouldShow));
   };
 
   window.__br9UpdateWhatsappVisibility = updateVisibility;
