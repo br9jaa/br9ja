@@ -307,35 +307,36 @@ html[data-theme="light"] .menu-toggle {
   background: var(--hero-stage-bg);
 }
 
-.hero-stage__clarifier {
-  position: absolute;
-  left: 28px;
-  bottom: 24px;
-  z-index: 2;
+.hero-clarity-bar {
   display: grid;
   gap: 4px;
-  max-width: min(420px, calc(100% - 56px));
-  padding: 14px 16px;
+  width: min(100%, 560px);
+  margin: 18px auto 0;
+  padding: 16px 18px;
   border: 1px solid rgba(255, 215, 0, 0.22);
-  border-radius: 18px;
-  background: rgba(1, 10, 31, 0.78);
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.24);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 215, 0, 0.12), transparent 36%),
+    rgba(1, 10, 31, 0.9);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(14px);
+  justify-items: center;
+  text-align: center;
 }
 
-.hero-stage__clarifier strong {
+.hero-clarity-bar strong {
   color: #ffffff;
   font-size: clamp(1.05rem, 2vw, 1.3rem);
   letter-spacing: -0.03em;
 }
 
-.hero-stage__clarifier span:last-child {
+.hero-clarity-bar span:last-child {
   color: rgba(248, 251, 255, 0.78);
   font-size: 0.86rem;
   line-height: 1.5;
 }
 
-.hero-stage__clarifier-tag {
+.hero-clarity-bar__tag {
   color: var(--br9-gold);
   font-size: 0.76rem;
   font-weight: 800;
@@ -364,6 +365,45 @@ html[data-theme="light"] .menu-toggle {
   display: grid;
   gap: 18px;
   padding: 34px 10px 10px;
+}
+
+.hero-proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.hero-proof-card {
+  display: grid;
+  gap: 8px;
+  min-height: 100%;
+  padding: 18px 18px 20px;
+  border: 1px solid rgba(255, 215, 0, 0.14);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.03)),
+    rgba(7, 18, 39, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.hero-proof-card__eyebrow {
+  color: var(--br9-gold);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-proof-card strong {
+  color: var(--heading-text);
+  font-size: 1rem;
+  letter-spacing: -0.03em;
+}
+
+.hero-proof-card span:last-child {
+  color: var(--page-muted);
+  line-height: 1.6;
 }
 
 .hero-content--center {
@@ -907,6 +947,28 @@ html[data-theme="light"] .luxury-card,
 html[data-theme="light"] .ritual-step,
 html[data-theme="light"] .lux-list__item {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 247, 250, 0.98));
+}
+
+html[data-theme="light"] .hero-clarity-bar {
+  background:
+    radial-gradient(circle at top left, rgba(255, 215, 0, 0.12), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 247, 251, 0.98));
+  box-shadow: 0 18px 44px rgba(11, 24, 47, 0.08);
+}
+
+html[data-theme="light"] .hero-clarity-bar strong {
+  color: var(--heading-text);
+}
+
+html[data-theme="light"] .hero-clarity-bar span:last-child {
+  color: var(--page-muted);
+}
+
+html[data-theme="light"] .hero-proof-card {
+  background:
+    radial-gradient(circle at top right, rgba(255, 215, 0, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 252, 0.98));
+  box-shadow: 0 18px 44px rgba(11, 24, 47, 0.06);
 }
 
 html[data-theme="light"] body[data-page="home"] .hero-panel,
@@ -2357,23 +2419,24 @@ html[data-theme="light"] .auth-card {
 
   .site-nav a {
     width: 100%;
-    padding: 0;
-    border-radius: 0;
-    border: 0;
-    background: transparent;
+    padding: 18px 22px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
     color: #ffffff;
-    font-size: 2rem;
+    font-size: 1.32rem;
     font-weight: 800;
     letter-spacing: -0.04em;
     position: relative;
     text-align: center;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
   }
 
   .site-nav a:hover,
   .site-nav a.is-active {
-    background: transparent;
-    border-color: transparent;
-    color: #ffffff;
+    background: linear-gradient(135deg, #ffd700 0%, #ffec80 100%);
+    border-color: rgba(255, 255, 255, 0.42);
+    color: #010a1f;
   }
 
   .site-nav a.is-active::before {
@@ -2413,14 +2476,10 @@ html[data-theme="light"] .auth-card {
     font-size: clamp(1.9rem, 8vw, 2.6rem);
   }
 
-  .hero-stage__clarifier {
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
-    max-width: none;
-    padding: 12px 14px;
-    justify-items: center;
-    text-align: center;
+  .hero-clarity-bar {
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px 16px;
   }
 
   .hero-content {
@@ -2463,7 +2522,8 @@ html[data-theme="light"] .auth-card {
   .button-row,
   .download-row,
   .chip-row,
-  .wallet-columns {
+  .wallet-columns,
+  .hero-proof-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2478,6 +2538,7 @@ html[data-theme="light"] .auth-card {
 
   body[data-page="home"] .section-header,
   body[data-page="home"] .page-header,
+  body[data-page="home"] .hero-proof-card,
   body[data-page="home"] .metric-card,
   body[data-page="home"] .how-card,
   body[data-page="home"] .premium-card,
