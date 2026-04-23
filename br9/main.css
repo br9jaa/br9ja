@@ -670,6 +670,72 @@ html[data-theme="light"] .menu-toggle {
   margin-bottom: 24px;
 }
 
+body[data-page="home"] .hero-title,
+body[data-page="home"] .section-title,
+body[data-page="home"] .page-header__title {
+  margin-inline: auto;
+  text-wrap: balance;
+}
+
+body[data-page="home"] .hero-title {
+  max-width: 10.5ch;
+}
+
+body[data-page="home"] .section-title,
+body[data-page="home"] .page-header__title {
+  max-width: 15ch;
+}
+
+body[data-page="home"] .hero-copy,
+body[data-page="home"] .section-copy,
+body[data-page="home"] .page-header__copy,
+body[data-page="home"] .footer-copy {
+  max-width: 60ch;
+  margin-inline: auto;
+  text-wrap: pretty;
+}
+
+body[data-page="home"] .section-header,
+body[data-page="home"] .page-header {
+  justify-items: center;
+  text-align: center;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+body[data-page="home"] .hero-content {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+body[data-page="home"] .hero-metrics {
+  align-items: stretch;
+}
+
+body[data-page="home"] .metric-card,
+body[data-page="home"] .how-card,
+body[data-page="home"] .premium-card,
+body[data-page="home"] .luxury-card,
+body[data-page="home"] .ritual-step,
+body[data-page="home"] .lux-list__item {
+  justify-items: center;
+  text-align: center;
+}
+
+body[data-page="home"] .service-card {
+  justify-items: center;
+  text-align: center;
+}
+
+body[data-page="home"] .service-card .field-group {
+  width: 100%;
+  text-align: left;
+}
+
+body[data-page="home"] .service-card .action-button {
+  width: min(100%, 220px);
+}
+
 .service-grid,
 .content-grid,
 .contact-grid,
@@ -841,6 +907,14 @@ html[data-theme="light"] .luxury-card,
 html[data-theme="light"] .ritual-step,
 html[data-theme="light"] .lux-list__item {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 247, 250, 0.98));
+}
+
+html[data-theme="light"] body[data-page="home"] .hero-panel,
+html[data-theme="light"] body[data-page="home"] .section-panel:not(.footer-panel) {
+  background:
+    radial-gradient(circle at top right, rgba(255, 215, 0, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(246, 249, 252, 0.98));
+  box-shadow: 0 20px 52px rgba(11, 24, 47, 0.08);
 }
 
 .premium-card::after,
@@ -2354,6 +2428,28 @@ html[data-theme="light"] .auth-card {
     padding: 28px 4px 8px;
   }
 
+  body[data-page="home"] .hero-content {
+    max-width: 100%;
+  }
+
+  body[data-page="home"] .hero-title {
+    max-width: 10.4ch;
+    font-size: clamp(2rem, 8.8vw, 2.8rem);
+  }
+
+  body[data-page="home"] .section-title,
+  body[data-page="home"] .page-header__title {
+    max-width: 12ch;
+  }
+
+  body[data-page="home"] .hero-copy,
+  body[data-page="home"] .section-copy,
+  body[data-page="home"] .page-header__copy,
+  body[data-page="home"] .card-copy {
+    max-width: 32rem;
+    margin-inline: auto;
+  }
+
   .hero-content--center {
     justify-items: center;
     text-align: center;
@@ -2407,6 +2503,11 @@ html[data-theme="light"] .auth-card {
   body[data-page="home"] .footer-copy {
     margin-inline: auto;
     text-align: center;
+  }
+
+  body[data-page="home"] .service-card .field-group,
+  body[data-page="home"] .service-card .field-status {
+    text-align: left;
   }
 
   body[data-page="home"] .wallet-stack,
@@ -2507,9 +2608,10 @@ html[data-theme="light"] .auth-card {
     right: 14px;
     left: auto;
     bottom: 14px;
-    min-height: 54px;
-    padding: 0 16px 0 12px;
+    min-height: 52px;
+    padding: 0 14px 0 11px;
     gap: 8px;
+    max-width: 182px;
     opacity: 1;
     pointer-events: auto;
     transform: none;
