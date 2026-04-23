@@ -2199,17 +2199,16 @@ html[data-theme="light"] .auth-card {
   z-index: 50;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 58px;
-  padding: 0 20px 0 14px;
-  border-radius: 999px;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  border-radius: 50%;
   border: 1px solid rgba(37, 211, 102, 0.42);
   background: linear-gradient(135deg, #25d366 0%, #17a34a 100%);
   color: #ffffff;
   text-decoration: none;
   box-shadow: 0 20px 40px rgba(14, 97, 55, 0.30);
-  font-weight: 800;
-  letter-spacing: 0.01em;
 }
 
 .public-whatsapp .floating-whatsapp {
@@ -2220,13 +2219,17 @@ html[data-theme="light"] .auth-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
-  font-size: 0.86rem;
-  font-weight: 900;
+}
+
+.floating-whatsapp__icon svg {
+  width: 21px;
+  height: 21px;
+  fill: currentColor;
 }
 
 .floating-whatsapp__text {
@@ -2676,10 +2679,10 @@ html[data-theme="light"] .auth-card {
     right: 14px;
     left: auto;
     bottom: 14px;
-    min-height: 52px;
-    padding: 0 14px 0 11px;
-    gap: 8px;
-    max-width: 182px;
+    width: 54px;
+    height: 54px;
+    min-height: 54px;
+    max-width: 54px;
     opacity: 1;
     pointer-events: auto;
     transform: none;
@@ -2689,10 +2692,10 @@ html[data-theme="light"] .auth-card {
   .floating-whatsapp__icon {
     width: 30px;
     height: 30px;
-    font-size: 0.78rem;
   }
 
-  .floating-whatsapp__text {
-    font-size: 0.88rem;
+  .floating-whatsapp__icon svg {
+    width: 17px;
+    height: 17px;
   }
 }
