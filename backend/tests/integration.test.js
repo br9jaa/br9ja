@@ -209,6 +209,62 @@ describe('BR9 backend integration', () => {
     expect(storedUser.virtualAccountNumber).toBeTruthy();
   });
 
+  test('Auth: signup rejects reused email, phone number, and username', async () => {
+    await createUser({
+      fullName: 'Existing User',
+      email: 'existing@br9.test',
+      phoneNumber: '08030000111',
+      bayrightTag: '@existinguser',
+      referralCode: 'EXISTING',
+    });
+
+    let phoneAttempt = 112;
+    const attempt = async (overrides = {}) => {
+      phoneAttempt += 1;
+      const phoneNumber =
+        overrides.phoneNumber || `08030000${String(phoneAttempt).padStart(3, '0')}`;
+      const sendResponse = await request(app)
+        .post('/api/auth/send-phone-verification')
+        .send({ phoneNumber });
+
+      if (sendResponse.status !== 200) {
+        return sendResponse;
+      }
+
+      const verifyResponse = await request(app)
+        .post('/api/auth/verify-phone-code')
+        .send({
+          phoneNumber,
+          code: sendResponse.body.data.devCode,
+        });
+
+      return request(app)
+        .post('/api/auth/register')
+        .send({
+          fullName: 'Duplicate Attempt',
+          username: overrides.username || 'freshuser',
+          email: overrides.email || 'fresh@br9.test',
+          phoneNumber,
+          password: 'StrongPass123!',
+          pin: '654321',
+          phoneVerificationToken:
+            verifyResponse.body.data.phoneVerificationToken,
+        });
+    };
+
+    const emailResponse = await attempt({ email: 'existing@br9.test' });
+    expect(emailResponse.status).toBe(409);
+    expect(emailResponse.body.message).toContain('email');
+
+    const phoneResponse = await attempt({ phoneNumber: '08030000111' });
+    expect(phoneResponse.status).toBe(409);
+    expect(phoneResponse.body.message).toContain('phone number');
+
+    const usernameResponse = await attempt({ username: 'existinguser' });
+    expect(usernameResponse.status).toBe(409);
+    expect(usernameResponse.body.message).toContain('username');
+  });
+
   test('Funding rail: deposit webhook credits virtual account and logs operational expense', async () => {
     const user = await createUser({
       fullName: 'Deposit User',
@@ -294,6 +350,92 @@ describe('BR9 backend integration', () => {
     );
     expect(response.body.data.services.electricity.backupProvider).toBe('vtpass');
     expect(response.body.data.services.betting.primaryProvider).toBe('flutterwave');
+  });
+
+  test('Admin directory: can debit, wipe, restrict, and soft-delete users with audit logs', async () => {
+    const user = await createUser({
+      fullName: 'Governed User',
+      email: 'governed@br9.test',
+      phoneNumber: '08030000120',
+      bayrightTag: '@governeduser',
+      balance: 5000,
+      referralCode: 'GOVUSER',
+    });
+
+    const debitResponse = await request(app)
+      .post('/api/admin/site-adjust-user-balance')
+      .set('x-site-admin-token', 'br9-local-admin')
+      .send({
+        userId: user._id.toString(),
+        action: 'debit',
+        amount: 1500,
+        reason: 'Customer requested partial wallet withdrawal.',
+      });
+
+    expect(debitResponse.status).toBe(201);
+    expect(debitResponse.body.data.balance).toBe(3500);
+
+    const restrictedResponse = await request(app)
+      .patch('/api/admin/site-user-status')
+      .set('x-site-admin-token', 'br9-local-admin')
+      .send({
+        userId: user._id.toString(),
+        status: 'restricted',
+        reason: 'Refund review in progress.',
+      });
+
+    expect(restrictedResponse.status).toBe(200);
+    expect(restrictedResponse.body.data.accountStatus).toBe('restricted');
+
+    const token = (await login(user.email)).body.data.accessToken;
+    const blockedTransfer = await request(app)
+      .post('/api/transactions/transfer')
+      .set('Authorization', `Bearer ${token}`)
+      .set('X-Device-ID', testDeviceId)
+      .send({
+        recipient: '@nobody',
+        amount: 100,
+        transactionPin: '654321',
+      });
+    expect(blockedTransfer.status).toBe(423);
+
+    const wipeResponse = await request(app)
+      .post('/api/admin/site-adjust-user-balance')
+      .set('x-site-admin-token', 'br9-local-admin')
+      .send({
+        userId: user._id.toString(),
+        action: 'wipe',
+        reason: 'Customer requested account closure.',
+      });
+
+    expect(wipeResponse.status).toBe(201);
+    expect(wipeResponse.body.data.balance).toBe(0);
+
+    const deleteResponse = await request(app)
+      .patch('/api/admin/site-user-status')
+      .set('x-site-admin-token', 'br9-local-admin')
+      .send({
+        userId: user._id.toString(),
+        status: 'deleted',
+        reason: 'Customer requested account closure.',
+      });
+
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteResponse.body.data.accountStatus).toBe('deleted');
+
+    const loginResponse = await login(user.email);
+    const adjustmentCount = await Transaction.countDocuments({
+      userId: user._id,
+      type: 'AdminAdjustment',
+    });
+    const securityCount = await SecurityEvent.countDocuments({
+      userId: user._id,
+      eventType: { $in: ['admin-balance-adjustment', 'admin-account-status-change'] },
+    });
+
+    expect(loginResponse.status).toBe(423);
+    expect(adjustmentCount).toBe(2);
+    expect(securityCount).toBeGreaterThanOrEqual(4);
   });
 
   test('Games: web clients are blocked from gameplay endpoints', async () => {

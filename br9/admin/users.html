@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BR9ja Directory</title>
-  <meta name="description" content="Private BR9ja user directory with search, spend insight, and manual credit controls.">
+  <meta name="description" content="Private BR9ja user directory with search, spend insight, wallet adjustment, and account governance controls.">
   <meta name="theme-color" content="#010A1F">
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" type="image/png" href="../assets/favicon.png">
@@ -23,8 +23,8 @@
       <section class="section-panel admin-console">
         <div class="section-header">
           <span class="kicker">Directory</span>
-          <h1 class="section-title">Search people fast, credit winners instantly.</h1>
-          <p class="section-copy">Find any BR9ja user by phone number or username, review their spend posture, and push a manual credit with a logged reason.</p>
+          <h1 class="section-title">Search people fast, govern accounts safely.</h1>
+          <p class="section-copy">Find any BR9ja user by phone number or username, review wallet posture, credit or debit with a logged reason, and control account access from one place.</p>
         </div>
 
         <form class="admin-filter-form" data-form="directory-search">
@@ -38,6 +38,7 @@
         </form>
 
         <p class="mini-note" data-users-summary>0 users loaded</p>
+        <p class="success-banner" data-users-action-feedback aria-live="polite"></p>
 
         <div class="admin-table-shell">
           <table class="admin-table">
@@ -48,12 +49,13 @@
                 <th>Signup Date</th>
                 <th>Total Spent</th>
                 <th>Wallet</th>
-                <th>Action</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody data-users-table>
               <tr>
-                <td colspan="6">Unlock the Directory to load user records.</td>
+                <td colspan="7">Unlock the Directory to load user records.</td>
               </tr>
             </tbody>
           </table>
@@ -99,6 +101,17 @@
             <button class="action-button" type="submit">Credit User</button>
           </div>
         </form>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Wallet Safety</span>
+            <h2>Subtract or wipe funds with audit logs</h2>
+          </div>
+          <p class="section-copy">Use Debit for partial refunds/reversals and Wipe only when the user explicitly wants their wallet cleared before leaving the service.</p>
+        </div>
+        <p class="mini-note">Every debit, wipe, restriction, and delete action creates an admin security event plus a wallet transaction record.</p>
       </section>
     </main>
   </div>

@@ -134,6 +134,34 @@ const userSchema = new Schema(
       default: false,
       index: true,
     },
+    accountStatus: {
+      type: String,
+      enum: [
+        'active',
+        'suspended',
+        'restricted',
+        'verification_required',
+        'under_review',
+        'deleted',
+      ],
+      default: 'active',
+      index: true,
+    },
+    accountStatusReason: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 500,
+    },
+    accountStatusUpdatedAt: {
+      type: Date,
+      default: null,
+    },
+    accountDeletedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
     freezeReason: {
       type: String,
       default: '',

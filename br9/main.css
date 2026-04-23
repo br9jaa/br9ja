@@ -64,6 +64,7 @@ body {
   background: var(--page-bg);
   color: var(--page-text);
   font-family: "Inter", "Montserrat", "Segoe UI", sans-serif;
+  overflow-x: hidden;
   transition: background 220ms ease, color 220ms ease;
 }
 
@@ -103,6 +104,7 @@ code {
 
 .site-shell {
   max-width: 1240px;
+  width: 100%;
   margin: 0 auto;
   padding: 24px 20px 64px;
 }
@@ -1740,6 +1742,66 @@ html[data-theme="light"] .admin-mini-card {
   min-height: 44px;
 }
 
+.admin-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 8px;
+  min-width: 280px;
+}
+
+.admin-action-grid .admin-row-action {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+}
+
+.danger-button {
+  border-color: rgba(255, 107, 107, 0.42);
+  color: var(--br9-danger);
+}
+
+.danger-button:hover {
+  background: rgba(255, 107, 107, 0.1);
+  box-shadow: 0 12px 28px rgba(255, 107, 107, 0.12);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 215, 0, 0.24);
+  background: rgba(255, 215, 0, 0.1);
+  color: var(--br9-gold);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.status-pill--active {
+  border-color: rgba(40, 199, 111, 0.35);
+  background: rgba(40, 199, 111, 0.12);
+  color: var(--br9-success);
+}
+
+.status-pill--suspended,
+.status-pill--deleted {
+  border-color: rgba(255, 107, 107, 0.35);
+  background: rgba(255, 107, 107, 0.12);
+  color: var(--br9-danger);
+}
+
+.status-pill--restricted,
+.status-pill--verification_required,
+.status-pill--under_review {
+  border-color: rgba(255, 215, 0, 0.35);
+  background: rgba(255, 215, 0, 0.12);
+  color: var(--br9-gold);
+}
+
 .admin-service-meta {
   display: flex;
   flex-wrap: wrap;
@@ -2194,27 +2256,33 @@ html[data-theme="light"] .auth-card {
     right: 0;
     left: 0;
     bottom: 0;
-    width: 100vw;
+    width: 100%;
+    max-width: 100%;
     padding: 120px 28px 48px;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     justify-content: flex-start;
     gap: 40px;
     background:
       radial-gradient(circle at top right, rgba(255, 215, 0, 0.24), transparent 20%),
       linear-gradient(135deg, #010a1f 0%, #091b41 58%, #7f6510 130%);
     box-shadow: -18px 0 40px rgba(0, 0, 0, 0.28);
-    transform: translateX(110%);
-    transition: transform 220ms ease;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    overflow-y: auto;
+    transition: opacity 220ms ease, visibility 220ms ease;
     z-index: 55;
   }
 
   .site-nav.is-open {
-    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .site-nav a {
-    width: auto;
+    width: 100%;
     padding: 0;
     border-radius: 0;
     border: 0;
@@ -2224,6 +2292,7 @@ html[data-theme="light"] .auth-card {
     font-weight: 800;
     letter-spacing: -0.04em;
     position: relative;
+    text-align: center;
   }
 
   .site-nav a:hover,
@@ -2236,13 +2305,13 @@ html[data-theme="light"] .auth-card {
   .site-nav a.is-active::before {
     content: "";
     position: absolute;
-    left: -16px;
-    top: 50%;
-    width: 6px;
-    height: 36px;
+    left: 50%;
+    bottom: -14px;
+    width: 48px;
+    height: 5px;
     border-radius: 999px;
     background: var(--br9-gold);
-    transform: translateY(-50%);
+    transform: translateX(-50%);
   }
 
   .site-header {
@@ -2258,7 +2327,16 @@ html[data-theme="light"] .auth-card {
 
   .hero-stage {
     min-height: 236px;
-    padding: 8px;
+    padding: 8px 8px 0;
+  }
+
+  .hero-title {
+    font-size: clamp(2.45rem, 11vw, 3.35rem);
+  }
+
+  .section-title,
+  .page-header__title {
+    font-size: clamp(1.9rem, 8vw, 2.6rem);
   }
 
   .hero-stage__clarifier {
@@ -2267,20 +2345,23 @@ html[data-theme="light"] .auth-card {
     bottom: 16px;
     max-width: none;
     padding: 12px 14px;
+    justify-items: center;
+    text-align: center;
   }
 
   .hero-content {
     gap: 16px;
-    padding: 28px 72px 8px 4px;
+    padding: 28px 4px 8px;
   }
 
   .hero-content--center {
-    justify-items: start;
-    text-align: left;
+    justify-items: center;
+    text-align: center;
   }
 
   .hero-content--center .hero-copy {
-    max-width: none;
+    max-width: 34rem;
+    margin-inline: auto;
   }
 
   .button-row,
@@ -2297,6 +2378,76 @@ html[data-theme="light"] .auth-card {
 
   .auth-row .auth-button {
     width: auto;
+  }
+
+  body[data-page="home"] .section-header,
+  body[data-page="home"] .page-header,
+  body[data-page="home"] .metric-card,
+  body[data-page="home"] .how-card,
+  body[data-page="home"] .premium-card,
+  body[data-page="home"] .luxury-card,
+  body[data-page="home"] .ritual-step,
+  body[data-page="home"] .lux-list__item {
+    justify-items: center;
+    text-align: center;
+  }
+
+  body[data-page="home"] .section-header .kicker,
+  body[data-page="home"] .page-header .kicker,
+  body[data-page="home"] .premium-card__eyebrow,
+  body[data-page="home"] .ritual-step__day,
+  body[data-page="home"] .luxury-card__icon,
+  body[data-page="home"] .step-badge {
+    margin-inline: auto;
+  }
+
+  body[data-page="home"] .section-copy,
+  body[data-page="home"] .page-header__copy,
+  body[data-page="home"] .card-copy,
+  body[data-page="home"] .footer-copy {
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  body[data-page="home"] .wallet-stack,
+  body[data-page="home"] .security-stack,
+  body[data-page="home"] .lux-list,
+  body[data-page="home"] .wallet-balance,
+  body[data-page="home"] .wallet-pill {
+    justify-items: center;
+    text-align: center;
+  }
+
+  body[data-page="home"] .progress-legend,
+  body[data-page="home"] .partners-row {
+    justify-content: center;
+  }
+
+  .ticker {
+    overflow-x: auto;
+    padding: 10px 0;
+    white-space: normal;
+    scrollbar-width: none;
+  }
+
+  .ticker::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ticker__track {
+    min-width: 100%;
+    padding-inline: 4px;
+    animation: none;
+  }
+
+  .ticker__item {
+    flex: 0 0 min(84vw, 290px);
+    white-space: normal;
+    text-align: center;
+  }
+
+  .floating-whatsapp {
+    max-width: calc(100vw - 28px);
   }
 
   .cta-button,

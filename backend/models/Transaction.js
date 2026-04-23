@@ -55,6 +55,7 @@ const transactionSchema = new Schema(
         'Betting',
         'PointConversion',
         'Reward',
+        'AdminAdjustment',
         'Marketplace',
       ],
       required: true,

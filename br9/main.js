@@ -453,6 +453,15 @@ function formatCurrency(value) {
   return `₦${numeric.toLocaleString()}`;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 function formatPromoServices(targetServices = []) {
   const values = Array.isArray(targetServices) ? targetServices : [];
   if (!values.length || values.includes('all')) {
@@ -1897,24 +1906,47 @@ function populateUsersTable(data) {
   tbody.innerHTML = rows.length
     ? rows
         .map(
-          (user) => `
+          (user) => {
+            const status = user.accountStatus || 'active';
+            const statusLabel = user.accountStatusLabel || formatModeLabel(status);
+            const reason = user.accountStatusReason
+              ? `<div class="mini-note">${escapeHtml(user.accountStatusReason)}</div>`
+              : '';
+
+            return `
             <tr>
               <td>
-                <strong>${user.fullName}</strong>
-                <div class="mini-note">${user.username}</div>
+                <strong>${escapeHtml(user.fullName)}</strong>
+                <div class="mini-note">${escapeHtml(user.username)}</div>
+                <div class="mini-note">${escapeHtml(user.email || '')}</div>
               </td>
-              <td>${user.phoneNumber}</td>
+              <td>${escapeHtml(user.phoneNumber)}</td>
               <td>${new Date(user.signupDate).toLocaleDateString()}</td>
               <td>${formatCurrency(user.totalSpent)}</td>
               <td>${formatCurrency(user.balance)}</td>
               <td>
-                <button class="ghost-button admin-row-action" type="button" data-credit-user="${user.id}" data-credit-name="${user.fullName}" data-credit-username="${user.username}">Credit User</button>
+                <span class="status-pill status-pill--${escapeHtml(status)}">${escapeHtml(statusLabel)}</span>
+                ${reason}
+              </td>
+              <td>
+                <div class="admin-action-grid">
+                  <button class="ghost-button admin-row-action" type="button" data-credit-user="${escapeHtml(user.id)}" data-credit-name="${escapeHtml(user.fullName)}" data-credit-username="${escapeHtml(user.username)}">Credit</button>
+                  <button class="ghost-button admin-row-action" type="button" data-balance-action="debit" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.fullName)}" data-user-balance="${Number(user.balance || 0)}">Subtract</button>
+                  <button class="ghost-button admin-row-action danger-button" type="button" data-balance-action="wipe" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.fullName)}" data-user-balance="${Number(user.balance || 0)}">Wipe</button>
+                  <button class="ghost-button admin-row-action" type="button" data-status-action="suspended" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.fullName)}">Suspend</button>
+                  <button class="ghost-button admin-row-action" type="button" data-status-action="restricted" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.fullName)}">Restrict</button>
+                  <button class="ghost-button admin-row-action" type="button" data-status-action="verification_required" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.fullName)}">Request Verification</button>
+                  <button class="ghost-button admin-row-action" type="button" data-status-action="under_review" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.fullName)}">Under Review</button>
+                  <button class="ghost-button admin-row-action" type="button" data-status-action="active" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.fullName)}">Restore</button>
+                  <button class="ghost-button admin-row-action danger-button" type="button" data-status-action="deleted" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.fullName)}">Delete</button>
+                </div>
               </td>
             </tr>
-          `
+          `;
+          }
         )
         .join('')
-    : '<tr><td colspan="6">No users matched that search yet.</td></tr>';
+    : '<tr><td colspan="7">No users matched that search yet.</td></tr>';
 
   const summary = document.querySelector('[data-users-summary]');
   if (summary) {
@@ -1983,6 +2015,7 @@ async function loadAdminTransactions(token) {
 async function loadAdminUsers(token) {
   const searchForm = document.querySelector('[data-form="directory-search"]');
   const creditForm = document.querySelector('[data-form="manual-credit"]');
+  const pageSuccessNode = document.querySelector('[data-users-action-feedback]');
 
   const fetchAndRender = async () => {
     const params = new URLSearchParams();
@@ -2016,6 +2049,119 @@ async function loadAdminUsers(token) {
 
     creditForm.elements.userId.value = button.dataset.creditUser || '';
     creditForm.elements.userLabel.value = `${button.dataset.creditName || ''} (${button.dataset.creditUsername || ''})`;
+  });
+
+  document.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-balance-action]');
+    if (!button) {
+      return;
+    }
+
+    const action = button.dataset.balanceAction || '';
+    const userId = button.dataset.userId || '';
+    const userName = button.dataset.userName || 'this user';
+    const currentBalance = Number(button.dataset.userBalance || 0);
+    let amount = currentBalance;
+
+    if (action === 'debit') {
+      const amountInput = window.prompt(
+        `How much should be subtracted from ${userName}? Current wallet: ${formatCurrency(currentBalance)}`
+      );
+      if (amountInput === null) {
+        return;
+      }
+      amount = Number.parseFloat(amountInput);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        showSuccess(pageSuccessNode, 'Enter a valid amount to subtract.');
+        return;
+      }
+    }
+
+    const reason = window.prompt(
+      action === 'wipe'
+        ? `Why are you wiping ${userName}'s wallet balance?`
+        : `Reason for subtracting ${formatCurrency(amount)} from ${userName}:`
+    );
+    if (!reason || !reason.trim()) {
+      showSuccess(pageSuccessNode, 'A reason is required for wallet adjustments.');
+      return;
+    }
+
+    if (
+      action === 'wipe' &&
+      !window.confirm(
+        `Confirm wallet wipe for ${userName}. This resets the wallet from ${formatCurrency(currentBalance)} to ₦0 and logs the action.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const result = await adminFetch('/api/admin/site-adjust-user-balance', token, {
+        method: 'POST',
+        body: {
+          userId,
+          action,
+          amount,
+          reason,
+        },
+      });
+      showSuccess(
+        pageSuccessNode,
+        `${result.username} ${action === 'wipe' ? 'wiped' : 'debited'} by ${formatCurrency(result.amount)}. New balance: ${formatCurrency(result.balance)}.`
+      );
+      await fetchAndRender();
+    } catch (error) {
+      showSuccess(pageSuccessNode, error.message);
+    }
+  });
+
+  document.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-status-action]');
+    if (!button) {
+      return;
+    }
+
+    const status = button.dataset.statusAction || '';
+    const userId = button.dataset.userId || '';
+    const userName = button.dataset.userName || 'this user';
+    const label = formatModeLabel(status);
+    let reason = '';
+
+    if (status !== 'active') {
+      reason = window.prompt(`Reason to mark ${userName} as ${label}:`) || '';
+      if (!reason.trim()) {
+        showSuccess(pageSuccessNode, 'A reason is required for account restrictions.');
+        return;
+      }
+    }
+
+    if (
+      status === 'deleted' &&
+      !window.confirm(
+        `Delete ${userName}? This is a soft-delete: login and transactions stop, but financial history remains for audit.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const result = await adminFetch('/api/admin/site-user-status', token, {
+        method: 'PATCH',
+        body: {
+          userId,
+          status,
+          reason,
+        },
+      });
+      showSuccess(
+        pageSuccessNode,
+        `${result.username} is now ${result.accountStatusLabel}.`
+      );
+      await fetchAndRender();
+    } catch (error) {
+      showSuccess(pageSuccessNode, error.message);
+    }
   });
 
   if (creditForm) {

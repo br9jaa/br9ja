@@ -144,6 +144,24 @@ class HttpError extends Error {
   }
 }
 
+const ACCOUNT_STATUS_OPTIONS = new Set([
+  'active',
+  'suspended',
+  'restricted',
+  'verification_required',
+  'under_review',
+  'deleted',
+]);
+
+const ACCOUNT_STATUS_LABELS = {
+  active: 'Active',
+  suspended: 'Suspended',
+  restricted: 'Restricted',
+  verification_required: 'Request Verification',
+  under_review: 'Under Review',
+  deleted: 'Deleted',
+};
+
 function successResponse(data, message = '') {
   return { success: true, data, message };
 }
@@ -583,6 +601,33 @@ function normaliseAmount(value) {
     : Number.parseFloat(String(value ?? 0));
 }
 
+function normaliseAccountStatus(value) {
+  const status = String(value || '').trim().toLowerCase();
+  if (!ACCOUNT_STATUS_OPTIONS.has(status)) {
+    throw new HttpError(400, 'Invalid account status action.');
+  }
+  return status;
+}
+
+function getAccountStatusLabel(status) {
+  return ACCOUNT_STATUS_LABELS[status] || ACCOUNT_STATUS_LABELS.active;
+}
+
+function buildAccountStatusNotificationBody(status, reason) {
+  const label = getAccountStatusLabel(status);
+  if (status === 'active') {
+    return 'Your BR9ja account has been restored. You can continue using services.';
+  }
+
+  if (status === 'deleted') {
+    return 'Your BR9ja account has been marked deleted and can no longer be used.';
+  }
+
+  return reason
+    ? `Your BR9ja account is now ${label.toLowerCase()}: ${reason}`
+    : `Your BR9ja account is now ${label.toLowerCase()}.`;
+}
+
 function buildAccountNumber(user) {
   if (user.accountNumber && String(user.accountNumber).trim().length > 0) {
     return user.accountNumber;
@@ -620,6 +665,8 @@ function mapService(type) {
       return 'BR9 Gold Conversion';
     case 'Reward':
       return 'BR9 Reward';
+    case 'AdminAdjustment':
+      return 'Admin Wallet Adjustment';
     case 'Marketplace':
       return 'Marketplace';
     default:
@@ -685,6 +732,10 @@ async function buildUserProfile(userId) {
       status: userDoc.virtualAccountStatus || 'pending',
     },
     kycTier: userDoc.kycTier,
+    accountStatus: userDoc.accountStatus || 'active',
+    accountStatusReason: userDoc.accountStatusReason || userDoc.freezeReason || '',
+    accountStatusUpdatedAt: userDoc.accountStatusUpdatedAt || userDoc.frozenAt || null,
+    isFrozen: Boolean(userDoc.isFrozen),
     walletBalance: normaliseAmount(userDoc.balance),
     br9GoldPoints: Number(userDoc.br9GoldPoints || 0),
     referralCode: userDoc.referralCode || '',
@@ -1414,7 +1465,7 @@ app.get('/api/admin/site-users', async (req, res, next) => {
       .sort({ createdAt: -1 })
       .limit(limit)
       .select(
-        'fullName bayrightTag email phoneNumber balance br9GoldPoints createdAt lastLoginAt'
+        'fullName bayrightTag email phoneNumber balance br9GoldPoints createdAt lastLoginAt accountStatus accountStatusReason accountStatusUpdatedAt accountDeletedAt isFrozen freezeReason'
       )
       .lean();
 
@@ -1455,6 +1506,14 @@ app.get('/api/admin/site-users', async (req, res, next) => {
               whatsappNumber: user.phoneNumber,
               balance: Number(user.balance || 0),
               br9GoldPoints: Number(user.br9GoldPoints || 0),
+              accountStatus: user.accountStatus || (user.isFrozen ? 'under_review' : 'active'),
+              accountStatusLabel: getAccountStatusLabel(
+                user.accountStatus || (user.isFrozen ? 'under_review' : 'active')
+              ),
+              accountStatusReason: user.accountStatusReason || user.freezeReason || '',
+              accountStatusUpdatedAt:
+                user.accountStatusUpdatedAt || user.accountDeletedAt || null,
+              isFrozen: Boolean(user.isFrozen),
               signupDate: user.createdAt,
               lastLoginAt: user.lastLoginAt,
               totalSpent: Number(spend.totalSpent || 0),
@@ -1556,6 +1615,245 @@ app.post('/api/admin/site-credit-user', async (req, res, next) => {
     res.status(201).json(
       successResponse(responsePayload, 'Manual credit applied successfully.')
     );
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+});
+
+app.post('/api/admin/site-adjust-user-balance', async (req, res, next) => {
+  const session = await mongoose.startSession();
+
+  try {
+    requireSiteAdminToken(req);
+
+    const userId = String(req.body?.userId || '').trim();
+    const action = String(req.body?.action || '').trim().toLowerCase();
+    const amount = normaliseAmount(req.body?.amount);
+    const reason = String(req.body?.reason || '').trim();
+
+    if (!userId || !['debit', 'wipe'].includes(action) || !reason) {
+      throw new HttpError(
+        400,
+        'userId, action (debit or wipe), and reason are required.'
+      );
+    }
+
+    if (action === 'debit' && (!Number.isFinite(amount) || amount <= 0)) {
+      throw new HttpError(400, 'A positive debit amount is required.');
+    }
+
+    let responsePayload;
+
+    await session.withTransaction(async () => {
+      const user = await User.findById(userId).session(session);
+      if (!user) {
+        throw new HttpError(404, 'User not found for balance adjustment.');
+      }
+
+      const balanceBefore = Number(user.balance || 0);
+      const debitAmount = action === 'wipe' ? balanceBefore : amount;
+
+      if (debitAmount <= 0) {
+        throw new HttpError(400, 'This user has no wallet balance to adjust.');
+      }
+
+      if (debitAmount > balanceBefore) {
+        throw new HttpError(
+          400,
+          'Debit amount cannot exceed the user wallet balance.'
+        );
+      }
+
+      user.balance = Math.max(balanceBefore - debitAmount, 0);
+      await user.save({ session });
+
+      const [transaction] = await Transaction.create(
+        [
+          {
+            senderId: user._id,
+            userId: user._id,
+            senderName: user.fullName,
+            receiverName: 'BR9 Admin',
+            amount: debitAmount,
+            type: 'AdminAdjustment',
+            status: 'success',
+            timestamp: new Date(),
+            reference: createReference(action === 'wipe' ? 'WIPE' : 'DEBIT'),
+            note: reason,
+            balanceAfter: user.balance,
+            currency: 'NGN',
+            metadata: {
+              source: 'site-admin-balance-adjustment',
+              action,
+              balanceBefore,
+              balanceAfter: user.balance,
+              reason,
+            },
+          },
+        ],
+        { session }
+      );
+
+      await UserNotification.create(
+        [
+          {
+            userId: user._id,
+            title: action === 'wipe' ? 'Wallet Balance Wiped' : 'Wallet Balance Adjusted',
+            body:
+              action === 'wipe'
+                ? `Your BR9ja wallet balance was reset to ₦0. Reason: ${reason}.`
+                : `₦${debitAmount.toLocaleString()} was debited from your BR9ja wallet. Reason: ${reason}.`,
+            type: 'admin-balance-adjustment',
+            status: 'queued',
+            metadata: {
+              transactionId: transaction._id.toString(),
+              action,
+              reason,
+            },
+          },
+        ],
+        { session }
+      );
+
+      await SecurityEvent.create(
+        [
+          {
+            userId: user._id,
+            email: user.email,
+            bayrightTag: user.bayrightTag,
+            eventType: 'admin-balance-adjustment',
+            severity: 'high',
+            route: req.originalUrl,
+            method: req.method,
+            ipAddress: req.ip,
+            deviceId: req.get('X-Device-ID') || '',
+            message: `Admin ${action} adjustment of ₦${debitAmount.toLocaleString()} applied.`,
+            metadata: {
+              action,
+              amount: debitAmount,
+              balanceBefore,
+              balanceAfter: user.balance,
+              reason,
+              reference: transaction.reference,
+            },
+          },
+        ],
+        { session }
+      );
+
+      responsePayload = {
+        userId: user._id.toString(),
+        username: user.bayrightTag,
+        action,
+        amount: debitAmount,
+        balanceBefore,
+        balance: Number(user.balance || 0),
+        reason,
+        transactionId: transaction._id.toString(),
+        reference: transaction.reference,
+      };
+    });
+
+    res.status(201).json(
+      successResponse(responsePayload, 'Balance adjustment applied successfully.')
+    );
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+});
+
+app.patch('/api/admin/site-user-status', async (req, res, next) => {
+  const session = await mongoose.startSession();
+
+  try {
+    requireSiteAdminToken(req);
+
+    const userId = String(req.body?.userId || '').trim();
+    const status = normaliseAccountStatus(req.body?.status);
+    const reason = String(req.body?.reason || '').trim();
+
+    if (!userId) {
+      throw new HttpError(400, 'userId is required.');
+    }
+
+    if (status !== 'active' && !reason) {
+      throw new HttpError(400, 'A reason is required for account restrictions.');
+    }
+
+    let responsePayload;
+
+    await session.withTransaction(async () => {
+      const user = await User.findById(userId).session(session);
+      if (!user) {
+        throw new HttpError(404, 'User not found for status update.');
+      }
+
+      const now = new Date();
+      const shouldFreeze = status !== 'active';
+      user.accountStatus = status;
+      user.accountStatusReason = status === 'active' ? '' : reason;
+      user.accountStatusUpdatedAt = now;
+      user.accountDeletedAt = status === 'deleted' ? now : null;
+      user.isFrozen = shouldFreeze;
+      user.freezeReason = shouldFreeze ? reason : '';
+      user.frozenAt = shouldFreeze ? now : null;
+      await user.save({ session });
+
+      await UserNotification.create(
+        [
+          {
+            userId: user._id,
+            title: `Account ${getAccountStatusLabel(status)}`,
+            body: buildAccountStatusNotificationBody(status, reason),
+            type: 'account-status',
+            status: 'queued',
+            metadata: {
+              accountStatus: status,
+              reason,
+            },
+          },
+        ],
+        { session }
+      );
+
+      await SecurityEvent.create(
+        [
+          {
+            userId: user._id,
+            email: user.email,
+            bayrightTag: user.bayrightTag,
+            eventType: 'admin-account-status-change',
+            severity: status === 'active' ? 'medium' : 'high',
+            route: req.originalUrl,
+            method: req.method,
+            ipAddress: req.ip,
+            deviceId: req.get('X-Device-ID') || '',
+            message: `Admin changed account status to ${getAccountStatusLabel(status)}.`,
+            metadata: {
+              accountStatus: status,
+              reason,
+            },
+          },
+        ],
+        { session }
+      );
+
+      responsePayload = {
+        userId: user._id.toString(),
+        username: user.bayrightTag,
+        accountStatus: status,
+        accountStatusLabel: getAccountStatusLabel(status),
+        accountStatusReason: user.accountStatusReason,
+        accountStatusUpdatedAt: user.accountStatusUpdatedAt,
+        isFrozen: user.isFrozen,
+      };
+    });
+
+    res.json(successResponse(responsePayload, 'Account status updated.'));
   } catch (error) {
     next(error);
   } finally {
@@ -1737,6 +2035,28 @@ app.post('/api/auth/register', async (req, res, next) => {
       throw new HttpError(400, 'PIN must be exactly 6 digits.');
     }
 
+    const existingIdentity = await User.findOne({
+      $or: [{ email }, { phoneNumber }, { bayrightTag }],
+    })
+      .select('email phoneNumber bayrightTag')
+      .lean();
+
+    if (existingIdentity) {
+      if (existingIdentity.email === email) {
+        throw new HttpError(409, 'That email address is already registered.');
+      }
+
+      if (existingIdentity.phoneNumber === phoneNumber) {
+        throw new HttpError(409, 'That phone number is already registered.');
+      }
+
+      if (existingIdentity.bayrightTag === bayrightTag) {
+        throw new HttpError(409, 'That username is already registered.');
+      }
+
+      throw new HttpError(409, 'An account with those details already exists.');
+    }
+
     const verificationRecord = await PhoneVerification.findOne({
       phoneNumber,
     }).select('+verificationTokenHash');
@@ -1837,6 +2157,17 @@ app.post('/api/auth/login', async (req, res, next) => {
     const user = await User.findOne(loginQuery).select('+activeDeviceId');
     if (!user) {
       throw new HttpError(401, 'Invalid username, email, or password.');
+    }
+
+    if (['suspended', 'deleted'].includes(user.accountStatus || 'active')) {
+      throw new HttpError(
+        423,
+        user.accountStatus === 'deleted'
+          ? 'This account has been deleted by BR9ja admin support.'
+          : user.accountStatusReason
+            ? `Account suspended: ${user.accountStatusReason}`
+            : 'Account suspended pending BR9ja admin review.'
+      );
     }
 
     const storedPasswordHash = user.password || user.passwordHash;
