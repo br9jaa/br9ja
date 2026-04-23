@@ -32,9 +32,12 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+build/
 /coverage/
 node_modules/
 **/node_modules/
+.env
+.env.*
 backend/.env.dev
 backend/.env.prod
 backend/.env.production
