@@ -998,8 +998,7 @@ async function loadConfig() {
   };
 }
 
-function buildHeaderAuthMarkup(base) {
-  const authUser = getStoredAuthUser();
+function buildHeaderAuthMarkup(base, authUser = getStoredAuthUser()) {
   if (authUser) {
     const label = authUser.firstName || authUser.username || 'Profile';
     return `
@@ -1024,6 +1023,8 @@ function buildHeaderAuthMarkup(base) {
 function buildHeader(config, theme) {
   const base = getBasePath();
   const current = getPageName();
+  const authUser = getStoredAuthUser();
+  const headerStateClass = authUser ? 'site-header--signed-in' : 'site-header--guest';
   const navLinks = HEADER_NAV_ITEMS.map(([key, label, href]) => {
     const active = current === key ? 'is-active' : '';
     return `<a class="${active}" href="${base}/${href}">${label}</a>`;
@@ -1033,7 +1034,7 @@ function buildHeader(config, theme) {
   const themeLabel = theme === 'light' ? 'Light Mode' : 'Dark Mode';
 
   return `
-    <header class="site-header">
+    <header class="site-header ${headerStateClass}">
       <a class="site-brand" href="${base}/index.html" aria-label="${config.brandName} Home">
         <img src="${base}/assets/logo_web_header.webp" alt="${config.brandName} logo" class="site-brand__logo">
         <span class="site-brand__text">
@@ -1043,7 +1044,7 @@ function buildHeader(config, theme) {
       </a>
 
       <div class="site-header__actions">
-        ${buildHeaderAuthMarkup(base)}
+        ${buildHeaderAuthMarkup(base, authUser)}
         <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
           ${navLinks}
         </nav>
