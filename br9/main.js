@@ -1907,6 +1907,17 @@ function bindContactForms(config) {
 function bindAuthUi(config) {
   const rememberedIdentity = getRememberedIdentity();
 
+  document.querySelectorAll('[data-toggle-password]').forEach((toggle) => {
+    toggle.addEventListener('change', () => {
+      const selector = toggle.dataset.togglePassword;
+      const input = selector ? document.querySelector(selector) : null;
+      if (!(input instanceof HTMLInputElement)) {
+        return;
+      }
+      input.type = toggle.checked ? 'text' : 'password';
+    });
+  });
+
   document.querySelectorAll('[data-form="auth-preview"]').forEach((form) => {
     const mode = form.dataset.authMode || 'login';
     const successNode = form.querySelector('.success-banner');

@@ -21,11 +21,11 @@
     <div data-site-shell></div>
 
     <main class="auth-shell">
-      <section class="auth-card" data-auth-card>
+      <section class="auth-card auth-card--login" data-auth-card>
         <div class="auth-card__header">
           <span class="kicker">Login</span>
           <h1>Welcome back to BR9ja</h1>
-          <p class="auth-card__copy">Returning users can sign in with password, 6-digit PIN, or one quick device-unlock button. If you forgot your password, reset it on a clean separate page and come right back in.</p>
+          <p class="auth-card__copy">Sign in with your password or 6-digit PIN. If this device already knows you, one quiet unlock button gets you in faster.</p>
         </div>
 
         <form class="admin-form" data-form="auth-preview" data-auth-mode="login">
@@ -39,26 +39,25 @@
 
           <div class="field-group">
             <label for="login-password">Password or 6-Digit PIN</label>
-            <div class="field-shell">
+            <div class="field-shell field-shell--with-action">
               <span class="field-icon">🔒</span>
               <input id="login-password" name="secret" type="password" placeholder="Enter your password or 6-digit PIN" required>
+              <button class="field-inline-action" type="button" data-quick-login="device unlock" data-quick-login-inline aria-label="Use device unlock">
+                <span class="field-inline-action__icon">◌</span>
+              </button>
             </div>
           </div>
 
-          <div class="auth-quick-access">
-            <div class="section-header">
-              <span class="kicker">Quick Access</span>
-              <h2 class="section-title">Returning on this device?</h2>
-              <p class="section-copy">Use one clean button for quick access on this phone or browser instead of juggling multiple unlock options here.</p>
-            </div>
-            <div class="quick-access-row">
-              <button class="verify-button verify-button--confirm" type="button" data-quick-login="device unlock">Use Device Unlock</button>
-            </div>
-            <p class="success-banner" data-quick-login-feedback>Quick access becomes available after your first full sign-in on this device.</p>
+          <div class="login-utility-row">
+            <label class="password-toggle" for="login-show-password">
+              <input id="login-show-password" type="checkbox" data-toggle-password="#login-password">
+              <span>Show Password</span>
+            </label>
+            <a class="inline-link" href="./reset-password.html">Forgot Password?</a>
           </div>
+          <p class="success-banner" data-quick-login-feedback>Quick access becomes available after your first full sign-in on this device.</p>
 
           <button class="action-button" type="submit">Login to BR9ja</button>
-          <a class="ghost-button" href="./reset-password.html">Forgot Password? Reset It Here</a>
 
           <div class="auth-divider"></div>
           <p class="auth-footer-note">New here? <a href="./signup.html">Create your BR9ja account</a>.</p>

@@ -1420,6 +1420,10 @@ html[data-theme="light"] .wallet-balance {
   opacity: 1;
 }
 
+.field-shell--with-action {
+  padding-right: 10px;
+}
+
 .field-shell--valid {
   border-color: rgba(40, 199, 111, 0.54);
   box-shadow: 0 0 0 3px rgba(40, 199, 111, 0.12);
@@ -1469,6 +1473,10 @@ html[data-theme="light"] .field-prefix {
   color: var(--page-text);
 }
 
+.field-shell--with-action input {
+  padding-right: 12px;
+}
+
 .field-shell input::placeholder,
 .field-shell textarea::placeholder {
   color: var(--page-muted);
@@ -1478,6 +1486,69 @@ html[data-theme="light"] .field-prefix {
   min-height: 120px;
   padding-top: 14px;
   resize: vertical;
+}
+
+.field-inline-action {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(40, 199, 111, 0.28);
+  border-radius: 13px;
+  background: rgba(40, 199, 111, 0.12);
+  color: var(--br9-green);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.field-inline-action:hover {
+  transform: translateY(-1px);
+  border-color: rgba(40, 199, 111, 0.42);
+  box-shadow: 0 10px 22px rgba(40, 199, 111, 0.16);
+}
+
+.field-inline-action__icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.login-utility-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 12px;
+}
+
+.password-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--page-muted);
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.password-toggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--br9-green);
+}
+
+.inline-link {
+  color: var(--page-muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: right;
+  white-space: nowrap;
+  transition: color 160ms ease;
+}
+
+.inline-link:hover {
+  color: var(--heading-text);
 }
 
 .field-status {
@@ -2220,6 +2291,11 @@ html[data-theme="light"] .auth-card {
   box-shadow: 0 20px 50px rgba(11, 24, 47, 0.12);
 }
 
+html[data-theme="light"] .field-inline-action {
+  background: rgba(40, 199, 111, 0.10);
+  border-color: rgba(40, 199, 111, 0.18);
+}
+
 .auth-card__header {
   display: grid;
   gap: 10px;
@@ -2238,6 +2314,31 @@ html[data-theme="light"] .auth-card {
   margin: 0;
   color: var(--page-muted);
   line-height: 1.6;
+}
+
+.auth-card--login {
+  gap: 16px;
+}
+
+.auth-card--login .auth-card__header {
+  gap: 8px;
+}
+
+.auth-card--login .admin-form {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-card--login .action-button {
+  min-height: 52px;
+  border-radius: 18px;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  box-shadow: 0 18px 36px rgba(40, 199, 111, 0.16);
+}
+
+.auth-card--login .field-group label {
+  font-size: 0.9rem;
 }
 
 .verification-row {
@@ -3040,6 +3141,27 @@ html[data-theme="light"] .auth-card {
 
   .auth-card {
     padding: 24px 20px;
+  }
+
+  .auth-card--login {
+    gap: 14px;
+  }
+
+  .auth-card--login .action-button {
+    min-height: 50px;
+    border-radius: 16px;
+  }
+
+  .login-utility-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    gap: 10px;
+  }
+
+  .field-inline-action {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
   }
 
   .admin-section-card,
