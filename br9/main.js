@@ -1841,7 +1841,7 @@ function bindContactForms(config) {
           showSuccess(successNode, `Customer service draft opened for ${config.supportEmail}.`);
           openMailDraft(buildMailtoUrl(config.supportEmail, `[BR9ja Contact] ${payload.subject}`, [
             `Name: ${payload.name || ''}`,
-            `Phone Number: ${payload.phoneNumber || ''}`,
+            `Email: ${payload.email || ''}`,
             `Subject: ${payload.subject || ''}`,
             '',
             String(payload.message || '').trim(),
@@ -1859,7 +1859,7 @@ function bindContactForms(config) {
         showSuccess(successNode, `We opened your email app so this report can still reach ${config.supportEmail}.`);
         openMailDraft(buildMailtoUrl(config.supportEmail, `[BR9ja Contact] ${payload.subject}`, [
           `Name: ${payload.name || ''}`,
-          `Phone Number: ${payload.phoneNumber || ''}`,
+          `Email: ${payload.email || ''}`,
           `Subject: ${payload.subject || ''}`,
           '',
           String(payload.message || '').trim(),

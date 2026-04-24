@@ -799,26 +799,30 @@ app.get('/api/site-promo', async (_req, res, next) => {
 app.post('/api/site/contact', async (req, res, next) => {
   try {
     const name = String(req.body?.name || '').trim();
-    const phoneNumber = normalisePhoneNumber(req.body?.phoneNumber);
+    const email = String(req.body?.email || '').trim().toLowerCase();
     const subject = String(req.body?.subject || '').trim();
     const message = String(req.body?.message || '').trim();
 
-    if (!name || !phoneNumber || !subject || !message) {
+    if (!name || !email || !subject || !message) {
       throw new HttpError(
         400,
-        'name, phoneNumber, subject, and message are required.'
+        'name, email, subject, and message are required.'
       );
+    }
+
+    if (!isValidEmail(email)) {
+      throw new HttpError(400, 'email must be valid.');
     }
 
     const siteConfig = await readSiteConfig();
     const delivery = await sendSiteMail({
       to: siteConfig.supportEmail,
       subject: `[BR9ja Contact] ${subject}`,
-      text: `Name: ${name}\nPhone: ${phoneNumber}\nSubject: ${subject}\n\n${message}`,
+      text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\n${message}`,
       html: `
         <h2>BR9ja Contact Form</h2>
         <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Phone:</strong> ${phoneNumber}</p>
+        <p><strong>Email:</strong> ${email}</p>
         <p><strong>Subject:</strong> ${subject}</p>
         <p><strong>Message:</strong><br>${message.replace(/\n/g, '<br>')}</p>
       `,
@@ -831,6 +835,7 @@ app.post('/api/site/contact', async (req, res, next) => {
       successResponse(
         {
           routedTo: siteConfig.supportEmail,
+          email,
           deliveryMode: delivery.deliveryMode,
           messageId: delivery.messageId,
         },
