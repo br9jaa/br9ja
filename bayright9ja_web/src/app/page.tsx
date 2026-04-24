@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Cable, Landmark, RadioTower, ShieldCheck, SunMedium, Tv } from "lucide-react";
@@ -54,14 +54,6 @@ export default function Home() {
   const [identity, setIdentity] = useState("");
   const [password, setPassword] = useState("");
 
-  const qrPattern = useMemo(
-    () =>
-      Array.from({ length: 49 }).map((_, index) =>
-        [0, 1, 2, 4, 6, 7, 9, 10, 12, 14, 16, 18, 20, 21, 22, 24, 26, 28, 30, 31, 33, 35, 36, 38, 40, 42, 43, 45, 46, 48].includes(index),
-      ),
-    [],
-  );
-
   const handleLandingLogin = async () => {
     await login({
       identity: "member@bayright9ja.com",
@@ -84,7 +76,7 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,215,0,0.18),_transparent_28%),radial-gradient(circle_at_80%_20%,_rgba(76,175,80,0.14),_transparent_18%),linear-gradient(135deg,_rgba(255,255,255,0.04)_0%,_transparent_40%)]" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 top-12 opacity-55">
           <img
-            src="/assets/processed_br9ja_hero_desktop.webp"
+            src="/br9/hero_main.jpg"
             alt="BR9ja hero background"
             className="h-full w-full object-contain object-bottom"
           />
@@ -175,24 +167,15 @@ export default function Home() {
                     Open Login
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowInlineLogin((current) => !current)}
-                  className="mx-auto mt-6 block rounded-[1.8rem] border border-[var(--color-neon-gold)] bg-[linear-gradient(145deg,rgba(255,215,0,0.14),rgba(0,13,29,0.72))] p-5 shadow-[0_0_0_1px_rgba(255,215,0,0.25),0_0_30px_rgba(255,215,0,0.18)] gold-pulse"
-                >
-                  <div className="grid h-[16rem] w-[16rem] grid-cols-7 gap-2 rounded-[1.4rem] bg-[#04182f] p-4">
-                    {qrPattern.map((highlighted, index) => (
-                      <span
-                        key={index}
-                        className={`rounded-[0.35rem] ${
-                          highlighted ? "bg-[var(--color-neon-gold)]" : "bg-white/10"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </button>
+                <div className="mt-6 overflow-hidden rounded-[1.9rem] border border-white/10 bg-[#07192f] p-3 shadow-[0_18px_54px_rgba(0,0,0,0.28)]">
+                  <img
+                    src="/br9/app_home.jpg"
+                    alt="BR9ja app home preview"
+                    className="w-full rounded-[1.4rem] object-contain"
+                  />
+                </div>
                 <p className="mt-6 text-center text-sm leading-7 text-white/72">
-                  Already a member? Open the Bayright9ja app and scan this code to access your dashboard on the web.
+                  Preview the BR9ja app home here, then login to continue into the live dashboard and wallet flows.
                 </p>
                 <button
                   type="button"
@@ -213,7 +196,7 @@ export default function Home() {
                       <input
                         value={identity}
                         onChange={(event) => setIdentity(event.target.value)}
-                        placeholder="Email / Username"
+                        placeholder="Email / Username / Phone"
                         className="glass-input w-full rounded-[1.1rem] px-4 py-3 text-sm outline-none"
                       />
                       <input

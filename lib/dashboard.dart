@@ -1,23 +1,14 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'core/api/br9_api_client.dart';
-import 'package:bayright9ja_mobile/core/theme/br9_theme.dart';
+import 'core/theme/br9_theme.dart';
 import 'providers/user_provider.dart';
 import 'screens/gaming/prediction_screen.dart';
-import 'screens/marketplace/education_screen.dart';
 import 'screens/marketplace/electricity_screen.dart';
-import 'screens/marketplace/betting_funding_screen.dart';
-import 'screens/marketplace/government_screen.dart';
-import 'screens/marketplace/marketplace_screen.dart';
-import 'screens/marketplace/transport_screen.dart';
 import 'screens/marketplace/tv_internet_screen.dart';
 import 'services/airtime_page.dart';
 import 'services/all_services_page.dart';
 import 'services/profile_page.dart';
-import 'services/service_ui.dart';
 import 'services/topup_page.dart';
 import 'services/transfer_page.dart';
 
@@ -34,398 +25,204 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      _HomeContent(onOpenTab: _openTab),
-      const MarketplaceScreen(),
+      const _Br9HomePage(),
+      const _RewardsPage(),
       const PredictionScreen(),
-      const _GoldHubPage(),
       const ProfilePage(),
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.deepNavy,
+      backgroundColor: const Color(0xFF081427),
       body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Color(0xFF090909),
-          border: Border(top: BorderSide(color: Colors.white10)),
-        ),
-        child: NavigationBar(
-          height: 82,
-          selectedIndex: _currentIndex,
-          backgroundColor: Colors.transparent,
-          indicatorColor: AppColors.primary.withValues(alpha: 0.14),
-          labelTextStyle: WidgetStateProperty.resolveWith(
-            (states) => TextStyle(
-              color: states.contains(WidgetState.selected)
-                  ? AppColors.primary
-                  : Colors.white70,
-              fontWeight: FontWeight.w700,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Container(
+            height: 78,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x22000000),
+                  blurRadius: 24,
+                  offset: Offset(0, 14),
+                ),
+              ],
             ),
-          ),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long_rounded),
-              label: 'Bills',
-            ),
-            NavigationDestination(
-              icon: _GamesNavIcon(selected: false),
-              selectedIcon: _GamesNavIcon(selected: true),
-              label: 'Games',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.workspace_premium_outlined),
-              selectedIcon: Icon(Icons.workspace_premium_rounded),
-              label: 'BR9 Gold',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
-            ),
-          ],
-          onDestinationSelected: (index) {
-            setState(() => _currentIndex = index);
-          },
-        ),
-      ),
-    );
-  }
-
-  void _openTab(int index) {
-    setState(() => _currentIndex = index);
-  }
-}
-
-class _HomeContent extends StatelessWidget {
-  const _HomeContent({required this.onOpenTab});
-
-  final ValueChanged<int> onOpenTab;
-
-  @override
-  Widget build(BuildContext context) {
-    final userProvider = context.watch<UserProvider>();
-    final shortcuts = <_Shortcut>[
-      _Shortcut(
-        label: 'Airtime',
-        icon: Icons.phone_android_rounded,
-        color: const Color(0xFF4EA8FF),
-        page: const AirtimePage(),
-        aliases: const ['recharge', 'phone', 'mtn', 'airtel', 'glo', '9mobile'],
-      ),
-      _Shortcut(
-        label: 'Electricity',
-        icon: Icons.bolt_rounded,
-        color: AppColors.success,
-        page: const ElectricityScreen(),
-        aliases: const ['meter', 'disco', 'ikeja', 'eko', 'aedc', 'power'],
-      ),
-      _Shortcut(
-        label: 'Cable TV',
-        icon: Icons.tv_rounded,
-        color: const Color(0xFF8B5CF6),
-        page: const TvInternetScreen(),
-        aliases: const [
-          'dstv',
-          'gotv',
-          'startimes',
-          'showmax',
-          'decoder',
-          'internet',
-        ],
-      ),
-      _Shortcut(
-        label: 'Education',
-        icon: Icons.school_rounded,
-        color: const Color(0xFFFF8A00),
-        page: const EducationScreen(),
-        aliases: const ['waec', 'jamb', 'neco', 'nabteb', 'pin'],
-      ),
-      _Shortcut(
-        label: 'Transport',
-        icon: Icons.directions_bus_rounded,
-        color: const Color(0xFF38BDF8),
-        page: const TransportScreen(),
-        aliases: const ['lcc', 'toll', 'etag', 'bus', 'gig', 'abc'],
-      ),
-      _Shortcut(
-        label: 'Government',
-        icon: Icons.account_balance_rounded,
-        color: const Color(0xFFFFD166),
-        page: const GovernmentScreen(),
-        aliases: const ['rrr', 'remita', 'frsc', 'passport', 'cac'],
-      ),
-      _Shortcut(
-        label: 'Betting',
-        icon: Icons.sports_soccer_rounded,
-        color: const Color(0xFFFF4D4D),
-        page: const BettingFundingScreen(),
-        aliases: const ['sportybet', 'bet9ja', '1xbet', 'betking'],
-      ),
-      _Shortcut(
-        label: 'More',
-        icon: Icons.grid_view_rounded,
-        color: AppColors.primary,
-        page: const AllServicesPage(),
-        aliases: const ['marketplace', 'netflix', 'gift cards', 'events'],
-      ),
-    ];
-
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(AppColors.radius),
-            onTap: () => onOpenTab(4),
             child: Row(
               children: [
-                Container(
-                  height: 54,
-                  width: 54,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFE082), AppColors.primary],
-                    ),
-                    borderRadius: BorderRadius.circular(AppColors.radius),
-                  ),
-                  child: const Icon(
-                    Icons.person_rounded,
-                    color: AppColors.deepNavy,
-                  ),
+                _NavItem(
+                  label: 'Home',
+                  icon: Icons.home_rounded,
+                  selected: _currentIndex == 0,
+                  onTap: () => setState(() => _currentIndex = 0),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        userProvider.userName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${userProvider.bankStatus} • ${userProvider.accountNumber}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+                _NavItem(
+                  label: 'Rewards',
+                  icon: Icons.workspace_premium_rounded,
+                  selected: _currentIndex == 1,
+                  onTap: () => setState(() => _currentIndex = 1),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: const Text(
-                    'Profile',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                _NavItem(
+                  label: 'Game',
+                  icon: Icons.sports_esports_rounded,
+                  selected: _currentIndex == 2,
+                  onTap: () => setState(() => _currentIndex = 2),
+                  highlighted: true,
+                ),
+                _NavItem(
+                  label: 'Profile',
+                  icon: Icons.person_rounded,
+                  selected: _currentIndex == 3,
+                  onTap: () => setState(() => _currentIndex = 3),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          _HomeHero(onOpenTab: onOpenTab),
-          const SizedBox(height: 16),
-          const _PromoHudCard(),
-          const SizedBox(height: 16),
-          _SmartSearchCard(shortcuts: shortcuts),
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _MetricCard(
-                label: 'Bank Status',
-                value: userProvider.bankStatus,
-                icon: Icons.verified_user_rounded,
-                tone: AppColors.success,
+        ),
+      ),
+    );
+  }
+}
+
+class _Br9HomePage extends StatelessWidget {
+  const _Br9HomePage();
+
+  @override
+  Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final displayName = _dashboardName(userProvider.userName);
+    final balance = userProvider.isLoggedIn
+        ? userProvider.walletBalance
+        : 56390.26;
+
+    const quickBills = <_BillShortcut>[
+      _BillShortcut(
+        label: 'Electricity',
+        icon: Icons.bolt_rounded,
+        color: Color(0xFFFFC857),
+        page: ElectricityScreen(),
+      ),
+      _BillShortcut(
+        label: 'Water',
+        icon: Icons.water_drop_rounded,
+        color: Color(0xFF6EC6FF),
+        page: AllServicesPage(),
+      ),
+      _BillShortcut(
+        label: 'TV Subscription',
+        icon: Icons.live_tv_rounded,
+        color: Color(0xFFD39CFF),
+        page: TvInternetScreen(),
+      ),
+      _BillShortcut(
+        label: 'Airtime & Data',
+        icon: Icons.phone_android_rounded,
+        color: Color(0xFF9CE0FF),
+        page: AirtimePage(),
+      ),
+      _BillShortcut(
+        label: 'Internet',
+        icon: Icons.wifi_rounded,
+        color: Color(0xFF8DEB90),
+        page: TvInternetScreen(),
+      ),
+      _BillShortcut(
+        label: 'More',
+        icon: Icons.grid_view_rounded,
+        color: AppColors.primary,
+        page: AllServicesPage(),
+      ),
+    ];
+
+    const transactions = <_RecentTransaction>[
+      _RecentTransaction(
+        title: 'Electricity Payment',
+        subtitle: 'PHCN',
+        amount: '₦12,000.00',
+        time: 'Today 10:24 AM',
+      ),
+      _RecentTransaction(
+        title: 'Airtime Purchase',
+        subtitle: 'MTN Nigeria',
+        amount: '₦1,500.00',
+        time: 'Today 9:15 AM',
+      ),
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF07111F), Color(0xFF0B1D3B), Color(0xFF07111F)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.08,
+              child: Image.asset(
+                'assets/images/app_home.jpg',
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
               ),
-              _MetricCard(
-                label: 'Total BR9 Gold',
-                value: '${userProvider.br9GoldPoints}',
-                icon: Icons.workspace_premium_rounded,
-                tone: AppColors.primary,
-              ),
-              _MetricCard(
-                label: 'Daily Streak',
-                value: '${userProvider.dailyStreak} days',
-                icon: Icons.local_fire_department_rounded,
-                tone: const Color(0xFFFF8A00),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 18),
-          Hero(
-            tag: kWalletHeroTag,
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF121212), Color(0xFF1F1A00)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white10),
+          const _BlueBackdrop(),
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
+              children: [
+                const _DashboardLogo(),
+                const SizedBox(height: 18),
+                _UserRow(name: displayName),
+                const SizedBox(height: 18),
+                _WalletCard(balance: balance),
+                const SizedBox(height: 22),
+                _SectionHeader(
+                  title: 'Recent Transactions',
+                  actionLabel: 'View all',
+                  onActionTap: () =>
+                      _pushPage(context, const AllServicesPage()),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Wallet Balance',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '₦${userProvider.walletBalance.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.w900,
+                const SizedBox(height: 12),
+                ...transactions.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _TransactionTile(item: item),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const _SectionHeader(title: 'Pay Bills'),
+                const SizedBox(height: 12),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final crossAxisCount = constraints.maxWidth < 340 ? 2 : 3;
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: quickBills.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.94,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _WalletActionButton(
-                            label: 'Add Money',
-                            icon: Icons.add_circle_outline_rounded,
-                            highlighted: true,
-                            onTap: () =>
-                                _pushServicePage(context, const TopupPage()),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _WalletActionButton(
-                            label: 'Transfer to Buddy',
-                            icon: Icons.swap_horiz_rounded,
-                            onTap: () =>
-                                _pushServicePage(context, const TransferPage()),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      itemBuilder: (context, index) {
+                        return _BillShortcutCard(shortcut: quickBills[index]);
+                      },
+                    );
+                  },
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Quick Bill Pay',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
+                const SizedBox(height: 20),
+                _PlayBanner(
+                  onPlay: () => _pushPage(context, const PredictionScreen()),
                 ),
-              ),
-              TextButton(
-                onPressed: () => onOpenTab(1),
-                child: const Text('Open Bills'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Clear, specific actions so every payment feels simple and premium.',
-            style: TextStyle(color: Colors.white70),
-          ),
-          const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: shortcuts.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 0.96,
-            ),
-            itemBuilder: (context, index) {
-              return _ShortcutTile(shortcut: shortcuts[index]);
-            },
-          ),
-          const SizedBox(height: 22),
-          InkWell(
-            borderRadius: BorderRadius.circular(24),
-            onTap: () => onOpenTab(2),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF101010),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white10),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    height: 54,
-                    width: 54,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(
-                      Icons.sports_esports_rounded,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Market Runner',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Score ${userProvider.marketRunnerScore} • ${(userProvider.marketRunnerProgress * 100).round()}% completion',
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    color: AppColors.primary,
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
         ],
@@ -434,65 +231,703 @@ class _HomeContent extends StatelessWidget {
   }
 }
 
-class _SmartSearchCard extends StatefulWidget {
-  const _SmartSearchCard({required this.shortcuts});
-
-  final List<_Shortcut> shortcuts;
+class _RewardsPage extends StatelessWidget {
+  const _RewardsPage();
 
   @override
-  State<_SmartSearchCard> createState() => _SmartSearchCardState();
+  Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final goldPoints = userProvider.br9GoldPoints > 0
+        ? userProvider.br9GoldPoints
+        : 1000;
+    final streak = userProvider.dailyStreak == 0 ? 4 : userProvider.dailyStreak;
+    final progress = ((goldPoints / 2000).clamp(0, 1)).toDouble();
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF07111F), Color(0xFF0B1D3B), Color(0xFF07111F)],
+        ),
+      ),
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+          children: [
+            const _DashboardLogo(),
+            const SizedBox(height: 22),
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF102346), Color(0xFF0C1730)],
+                ),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'BR9 GOLD',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '$goldPoints',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Keep your streak alive, pay bills, and play games to grow your next Monday payout.',
+                    style: TextStyle(color: Colors.white70, height: 1.5),
+                  ),
+                  const SizedBox(height: 18),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      minHeight: 12,
+                      value: progress,
+                      backgroundColor: Colors.white12,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: _RewardStat(
+                    title: 'Daily Streak',
+                    value: '$streak days',
+                    icon: Icons.local_fire_department_rounded,
+                    tone: const Color(0xFFFFA24D),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _RewardStat(
+                    title: 'Wallet Ready',
+                    value: userProvider.walletBalance > 0
+                        ? 'Active'
+                        : 'Fund now',
+                    icon: Icons.account_balance_wallet_rounded,
+                    tone: const Color(0xFF6EC6FF),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _PlayBanner(
+              onPlay: () => _pushPage(context, const PredictionScreen()),
+              compact: true,
+            ),
+            const SizedBox(height: 18),
+            _RewardChecklist(
+              items: <String>[
+                'Play Market Runner daily',
+                'Pay at least one bill this week',
+                'Keep your quick wallet actions active',
+                'Return on Monday for BR9 Gold conversion',
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _SmartSearchCardState extends State<_SmartSearchCard> {
-  final _controller = TextEditingController();
-  List<_Shortcut> _matches = const [];
+class _DashboardLogo extends StatelessWidget {
+  const _DashboardLogo();
 
   @override
-  void initState() {
-    super.initState();
-    _matches = widget.shortcuts.take(4).toList(growable: false);
+  Widget build(BuildContext context) {
+    return Row(
+      children: const [
+        Text(
+          'br9',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 30,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1,
+          ),
+        ),
+        Text(
+          '.ng',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontSize: 30,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1,
+          ),
+        ),
+      ],
+    );
   }
+}
+
+class _UserRow extends StatelessWidget {
+  const _UserRow({required this.name});
+
+  final String name;
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          height: 56,
+          width: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFD56A), Color(0xFFFFB703)],
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x40FFD700),
+                blurRadius: 18,
+                offset: Offset(0, 10),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.person_rounded,
+            color: Color(0xFF14315A),
+            size: 30,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Premium wallet & bill payments',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          height: 48,
+          width: 48,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: const Icon(
+            Icons.notifications_none_rounded,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+      ],
+    );
   }
+}
 
-  void _updateMatches(String value) {
-    final query = value.trim().toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _matches = widget.shortcuts.take(4).toList(growable: false);
-        return;
-      }
+class _WalletCard extends StatelessWidget {
+  const _WalletCard({required this.balance});
 
-      _matches = widget.shortcuts
-          .where((shortcut) {
-            final haystack = [
-              shortcut.label,
-              ...shortcut.aliases,
-            ].join(' ').toLowerCase();
-            return haystack.contains(query);
-          })
-          .take(4)
-          .toList(growable: false);
-    });
+  final double balance;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1B5CC7), Color(0xFF233B94), Color(0xFF8A2BE2)],
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 34,
+            offset: Offset(0, 18),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'WALLET BALANCE',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'Wallet',
+                  style: TextStyle(
+                    color: Color(0xFF173A6E),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            '₦${balance.toStringAsFixed(2)}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.8,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _PrimaryActionButton(
+                  label: 'TOP UP',
+                  icon: Icons.add_circle_outline_rounded,
+                  onTap: () => _pushPage(context, const TopupPage()),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _SecondaryActionButton(
+                  label: 'GIFT USER',
+                  icon: Icons.card_giftcard_rounded,
+                  onTap: () => _pushPage(context, const TransferPage()),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
+}
 
-  void _openFirstMatch() {
-    final match = _matches.isNotEmpty ? _matches.first : null;
-    if (match != null) {
-      _pushServicePage(context, match.page);
-    }
+class _PrimaryActionButton extends StatelessWidget {
+  const _PrimaryActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF173A6E),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      onPressed: onTap,
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+      ),
+    );
   }
+}
+
+class _SecondaryActionButton extends StatelessWidget {
+  const _SecondaryActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        side: const BorderSide(color: Colors.white24),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      onPressed: onTap,
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    this.actionLabel,
+    this.onActionTap,
+  });
+
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        if (actionLabel != null)
+          TextButton(
+            onPressed: onActionTap,
+            child: Text(
+              actionLabel!,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _TransactionTile extends StatelessWidget {
+  const _TransactionTile({required this.item});
+
+  final _RecentTransaction item;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF101010),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: 50,
+            width: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF3FF),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(
+              item.title.contains('Electricity')
+                  ? Icons.bolt_rounded
+                  : Icons.phone_android_rounded,
+              color: const Color(0xFF1B5CC7),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: const TextStyle(
+                    color: Color(0xFF111827),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  item.subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  item.time,
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            item.amount,
+            style: const TextStyle(
+              color: Color(0xFFE11D48),
+              fontWeight: FontWeight.w900,
+              fontSize: 15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BillShortcutCard extends StatelessWidget {
+  const _BillShortcutCard({required this.shortcut});
+
+  final _BillShortcut shortcut;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () => _pushPage(context, shortcut.page),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              height: 50,
+              width: 50,
+              decoration: BoxDecoration(
+                color: shortcut.color.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Icon(shortcut.icon, color: shortcut.color, size: 28),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              shortcut.label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF0F172A),
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                height: 1.25,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlayBanner extends StatelessWidget {
+  const _PlayBanner({required this.onPlay, this.compact = false});
+
+  final VoidCallback onPlay;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(compact ? 18 : 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF162C57), Color(0xFF0B1730), Color(0xFF3F2B78)],
+        ),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'PLAY GAMES WIN BR9 GOLD',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 19,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Step into BR9ja game mode, push your streak, and keep your next reward conversion moving.',
+                  style: TextStyle(color: Colors.white70, height: 1.5),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: const Color(0xFF102346),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  onPressed: onPlay,
+                  child: const Text(
+                    'Play Now',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Container(
+            height: compact ? 78 : 92,
+            width: compact ? 78 : 92,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFE082), Color(0xFFFFD700)],
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x44FFD700),
+                  blurRadius: 24,
+                  offset: Offset(0, 12),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              color: Color(0xFF14315A),
+              size: 42,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RewardStat extends StatelessWidget {
+  const _RewardStat({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.tone,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color tone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF102346),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 42,
+            width: 42,
+            decoration: BoxDecoration(
+              color: tone.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: tone),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RewardChecklist extends StatelessWidget {
+  const _RewardChecklist({required this.items});
+
+  final List<String> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1D35),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white10),
       ),
@@ -500,420 +935,47 @@ class _SmartSearchCardState extends State<_SmartSearchCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Find any BR9ja service',
+            'Weekly Flow',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Try DStv, LCC, WAEC, SportyBet, RRR, or Electricity.',
-            style: TextStyle(color: Colors.white70),
-          ),
           const SizedBox(height: 14),
-          TextField(
-            controller: _controller,
-            onChanged: _updateMatches,
-            onSubmitted: (_) => _openFirstMatch(),
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              prefixIcon: const Icon(
-                Icons.search_rounded,
-                color: AppColors.primary,
-              ),
-              suffixIcon: IconButton(
-                onPressed: _openFirstMatch,
-                icon: const Icon(Icons.arrow_forward_rounded),
-                color: AppColors.primary,
-              ),
-              hintText: 'Search service, biller, or keyword',
-              hintStyle: const TextStyle(color: Colors.white54),
-              filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.05),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(color: Colors.white12),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(color: Colors.white12),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _matches
-                .map(
-                  (shortcut) => ActionChip(
-                    avatar: Icon(
-                      shortcut.icon,
-                      size: 18,
-                      color: shortcut.color,
-                    ),
-                    label: Text(shortcut.label),
-                    onPressed: () => _pushServicePage(context, shortcut.page),
-                    backgroundColor: shortcut.color.withValues(alpha: 0.12),
-                    labelStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    side: BorderSide(
-                      color: shortcut.color.withValues(alpha: 0.26),
-                    ),
-                  ),
-                )
-                .toList(growable: false),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PromoHudCard extends StatefulWidget {
-  const _PromoHudCard();
-
-  @override
-  State<_PromoHudCard> createState() => _PromoHudCardState();
-}
-
-class _PromoHudCardState extends State<_PromoHudCard> {
-  Map<String, dynamic>? _promo;
-  Timer? _ticker;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPromo();
-  }
-
-  @override
-  void dispose() {
-    _ticker?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _loadPromo() async {
-    try {
-      final response = await BR9ApiClient.instance.fetchPromoStatus();
-      final data = response['data'] as Map<String, dynamic>?;
-      if (!mounted) {
-        return;
-      }
-      setState(() => _promo = data);
-      _startTicker();
-    } on BR9ApiException {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _promo = null);
-    }
-  }
-
-  void _startTicker() {
-    _ticker?.cancel();
-    final promo = _promo;
-    if (promo == null) {
-      return;
-    }
-
-    final status = (promo['status'] ?? '').toString();
-    if (status != 'active' && status != 'upcoming') {
-      return;
-    }
-
-    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted || _promo == null) {
-        timer.cancel();
-        return;
-      }
-
-      setState(() {
-        if (status == 'active') {
-          final next = (((_promo!['secondsRemaining'] as num?) ?? 0) - 1).clamp(
-            0,
-            999999,
-          );
-          _promo = {..._promo!, 'secondsRemaining': next};
-          if (next == 0) {
-            timer.cancel();
-            unawaited(_loadPromo());
-          } else if (next % 15 == 0) {
-            unawaited(_loadPromo());
-          }
-        } else {
-          final next = (((_promo!['secondsUntilStart'] as num?) ?? 0) - 1)
-              .clamp(0, 999999);
-          _promo = {..._promo!, 'secondsUntilStart': next};
-          if (next == 0) {
-            timer.cancel();
-            unawaited(_loadPromo());
-          }
-        }
-      });
-    });
-  }
-
-  String _formatCountdown(int seconds) {
-    final safe = seconds < 0 ? 0 : seconds;
-    final hours = safe ~/ 3600;
-    final minutes = (safe % 3600) ~/ 60;
-    final remaining = safe % 60;
-    if (hours > 0) {
-      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remaining.toString().padLeft(2, '0')}';
-    }
-    return '${minutes.toString().padLeft(2, '0')}:${remaining.toString().padLeft(2, '0')}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final promo = _promo;
-    if (promo == null || (promo['status'] == null)) {
-      return const SizedBox.shrink();
-    }
-
-    final status = (promo['status'] ?? '').toString();
-    final active = status == 'active';
-    final upcoming = status == 'upcoming';
-    final spotsRemaining = promo['spotsRemaining'];
-    final bannerText = (promo['bannerText'] ?? '').toString();
-    final countdown = active
-        ? _formatCountdown(((promo['secondsRemaining'] as num?) ?? 0).toInt())
-        : _formatCountdown(((promo['secondsUntilStart'] as num?) ?? 0).toInt());
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: active
-              ? const [Color(0xFFFFD84D), Color(0xFFFFA400)]
-              : const [Color(0xFF1D2433), Color(0xFF0F172A)],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: (active ? AppColors.primary : Colors.black).withValues(
-              alpha: 0.18,
-            ),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 46,
-            width: 46,
-            decoration: BoxDecoration(
-              color: active
-                  ? AppColors.deepNavy.withValues(alpha: 0.16)
-                  : Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              active ? Icons.flash_on_rounded : Icons.schedule_rounded,
-              color: active ? AppColors.deepNavy : AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  active
-                      ? 'Golden Window Live'
-                      : upcoming
-                      ? 'Golden Window Scheduled'
-                      : 'Promo Update',
-                  style: TextStyle(
-                    color: active ? AppColors.deepNavy : AppColors.primary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  bannerText.isEmpty
-                      ? 'Flash Sale Ended! Stay tuned for the next Golden Window.'
-                      : bannerText,
-                  style: TextStyle(
-                    color: active ? AppColors.deepNavy : Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _PromoPill(
-                      label: active
-                          ? 'Ends in $countdown'
-                          : 'Starts in $countdown',
-                      darkText: active,
-                    ),
-                    if (spotsRemaining != null)
-                      _PromoPill(
-                        label: '$spotsRemaining spots left',
-                        darkText: active,
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PromoPill extends StatelessWidget {
-  const _PromoPill({required this.label, required this.darkText});
-
-  final String label;
-  final bool darkText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: darkText
-            ? AppColors.deepNavy.withValues(alpha: 0.14)
-            : Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: darkText ? AppColors.deepNavy : Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeHero extends StatelessWidget {
-  const _HomeHero({required this.onOpenTab});
-
-  final ValueChanged<int> onOpenTab;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF000000), Color(0xFF1D1600), Color(0xFF000000)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -18,
-            top: -18,
-            child: Container(
-              height: 120,
-              width: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: 0.12),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 12,
-            bottom: -26,
-            child: Container(
-              height: 92,
-              width: 92,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.success.withValues(alpha: 0.10),
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Text(
-                  'Afrocentric Minimalism',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                'Play Games. Pay Bills. Get Paid.',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 34,
-                  height: 1.02,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'BR9ja now leads with Games, BR9 Gold, and Profile clarity. Your next move is obvious whether you are paying bills fast or climbing the Market Runner board.',
-                style: TextStyle(color: Colors.white70, height: 1.6),
-              ),
-              const SizedBox(height: 20),
-              Row(
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () => onOpenTab(2),
-                      icon: const Icon(Icons.sports_esports_rounded),
-                      label: const Text('Start Gaming Now'),
+                  Container(
+                    height: 26,
+                    width: 26,
+                    margin: const EdgeInsets.only(top: 1),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: AppColors.primary,
+                      size: 18,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => onOpenTab(1),
-                      icon: const Icon(Icons.receipt_long_rounded),
-                      label: const Text('Quick Bill Pay'),
+                    child: Text(
+                      item,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        height: 1.45,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -921,412 +983,159 @@ class _HomeHero extends StatelessWidget {
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.tone,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color tone;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 160,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF111111),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white10),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 40,
-              width: 40,
-              decoration: BoxDecoration(
-                color: tone.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: tone),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _WalletActionButton extends StatelessWidget {
-  const _WalletActionButton({
+class _NavItem extends StatelessWidget {
+  const _NavItem({
     required this.label,
     required this.icon,
+    required this.selected,
     required this.onTap,
     this.highlighted = false,
   });
 
   final String label;
   final IconData icon;
+  final bool selected;
   final VoidCallback onTap;
   final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.icon(
-      style: FilledButton.styleFrom(
-        backgroundColor: highlighted
-            ? AppColors.primary
-            : Colors.white.withValues(alpha: 0.06),
-        foregroundColor: highlighted ? AppColors.deepNavy : Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: highlighted
-              ? BorderSide.none
-              : const BorderSide(color: Colors.white12),
+    final background = highlighted && selected
+        ? const LinearGradient(colors: [Color(0xFFFFE082), AppColors.primary])
+        : null;
+
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            decoration: BoxDecoration(
+              gradient: background,
+              color: background == null && selected
+                  ? const Color(0xFFF3F7FF)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: selected
+                      ? const Color(0xFF173A6E)
+                      : const Color(0xFF6B7280),
+                  size: highlighted && selected ? 28 : 24,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: selected
+                        ? const Color(0xFF173A6E)
+                        : const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      onPressed: onTap,
-      icon: Icon(icon, size: 18),
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
     );
   }
 }
 
-class _Shortcut {
-  const _Shortcut({
+class _BlueBackdrop extends StatelessWidget {
+  const _BlueBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          Positioned(
+            top: -110,
+            left: -90,
+            child: Container(
+              height: 240,
+              width: 240,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0x331F7CFF),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 210,
+            right: -84,
+            child: Container(
+              height: 210,
+              width: 210,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0x22298BFF),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 80,
+            left: -72,
+            child: Container(
+              height: 180,
+              width: 180,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0x183C5CFF),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BillShortcut {
+  const _BillShortcut({
     required this.label,
     required this.icon,
     required this.color,
     required this.page,
-    this.aliases = const [],
   });
 
   final String label;
   final IconData icon;
   final Color color;
   final Widget page;
-  final List<String> aliases;
 }
 
-class _ShortcutTile extends StatelessWidget {
-  const _ShortcutTile({required this.shortcut});
-
-  final _Shortcut shortcut;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(22),
-      onTap: () => _pushServicePage(context, shortcut.page),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF111111),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white10),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 46,
-              width: 46,
-              decoration: BoxDecoration(
-                color: shortcut.color.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(shortcut.icon, color: shortcut.color),
-            ),
-            const Spacer(),
-            Text(
-              shortcut.label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GoldHubPage extends StatelessWidget {
-  const _GoldHubPage();
-
-  @override
-  Widget build(BuildContext context) {
-    final userProvider = context.watch<UserProvider>();
-    final progress = userProvider.marketRunnerProgress;
-
-    return Scaffold(
-      backgroundColor: AppColors.deepNavy,
-      appBar: AppBar(
-        title: const Text('BR9 Gold'),
-        backgroundColor: AppColors.deepNavy,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF171100), Color(0xFF050505)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Game Completion Progress',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${(progress * 100).round()}% complete',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    minHeight: 12,
-                    value: progress,
-                    backgroundColor: Colors.white12,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'BR9 Gold now grows from Market Runner completion, wallet momentum, and consistent streaks instead of match-result prediction.',
-                  style: TextStyle(color: Colors.white70, height: 1.5),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _MetricCard(
-                label: 'BR9 Gold Wallet',
-                value: '${userProvider.br9GoldPoints}',
-                icon: Icons.workspace_premium_rounded,
-                tone: AppColors.primary,
-              ),
-              _MetricCard(
-                label: 'Runner Score',
-                value: '${userProvider.marketRunnerScore}',
-                icon: Icons.speed_rounded,
-                tone: const Color(0xFF38BDF8),
-              ),
-              _MetricCard(
-                label: 'Daily Streak',
-                value: '${userProvider.dailyStreak} days',
-                icon: Icons.local_fire_department_rounded,
-                tone: const Color(0xFFFF8A00),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Progress Milestones',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _GoldMilestoneTile(
-            title: 'Wallet Ready',
-            subtitle:
-                'Fund your BR9 wallet to unlock your first runner milestone.',
-            complete: userProvider.walletBalance > 0,
-          ),
-          _GoldMilestoneTile(
-            title: '100 BR9 Gold Checkpoint',
-            subtitle:
-                'Reach at least 100 BR9 Gold to light up your weekly run.',
-            complete: userProvider.br9GoldPoints >= 100,
-          ),
-          _GoldMilestoneTile(
-            title: '3-Day Streak',
-            subtitle: 'Show consistency by keeping your daily streak alive.',
-            complete: userProvider.dailyStreak >= 3,
-          ),
-          _GoldMilestoneTile(
-            title: 'Verified Status',
-            subtitle:
-                'Finish liveness verification to unlock the security bonus.',
-            complete: userProvider.isLivenessVerified,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GoldMilestoneTile extends StatelessWidget {
-  const _GoldMilestoneTile({
+class _RecentTransaction {
+  const _RecentTransaction({
     required this.title,
     required this.subtitle,
-    required this.complete,
+    required this.amount,
+    required this.time,
   });
 
   final String title;
   final String subtitle;
-  final bool complete;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = complete ? AppColors.success : Colors.white54;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF101010),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 42,
-            width: 42,
-            decoration: BoxDecoration(
-              color: tone.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              complete
-                  ? Icons.check_circle_rounded
-                  : Icons.radio_button_unchecked,
-              color: tone,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.white70, height: 1.45),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  final String amount;
+  final String time;
 }
 
-class _GamesNavIcon extends StatelessWidget {
-  const _GamesNavIcon({required this.selected});
-
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      height: selected ? 48 : 42,
-      width: selected ? 48 : 42,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: selected
-            ? const LinearGradient(
-                colors: [Color(0xFFFFE082), AppColors.primary],
-              )
-            : null,
-        color: selected ? null : Colors.white.withValues(alpha: 0.04),
-        boxShadow: selected
-            ? const [
-                BoxShadow(
-                  color: Color(0x44FFD700),
-                  blurRadius: 18,
-                  spreadRadius: 2,
-                ),
-              ]
-            : null,
-      ),
-      child: Icon(
-        Icons.sports_esports_rounded,
-        size: selected ? 26 : 22,
-        color: selected ? AppColors.deepNavy : Colors.white70,
-      ),
-    );
+String _dashboardName(String userName) {
+  final trimmed = userName.trim();
+  if (trimmed.isEmpty) {
+    return 'STANKINGS';
   }
+  final firstToken = trimmed.split(RegExp(r'\s+')).first;
+  return firstToken.toUpperCase();
 }
 
-void _pushServicePage(BuildContext context, Widget page) {
-  Navigator.push(
-    context,
-    PageRouteBuilder<void>(
-      transitionDuration: const Duration(milliseconds: 320),
-      pageBuilder: (_, animation, secondaryAnimation) => page,
-      transitionsBuilder: (_, animation, secondaryAnimation, child) {
-        final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
-        final slide = Tween<Offset>(
-          begin: const Offset(0, 0.04),
-          end: Offset.zero,
-        ).animate(fade);
-        return FadeTransition(
-          opacity: fade,
-          child: SlideTransition(position: slide, child: child),
-        );
-      },
-    ),
-  );
+void _pushPage(BuildContext context, Widget page) {
+  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
 }

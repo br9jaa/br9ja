@@ -55,6 +55,35 @@ export default function DashboardOverviewPage() {
 
   return (
     <div className="space-y-8">
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.36 }}
+        className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(6,20,37,0.96),rgba(7,30,56,0.88))] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.34)]"
+      >
+        <div className="grid items-center gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="space-y-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--color-neon-gold)]">
+              App Home
+            </p>
+            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+              The dashboard visual your members see after login.
+            </h1>
+            <p className="max-w-xl text-sm leading-7 text-white/70 sm:text-base">
+              Wallet balance, bill shortcuts, recent activity, and BR9 Gold play stay centered in one premium entry view.
+              This image now anchors the authenticated BR9ja landing experience.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#08162a] p-3">
+            <img
+              src="/br9/app_home.jpg"
+              alt="BR9ja authenticated home preview"
+              className="w-full rounded-[1.2rem] object-contain"
+            />
+          </div>
+        </div>
+      </motion.section>
+
       <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
