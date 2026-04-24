@@ -23,25 +23,23 @@
     <main class="auth-shell">
       <section class="auth-card auth-card--login" data-auth-card>
         <div class="auth-card__header">
-          <span class="kicker">Login</span>
-          <h1>Welcome back to BR9ja</h1>
-          <p class="auth-card__copy">Sign in with your password or 6-digit PIN. If this device already knows you, one quiet unlock button gets you in faster.</p>
+          <h1>Login</h1>
         </div>
 
         <form class="admin-form" data-form="auth-preview" data-auth-mode="login">
           <div class="field-group">
-            <label for="login-identity">Email, Username, or Phone Number</label>
+            <label for="login-identity">Username / Email / Phone</label>
             <div class="field-shell">
               <span class="field-icon">👤</span>
-              <input id="login-identity" name="identity" type="text" placeholder="Enter your email, username, or phone number" required>
+              <input id="login-identity" name="identity" type="text" placeholder="Username, email, or phone" required>
             </div>
           </div>
 
           <div class="field-group">
-            <label for="login-password">Password or 6-Digit PIN</label>
+            <label for="login-password">Password / 6-Digit PIN</label>
             <div class="field-shell field-shell--with-action">
               <span class="field-icon">🔒</span>
-              <input id="login-password" name="secret" type="password" placeholder="Enter your password or 6-digit PIN" required>
+              <input id="login-password" name="secret" type="password" placeholder="Password or PIN" required>
               <button class="field-inline-action" type="button" data-quick-login="device unlock" data-quick-login-inline aria-label="Use device unlock">
                 <span class="field-inline-action__icon">◌</span>
               </button>
@@ -55,13 +53,13 @@
             </label>
             <a class="inline-link" href="./reset-password.html">Forgot Password?</a>
           </div>
-          <p class="success-banner" data-quick-login-feedback>Quick access becomes available after your first full sign-in on this device.</p>
+          <p class="success-banner" data-quick-login-feedback aria-live="polite"></p>
 
-          <button class="action-button" type="submit">Login to BR9ja</button>
+          <button class="action-button" type="submit">Login</button>
 
           <div class="auth-divider"></div>
-          <p class="auth-footer-note">New here? <a href="./signup.html">Create your BR9ja account</a>.</p>
-          <div class="success-banner">Sign in to continue.</div>
+          <p class="auth-footer-note">New here? <a href="./signup.html">Sign Up</a>.</p>
+          <div class="success-banner" aria-live="polite"></div>
         </form>
       </section>
     </main>

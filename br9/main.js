@@ -1937,7 +1937,7 @@ function bindAuthUi(config) {
             confirmPassword: payload.confirmPassword,
             pin: payload.pin,
           });
-          showSuccess(successNode, `Welcome to BR9ja, ${user.firstName}. Your account is ready and you are being taken to your profile.`);
+          showSuccess(successNode, `Welcome, ${user.firstName}.`);
           setTimeout(() => {
             window.location.href = `${getBasePath()}/profile.html`;
           }, 300);
@@ -1961,12 +1961,7 @@ function bindAuthUi(config) {
       try {
         const user = await loginPreviewUser(payload.identity, payload.secret);
         bindWhatsAppVisibility();
-        showSuccess(
-          successNode,
-          user.phoneVerified
-            ? `Welcome back, ${user.firstName}. Opening your BR9ja profile now.`
-            : `Welcome back, ${user.firstName}. Log in complete. Verify your phone number next inside your profile.`
-        );
+          showSuccess(successNode, `Welcome back, ${user.firstName}.`);
         setTimeout(() => {
           window.location.href = `${getBasePath()}/profile.html`;
         }, 300);
@@ -1988,7 +1983,7 @@ function bindAuthUi(config) {
         const user = await quickAccessLogin(method);
         showSuccess(
           feedback,
-          `${formatModeLabel(method)} accepted for ${user.firstName}. Opening your BR9ja profile now.`
+          `${formatModeLabel(method)} accepted.`
         );
         setTimeout(() => {
           window.location.href = `${getBasePath()}/profile.html`;
@@ -2010,7 +2005,7 @@ function bindAuthUi(config) {
         const challenge = await startPasswordReset(identity);
         showSuccess(
           successNode,
-          `Preview reset code sent by ${challenge.channel}. Use ${challenge.code} below, then set the new password twice.`
+          `Reset code: ${challenge.code}`
         );
       } catch (error) {
         showSuccess(successNode, error.message);
@@ -2025,7 +2020,7 @@ function bindAuthUi(config) {
           password: resetForm.elements.password?.value,
           confirmPassword: resetForm.elements.confirmPassword?.value,
         });
-        showSuccess(successNode, 'Password reset complete. You are being logged in now.');
+        showSuccess(successNode, 'Password reset complete.');
         setTimeout(() => {
           window.location.href = `${getBasePath()}/profile.html`;
         }, 300);
@@ -2059,8 +2054,8 @@ function bindProfilePage() {
     phoneNumber: user.phoneNumber || 'No phone number saved yet',
     phoneStatus: user.phoneVerified ? 'Verified' : 'Verification pending',
     quickAccess: user.firstLoginCompleted
-      ? 'Quick access is ready with password, 6-digit PIN, Face ID, device PIN, or pattern on this device.'
-      : 'First sign-in still needs your password before quick access unlocks.',
+      ? 'Ready.'
+      : 'Password first.',
   };
 
   document.querySelectorAll('[data-profile]').forEach((node) => {
@@ -2094,7 +2089,7 @@ function bindProfilePage() {
       const challenge = await startPhoneVerification(user.id);
       showSuccess(
         successNode,
-        `Preview phone verification code sent to ${user.phoneNumber}. Use ${challenge.code} to complete verification.`
+        `Code: ${challenge.code}`
       );
     } catch (error) {
       showSuccess(successNode, error.message);
@@ -2104,7 +2099,7 @@ function bindProfilePage() {
   verifyButton?.addEventListener('click', async () => {
     try {
       const updatedUser = await completePhoneVerification(user.id, codeInput?.value || '');
-      showSuccess(successNode, `${updatedUser.phoneNumber} is now verified for this BR9ja profile.`);
+      showSuccess(successNode, 'Phone verified.');
       setTimeout(() => {
         window.location.reload();
       }, 250);

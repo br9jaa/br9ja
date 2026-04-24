@@ -23,9 +23,7 @@
     <main class="auth-shell">
       <section class="auth-card profile-card" data-auth-card>
         <div class="auth-card__header">
-          <span class="kicker">Profile</span>
-          <h1>Hello, <span data-profile="firstName">BR9ja User</span></h1>
-          <p class="auth-card__copy">Your account details, quick-access posture, and phone verification all stay visible here so nothing feels hidden.</p>
+          <h1><span data-profile="firstName">BR9ja User</span></h1>
         </div>
 
         <div class="profile-summary-grid">
@@ -50,8 +48,7 @@
         <section class="auth-reset-panel" data-phone-verification-state>
           <div class="section-header">
             <span class="kicker">Phone Verification</span>
-            <h2 class="section-title">Finish phone verification after your first login.</h2>
-            <p class="section-copy">This keeps signup decluttered while still letting BR9ja verify the number once you are safely inside your account.</p>
+            <h2 class="section-title">Verify Phone</h2>
           </div>
 
           <form class="admin-form" data-form="phone-verification">
@@ -65,15 +62,15 @@
               <button class="verify-button verify-button--confirm" type="button" data-phone-verify>Verify</button>
             </div>
 
-            <div class="success-banner">Phone verification is waiting here after your first login.</div>
+            <div class="success-banner" aria-live="polite"></div>
           </form>
         </section>
 
         <section class="auth-reset-panel">
           <div class="section-header">
             <span class="kicker">Quick Access</span>
-            <h2 class="section-title">This device now remembers you.</h2>
-            <p class="section-copy" data-profile="quickAccess">Quick access unlocks after first login.</p>
+            <h2 class="section-title">Device Access</h2>
+            <p class="section-copy" data-profile="quickAccess"></p>
           </div>
         </section>
 

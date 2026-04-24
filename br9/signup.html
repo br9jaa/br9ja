@@ -23,9 +23,7 @@
     <main class="auth-shell">
       <section class="auth-card" data-auth-card>
         <div class="auth-card__header">
-          <span class="kicker">Create Account</span>
-          <h1>Create your BR9ja account</h1>
-          <p class="auth-card__copy">Set up your details, choose a password you can trust, and add your 6-digit quick PIN. Phone verification comes after your first login so this page stays clean and easy.</p>
+          <h1>Create Account</h1>
         </div>
 
         <form class="admin-form" data-form="auth-preview" data-auth-mode="signup">
@@ -33,7 +31,7 @@
             <label for="signup-full-name">Full Name</label>
             <div class="field-shell">
               <span class="field-icon">👤</span>
-              <input id="signup-full-name" name="fullName" type="text" placeholder="Enter your full name" data-validate="name" required>
+              <input id="signup-full-name" name="fullName" type="text" placeholder="Full name" data-validate="name" required>
             </div>
           </div>
 
@@ -41,7 +39,7 @@
             <label for="signup-username">Username</label>
             <div class="field-shell">
               <span class="field-icon">＠</span>
-              <input id="signup-username" name="username" type="text" placeholder="Choose a username" data-validate="username" required>
+              <input id="signup-username" name="username" type="text" placeholder="Username" data-validate="username" required>
             </div>
           </div>
 
@@ -49,7 +47,7 @@
             <label for="signup-email">Email</label>
             <div class="field-shell">
               <span class="field-icon">✉</span>
-              <input id="signup-email" name="email" type="email" placeholder="you@example.com" data-validate="email" required>
+              <input id="signup-email" name="email" type="email" placeholder="Email" data-validate="email" required>
             </div>
           </div>
 
@@ -57,7 +55,7 @@
             <label for="signup-phone">Phone Number</label>
             <div class="field-shell">
               <span class="field-icon">☎</span>
-              <input id="signup-phone" name="phone" type="tel" placeholder="Enter phone number" data-validate="phone" required>
+              <input id="signup-phone" name="phone" type="tel" placeholder="Phone number" data-validate="phone" required>
             </div>
           </div>
 
@@ -65,7 +63,7 @@
             <label for="signup-password">Password</label>
             <div class="field-shell">
               <span class="field-icon">🔒</span>
-              <input id="signup-password" name="password" type="password" placeholder="Create a secure password" data-validate="password" required>
+              <input id="signup-password" name="password" type="password" placeholder="Password" data-validate="password" required>
             </div>
           </div>
 
@@ -73,7 +71,7 @@
             <label for="signup-password-confirm">Repeat Password</label>
             <div class="field-shell">
               <span class="field-icon">🔒</span>
-              <input id="signup-password-confirm" name="confirmPassword" type="password" placeholder="Repeat your password" data-validate="password" required>
+              <input id="signup-password-confirm" name="confirmPassword" type="password" placeholder="Repeat password" data-validate="password" required>
             </div>
           </div>
 
@@ -81,14 +79,14 @@
             <label for="signup-pin">6-Digit Quick PIN</label>
             <div class="field-shell">
               <span class="field-icon">✦</span>
-              <input id="signup-pin" name="pin" type="password" inputmode="numeric" maxlength="6" placeholder="123456" data-validate="pin" required>
+              <input id="signup-pin" name="pin" type="password" inputmode="numeric" maxlength="6" placeholder="6-digit PIN" data-validate="pin" required>
             </div>
           </div>
 
           <button class="action-button" type="submit">Create Account</button>
           <div class="auth-divider"></div>
-          <p class="auth-footer-note">Already have an account? <a href="./login.html">Login instead</a>.</p>
-          <div class="success-banner">Create your account to continue.</div>
+          <p class="auth-footer-note">Have an account? <a href="./login.html">Login</a>.</p>
+          <div class="success-banner" aria-live="polite"></div>
         </form>
       </section>
     </main>
