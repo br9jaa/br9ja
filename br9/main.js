@@ -643,6 +643,27 @@ function createOneTimeCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+function splitFullName(value) {
+  const fullName = String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  if (!fullName) {
+    return {
+      firstName: '',
+      lastName: '',
+      fullName: '',
+    };
+  }
+
+  const parts = fullName.split(' ');
+  return {
+    firstName: parts[0] || '',
+    lastName: parts.slice(1).join(' '),
+    fullName,
+  };
+}
+
 async function hashSecret(value) {
   const text = String(value || '').trim();
   if (!text) {
@@ -692,9 +713,10 @@ function updatePreviewUser(userId, updater) {
 }
 
 async function registerPreviewUser(payload) {
-  const firstName = String(payload.firstName || '').trim();
-  const lastName = String(payload.lastName || '').trim();
-  const fullName = `${firstName} ${lastName}`.trim();
+  const nameParts = splitFullName(payload.fullName || `${payload.firstName || ''} ${payload.lastName || ''}`);
+  const firstName = nameParts.firstName;
+  const lastName = nameParts.lastName;
+  const fullName = nameParts.fullName;
   const username = normaliseUsernameInput(payload.username);
   const email = normaliseEmailInput(payload.email);
   const phoneNumber = normalisePhoneInput(payload.phoneNumber);
@@ -702,7 +724,7 @@ async function registerPreviewUser(payload) {
   const confirmPassword = String(payload.confirmPassword || '').trim();
   const pin = String(payload.pin || '').trim();
 
-  if (!firstName || !lastName || !username || !email || !phoneNumber || !password || !confirmPassword || !pin) {
+  if (!fullName || !username || !email || !phoneNumber || !password || !confirmPassword || !pin) {
     throw new Error('Fill every signup field before continuing.');
   }
 
@@ -989,9 +1011,12 @@ function buildHeaderAuthMarkup(base) {
   }
 
   return `
-    <div class="site-header__quick-auth">
-      <a class="header-auth-button header-auth-button--login" href="${base}/login.html">Login</a>
-      <a class="header-auth-button header-auth-button--signup" href="${base}/signup.html">Sign Up</a>
+    <div class="site-header__quick-auth site-header__quick-auth--guest">
+      <div class="site-header__quick-auth-group site-header__quick-auth-group--desktop">
+        <a class="header-auth-button header-auth-button--login" href="${base}/login.html">Login</a>
+        <a class="header-auth-button header-auth-button--signup" href="${base}/signup.html">Sign Up</a>
+      </div>
+      <a class="header-auth-button header-auth-button--combo header-auth-button--signup" href="${base}/login.html">Login/SignUp</a>
     </div>
   `;
 }
@@ -1706,16 +1731,110 @@ function openMailDraft(url) {
   }, 120);
 }
 
+function createContactMathChallenge() {
+  const useAddition = Math.random() >= 0.5;
+
+  if (useAddition) {
+    const left = 1 + Math.floor(Math.random() * 9);
+    const right = 1 + Math.floor(Math.random() * (10 - left));
+    return {
+      prompt: `${left} + ${right} = ?`,
+      answer: String(left + right),
+    };
+  }
+
+  const left = 2 + Math.floor(Math.random() * 9);
+  const right = 1 + Math.floor(Math.random() * (left - 1));
+  return {
+    prompt: `${left} - ${right} = ?`,
+    answer: String(left - right),
+  };
+}
+
+function bindContactChallenge(form) {
+  if (!form) {
+    return {
+      isValid: () => true,
+      refresh: () => {},
+    };
+  }
+
+  const questionNode = form.querySelector('[data-contact-question]');
+  const answerInput = form.querySelector('[data-contact-answer]');
+  const feedbackNode = form.querySelector('[data-contact-feedback]');
+  const submitButton = form.querySelector('[data-contact-submit]');
+  const answerShell = answerInput?.closest('.field-shell');
+
+  if (!questionNode || !answerInput || !feedbackNode || !submitButton) {
+    return {
+      isValid: () => true,
+      refresh: () => {},
+    };
+  }
+
+  const updateState = () => {
+    const expected = String(form.dataset.contactAnswer || '').trim();
+    const answer = String(answerInput.value || '').trim();
+    const hasValue = answer.length > 0;
+    const isValid = hasValue && answer === expected;
+    const formReady = form.checkValidity();
+
+    submitButton.disabled = !(isValid && formReady);
+    answerShell?.classList.toggle('field-shell--valid', isValid);
+    answerShell?.classList.toggle('field-shell--invalid', hasValue && !isValid);
+    feedbackNode.classList.remove('field-status--valid', 'field-status--invalid');
+
+    if (!hasValue) {
+      feedbackNode.textContent = feedbackNode.dataset.default || '';
+      return isValid;
+    }
+
+    feedbackNode.classList.add(isValid ? 'field-status--valid' : 'field-status--invalid');
+    feedbackNode.textContent = isValid
+      ? formReady
+        ? '✓ Correct answer. You can send your message now.'
+        : '✓ Correct answer. Finish the remaining fields to enable Send Message.'
+      : 'That answer is not correct yet. Try again.';
+    return isValid;
+  };
+
+  const refresh = () => {
+    const challenge = createContactMathChallenge();
+    form.dataset.contactAnswer = challenge.answer;
+    questionNode.textContent = challenge.prompt;
+    answerInput.value = '';
+    updateState();
+  };
+
+  answerInput.addEventListener('input', updateState);
+  form.addEventListener('input', updateState);
+  form.addEventListener('change', updateState);
+  refresh();
+
+  return {
+    isValid: updateState,
+    refresh,
+  };
+}
+
 function bindContactForms(config) {
   const contactForm = document.querySelector('[data-form="contact"]');
   const payoutForm = document.querySelector('[data-form="payout-issue"]');
 
   if (contactForm) {
+    const challenge = bindContactChallenge(contactForm);
     contactForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const formData = new FormData(contactForm);
       const payload = Object.fromEntries(formData.entries());
       const successNode = contactForm.querySelector('.success-banner');
+
+      if (!challenge.isValid()) {
+        showSuccess(successNode, 'Answer the quick check correctly before sending your message.');
+        return;
+      }
+
+      delete payload.authAnswer;
 
       try {
         if (window.location.protocol === 'file:') {
@@ -1727,12 +1846,15 @@ function bindContactForms(config) {
             '',
             String(payload.message || '').trim(),
           ]));
+          contactForm.reset();
+          challenge.refresh();
           return;
         }
 
         await postJson('/api/site/contact', payload);
         showSuccess(successNode, `Message sent successfully to ${config.supportEmail}.`);
         contactForm.reset();
+        challenge.refresh();
       } catch (error) {
         showSuccess(successNode, `We opened your email app so this report can still reach ${config.supportEmail}.`);
         openMailDraft(buildMailtoUrl(config.supportEmail, `[BR9ja Contact] ${payload.subject}`, [
@@ -1742,6 +1864,8 @@ function bindContactForms(config) {
           '',
           String(payload.message || '').trim(),
         ]));
+        contactForm.reset();
+        challenge.refresh();
       }
     });
   }
@@ -1793,8 +1917,7 @@ function bindAuthUi(config) {
 
         try {
           const user = await registerPreviewUser({
-            firstName: payload.firstName,
-            lastName: payload.lastName,
+            fullName: payload.fullName,
             username: payload.username,
             email: payload.email,
             phoneNumber: payload.phone,
@@ -1842,6 +1965,10 @@ function bindAuthUi(config) {
   });
 
   document.querySelectorAll('[data-quick-login]').forEach((button) => {
+    if (rememberedIdentity && findPreviewUserByIdentity(rememberedIdentity)) {
+      button.textContent = 'Use Device Unlock';
+    }
+
     button.addEventListener('click', async () => {
       const feedback = document.querySelector('[data-quick-login-feedback]');
       try {

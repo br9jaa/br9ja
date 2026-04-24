@@ -77,7 +77,28 @@
               <span class="field-status" data-default="The more specific you are, the faster we can help.">The more specific you are, the faster we can help.</span>
             </div>
 
-            <button class="action-button" type="submit">Send Message</button>
+            <div class="field-group contact-check" data-contact-check>
+              <label for="contact-auth-answer">Quick Check</label>
+              <div class="contact-check__row">
+                <div class="contact-check__question" data-contact-question>1 + 1 = ?</div>
+                <div class="field-shell contact-check__answer-shell">
+                  <input
+                    id="contact-auth-answer"
+                    name="authAnswer"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="2"
+                    placeholder="Answer"
+                    autocomplete="off"
+                    data-contact-answer
+                    required
+                  >
+                </div>
+              </div>
+              <span class="field-status" data-default="Answer the quick check correctly to unlock Send Message." data-contact-feedback>Answer the quick check correctly to unlock Send Message.</span>
+            </div>
+
+            <button class="action-button" type="submit" data-contact-submit disabled>Send Message</button>
             <div class="success-banner">Your message has been staged.</div>
           </form>
         </article>

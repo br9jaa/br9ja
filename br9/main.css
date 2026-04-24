@@ -181,6 +181,16 @@ html[data-theme="light"] .site-brand__logo {
   gap: 8px;
 }
 
+.site-header__quick-auth-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-auth-button--combo {
+  display: none;
+}
+
 .header-auth-button {
   display: inline-flex;
   align-items: center;
@@ -619,6 +629,36 @@ html[data-theme="light"] .menu-toggle {
 .stat-card strong {
   color: var(--br9-gold);
   font-size: 1.12rem;
+}
+
+.contact-check {
+  gap: 12px;
+}
+
+.contact-check__row {
+  display: grid;
+  grid-template-columns: minmax(118px, 156px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.contact-check__question {
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 18px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--heading-text);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.contact-check__answer-shell {
+  min-height: 56px;
 }
 
 .service-audit-card {
@@ -1141,6 +1181,12 @@ html[data-theme="light"] .verify-button--confirm {
 
 html[data-theme="light"] .site-nav a {
   color: #10203b;
+}
+
+html[data-theme="light"] .contact-check__question {
+  background: #ffffff;
+  border-color: rgba(11, 24, 47, 0.10);
+  box-shadow: 0 10px 22px rgba(11, 24, 47, 0.06);
 }
 
 html[data-theme="light"] body[data-page="home"] .hero-panel,
@@ -2213,7 +2259,7 @@ html[data-theme="light"] .auth-card {
 }
 
 .quick-access-row {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .auth-divider {
@@ -2565,6 +2611,20 @@ html[data-theme="light"] .auth-card {
     font-size: 0.88rem;
   }
 
+  .site-header__quick-auth--guest {
+    display: flex;
+    justify-content: center;
+  }
+
+  .site-header__quick-auth--guest .site-header__quick-auth-group--desktop {
+    display: none;
+  }
+
+  .site-header__quick-auth--guest .header-auth-button--combo {
+    display: inline-flex;
+    width: min(100%, 188px);
+  }
+
   .menu-toggle {
     display: inline-flex;
     min-width: 64px;
@@ -2760,6 +2820,7 @@ html[data-theme="light"] .auth-card {
   .chip-row,
   .wallet-columns,
   .hero-proof-grid,
+  .contact-check__row,
   .auth-name-grid,
   .quick-access-row,
   .profile-summary-grid,
