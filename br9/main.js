@@ -998,7 +998,7 @@ async function loadConfig() {
   };
 }
 
-function buildHeaderAuthMarkup(base, authUser = getStoredAuthUser()) {
+function buildHeaderAuthMarkup(base, current, authUser = getStoredAuthUser()) {
   if (authUser) {
     const label = authUser.firstName || authUser.username || 'Profile';
     return `
@@ -1009,13 +1009,42 @@ function buildHeaderAuthMarkup(base, authUser = getStoredAuthUser()) {
     `;
   }
 
+  const authLinks = [];
+  let mobileLabel = 'Login/SignUp';
+  let mobileHref = `${base}/login.html`;
+  let mobileVariant = 'header-auth-button--signup';
+
+  if (current === 'login') {
+    authLinks.push(['Sign Up', `${base}/signup.html`, 'header-auth-button--signup']);
+    mobileLabel = 'Sign Up';
+    mobileHref = `${base}/signup.html`;
+  } else if (current === 'signup') {
+    authLinks.push(['Login', `${base}/login.html`, 'header-auth-button--login']);
+    mobileLabel = 'Login';
+    mobileHref = `${base}/login.html`;
+    mobileVariant = 'header-auth-button--login';
+  } else if (current === 'reset-password') {
+    authLinks.push(['Login', `${base}/login.html`, 'header-auth-button--login']);
+    mobileLabel = 'Login';
+    mobileHref = `${base}/login.html`;
+    mobileVariant = 'header-auth-button--login';
+  } else {
+    authLinks.push(
+      ['Login', `${base}/login.html`, 'header-auth-button--login'],
+      ['Sign Up', `${base}/signup.html`, 'header-auth-button--signup'],
+    );
+  }
+
+  const desktopMarkup = authLinks
+    .map(([label, href, variant]) => `<a class="header-auth-button ${variant}" href="${href}">${label}</a>`)
+    .join('');
+
   return `
     <div class="site-header__quick-auth site-header__quick-auth--guest">
       <div class="site-header__quick-auth-group site-header__quick-auth-group--desktop">
-        <a class="header-auth-button header-auth-button--login" href="${base}/login.html">Login</a>
-        <a class="header-auth-button header-auth-button--signup" href="${base}/signup.html">Sign Up</a>
+        ${desktopMarkup}
       </div>
-      <a class="header-auth-button header-auth-button--combo header-auth-button--signup" href="${base}/login.html">Login/SignUp</a>
+      <a class="header-auth-button header-auth-button--combo ${mobileVariant}" href="${mobileHref}">${mobileLabel}</a>
     </div>
   `;
 }
@@ -1044,7 +1073,7 @@ function buildHeader(config, theme) {
       </a>
 
       <div class="site-header__actions">
-        ${buildHeaderAuthMarkup(base, authUser)}
+        ${buildHeaderAuthMarkup(base, current, authUser)}
         <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
           ${navLinks}
         </nav>
