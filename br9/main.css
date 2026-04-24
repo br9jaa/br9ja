@@ -966,6 +966,31 @@ body[data-page="home"] .service-card .action-button {
   border-color: rgba(255, 215, 0, 0.16);
 }
 
+.service-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 215, 0, 0.14);
+  color: var(--br9-gold);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.service-card--sample .field-shell {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.service-card--sample .field-shell input[readonly] {
+  color: var(--heading-text);
+  cursor: default;
+}
+
 .service-card__checkout {
   display: flex;
   align-items: baseline;
@@ -1160,6 +1185,10 @@ html[data-theme="light"] .how-card h3,
 html[data-theme="light"] .service-audit-card h3,
 html[data-theme="light"] .service-audit-list strong {
   color: #07152e;
+}
+
+html[data-theme="light"] .service-card--sample .field-shell {
+  background: rgba(244, 247, 250, 0.96);
 }
 
 html[data-theme="light"] .card-copy,

@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BR9ja Services | Airtime, Data, Electricity, Cable TV</title>
-  <meta name="description" content="Buy cheap data in Nigeria, top up airtime, pay electricity bills, and renew cable TV on BR9ja with clear service inputs and wallet confidence.">
+  <title>BR9ja Services | Public Catalogue & Sample Flows</title>
+  <meta name="description" content="Explore every BR9ja service in one public catalogue, see sample service flows, and log in to start live airtime, data, electricity, education, transport, marketplace, and BR9 Gold activity.">
   <meta name="theme-color" content="#010A1F">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="https://br9.ng/services">
   <meta property="og:title" content="BR9ja Services">
-  <meta property="og:description" content="Explicit bill-pay actions for Airtime, Data, Electricity, Cable TV, and the Market Runner gaming benchmark.">
+  <meta property="og:description" content="A public BR9ja catalogue showing sample service flows, full service coverage, and a clean login path before any live transaction begins.">
   <link rel="icon" type="image/png" href="./assets/favicon.png">
   <link rel="apple-touch-icon" href="./assets/apple_touch_icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,10 +27,16 @@
         "name": "BayRight9ja Ltd"
       },
       "serviceType": [
+        "Wallet Funding",
         "Airtime",
         "Data",
         "Electricity",
-        "Cable TV"
+        "Cable TV",
+        "Education Pins",
+        "Transport",
+        "Government Bills",
+        "Betting Wallet Funding",
+        "Marketplace"
       ],
       "areaServed": "NG"
     }
@@ -42,209 +48,209 @@
 
     <main class="section-stack">
       <section class="section-panel page-header">
-        <span class="kicker">Services Hub</span>
-        <h1 class="page-header__title">Every service action is explicit, fast, and confidence-driven.</h1>
+        <span class="kicker">Services Catalogue</span>
+        <h1 class="page-header__title">See every BR9ja service clearly before you log in.</h1>
         <p class="page-header__copy">
-          Airtime, data, electricity, and cable TV are the daily trust builders for BR9ja. We keep the inputs specific so every payment flow feels calm and clear.
+          Everything on this page is a public preview. It shows the kind of services BR9ja users can access on web and app, but any real transaction starts only after login.
         </p>
+        <div class="auth-row">
+          <a class="auth-button auth-button--login" href="./login.html">Login</a>
+          <a class="auth-button auth-button--signup" href="./signup.html">Sign Up</a>
+        </div>
       </section>
 
       <section class="section-panel">
         <div class="section-header">
-          <span class="kicker">Utility Marketplace</span>
-          <h2 class="section-title">The services Nigerians actually use every day.</h2>
+          <span class="kicker">Sample Service Flows</span>
+          <h2 class="section-title">These cards are examples, not live checkout forms.</h2>
+          <p class="section-copy">
+            The labels, inputs, and totals below are sample snapshots showing how BR9ja service flows look once a user is inside the platform.
+          </p>
         </div>
 
         <div class="service-grid">
-          <article class="service-card" data-service-key="airtime">
+          <article class="service-card service-card--sample">
+            <span class="service-card__badge">Public Sample</span>
             <span class="service-icon">📱</span>
-            <h3>Airtime</h3>
-            <p class="card-copy">Top up instantly with a clear phone number path.</p>
+            <h3>Airtime Example</h3>
+            <p class="card-copy">A simple top-up path showing how users enter a phone number and amount after login.</p>
             <div class="field-group">
-              <label for="service-airtime-phone">Enter Phone Number</label>
+              <label for="service-airtime-phone">Example Phone Number</label>
               <div class="field-shell">
                 <span class="field-icon">☎</span>
-                <input id="service-airtime-phone" type="tel" placeholder="Enter phone number" data-validate="phone">
+                <input id="service-airtime-phone" type="text" value="0801 234 5678" readonly>
               </div>
-              <span class="field-status" data-default="We use this to deliver airtime instantly.">We use this to deliver airtime instantly.</span>
+              <span class="field-status">Preview only. Login to run a live airtime purchase.</span>
             </div>
             <div class="field-group">
-              <label for="service-airtime-amount">Enter Amount in Naira (₦)</label>
+              <label for="service-airtime-amount">Example Amount in Naira (₦)</label>
               <div class="field-shell">
                 <span class="field-prefix">₦</span>
-                <input id="service-airtime-amount" type="number" placeholder="1000" min="100" data-validate="amount" data-service-amount>
+                <input id="service-airtime-amount" type="text" value="1,000" readonly>
               </div>
-              <span class="field-status" data-default="Minimum top-up is ₦100.">Minimum top-up is ₦100.</span>
             </div>
             <div class="service-card__checkout">
-              <span class="service-card__total-label">Customer total</span>
-              <strong data-total-amount="airtime">₦0</strong>
+              <span class="service-card__total-label">Sample checkout total</span>
+              <strong>₦1,050</strong>
             </div>
-            <button class="action-button service-pay-button" type="button" data-pay-button="airtime" disabled>Enter amount</button>
-            <div class="service-receipt-preview" data-receipt="airtime" hidden></div>
+            <a class="action-button" href="./login.html">Login to Start</a>
           </article>
 
-          <article class="service-card" data-service-key="data">
+          <article class="service-card service-card--sample">
+            <span class="service-card__badge">Public Sample</span>
             <span class="service-icon">🌐</span>
-            <h3>Data Bundles</h3>
-            <p class="card-copy">Buy cheap data Nigeria users can understand in one glance.</p>
+            <h3>Data Bundle Example</h3>
+            <p class="card-copy">A clean data purchase flow showing the number and amount fields users complete in BR9ja.</p>
             <div class="field-group">
-              <label for="service-data-phone">Enter Phone Number</label>
+              <label for="service-data-phone">Example Phone Number</label>
               <div class="field-shell">
                 <span class="field-icon">☎</span>
-                <input id="service-data-phone" type="tel" placeholder="Enter phone number" data-validate="phone">
+                <input id="service-data-phone" type="text" value="0803 456 7890" readonly>
               </div>
-              <span class="field-status" data-default="This number receives the bundle instantly.">This number receives the bundle instantly.</span>
+              <span class="field-status">Preview only. Login to buy a live bundle.</span>
             </div>
             <div class="field-group">
-              <label for="service-data-amount">Enter Amount in Naira (₦)</label>
+              <label for="service-data-amount">Example Amount in Naira (₦)</label>
               <div class="field-shell">
                 <span class="field-prefix">₦</span>
-                <input id="service-data-amount" type="number" placeholder="2500" min="100" data-validate="amount" data-service-amount>
+                <input id="service-data-amount" type="text" value="2,500" readonly>
               </div>
-              <span class="field-status" data-default="Use exact amount for your selected network plan.">Use exact amount for your selected network plan.</span>
             </div>
             <div class="service-card__checkout">
-              <span class="service-card__total-label">Customer total</span>
-              <strong data-total-amount="data">₦0</strong>
+              <span class="service-card__total-label">Sample checkout total</span>
+              <strong>₦2,550</strong>
             </div>
-            <button class="action-button service-pay-button" type="button" data-pay-button="data" disabled>Enter amount</button>
-            <div class="service-receipt-preview" data-receipt="data" hidden></div>
+            <a class="action-button" href="./login.html">Login to Start</a>
           </article>
 
-          <article class="service-card" data-service-key="electricity">
+          <article class="service-card service-card--sample">
+            <span class="service-card__badge">Public Sample</span>
             <span class="service-icon">⚡</span>
-            <h3>Electricity Bills</h3>
-            <p class="card-copy">Meter-first validation keeps the payment flow calm.</p>
+            <h3>Electricity Example</h3>
+            <p class="card-copy">This sample shows how users enter a meter reference and exact vending amount.</p>
             <div class="field-group">
-              <label for="service-meter">Enter Meter Number</label>
+              <label for="service-meter">Example Meter Number</label>
               <div class="field-shell">
-                <input id="service-meter" type="text" placeholder="01234567890" data-validate="meter">
+                <input id="service-meter" type="text" value="01234567890" readonly>
               </div>
-              <span class="field-status" data-default="We verify the customer before payment.">We verify the customer before payment.</span>
+              <span class="field-status">Preview only. Login to make a live electricity payment.</span>
             </div>
             <div class="field-group">
-              <label for="service-electricity-amount">Enter Amount in Naira (₦)</label>
+              <label for="service-electricity-amount">Example Amount in Naira (₦)</label>
               <div class="field-shell">
                 <span class="field-prefix">₦</span>
-                <input id="service-electricity-amount" type="number" placeholder="5000" min="100" data-validate="amount" data-service-amount>
+                <input id="service-electricity-amount" type="text" value="5,000" readonly>
               </div>
-              <span class="field-status" data-default="Use the amount you want to vend.">Use the amount you want to vend.</span>
             </div>
             <div class="service-card__checkout">
-              <span class="service-card__total-label">Customer total</span>
-              <strong data-total-amount="electricity">₦0</strong>
+              <span class="service-card__total-label">Sample checkout total</span>
+              <strong>₦5,100</strong>
             </div>
-            <button class="action-button service-pay-button" type="button" data-pay-button="electricity" disabled>Enter amount</button>
-            <div class="service-receipt-preview" data-receipt="electricity" hidden></div>
+            <a class="action-button" href="./login.html">Login to Start</a>
           </article>
 
-          <article class="service-card" data-service-key="cableTv">
+          <article class="service-card service-card--sample">
+            <span class="service-card__badge">Public Sample</span>
             <span class="service-icon">📺</span>
-            <h3>Cable TV</h3>
-            <p class="card-copy">Decoder number first, bouquet clarity second.</p>
+            <h3>Cable TV Example</h3>
+            <p class="card-copy">A decoder-first preview showing how cable renewals are entered inside BR9ja.</p>
             <div class="field-group">
-              <label for="service-decoder">Enter Decoder Number</label>
+              <label for="service-decoder">Example Decoder Number</label>
               <div class="field-shell">
-                <input id="service-decoder" type="text" placeholder="1234 5678 9012" data-validate="decoder">
+                <input id="service-decoder" type="text" value="1234 5678 9012" readonly>
               </div>
-              <span class="field-status" data-default="We confirm the active bouquet before checkout.">We confirm the active bouquet before checkout.</span>
+              <span class="field-status">Preview only. Login to renew live cable or internet plans.</span>
             </div>
             <div class="field-group">
-              <label for="service-cable-amount">Enter Amount in Naira (₦)</label>
+              <label for="service-cable-amount">Example Amount in Naira (₦)</label>
               <div class="field-shell">
                 <span class="field-prefix">₦</span>
-                <input id="service-cable-amount" type="number" placeholder="7200" min="100" data-validate="amount" data-service-amount>
+                <input id="service-cable-amount" type="text" value="7,200" readonly>
               </div>
-              <span class="field-status" data-default="Use the listed bouquet amount for the provider.">Use the listed bouquet amount for the provider.</span>
             </div>
             <div class="service-card__checkout">
-              <span class="service-card__total-label">Customer total</span>
-              <strong data-total-amount="cableTv">₦0</strong>
+              <span class="service-card__total-label">Sample checkout total</span>
+              <strong>₦7,400</strong>
             </div>
-            <button class="action-button service-pay-button" type="button" data-pay-button="cableTv" disabled>Enter amount</button>
-            <div class="service-receipt-preview" data-receipt="cableTv" hidden></div>
+            <a class="action-button" href="./login.html">Login to Start</a>
           </article>
 
-          <article class="service-card" data-service-key="education">
+          <article class="service-card service-card--sample">
+            <span class="service-card__badge">Public Sample</span>
             <span class="service-icon">🎓</span>
-            <h3>Education Pins</h3>
-            <p class="card-copy">WAEC, JAMB, NECO, and other exam surfaces with one visible total.</p>
+            <h3>Education Pin Example</h3>
+            <p class="card-copy">A sample view of how exam products like WAEC, JAMB, NECO, and NABTEB appear.</p>
             <div class="field-group">
-              <label for="service-education-type">Enter Exam Type</label>
+              <label for="service-education-type">Example Exam Product</label>
               <div class="field-shell">
-                <input id="service-education-type" type="text" placeholder="WAEC Result Checker">
+                <input id="service-education-type" type="text" value="WAEC Result Checker" readonly>
               </div>
-              <span class="field-status" data-default="Use the exam surface you want to purchase today.">Use the exam surface you want to purchase today.</span>
+              <span class="field-status">Preview only. Login to buy a live education product.</span>
             </div>
             <div class="field-group">
-              <label for="service-education-amount">Enter Amount in Naira (₦)</label>
+              <label for="service-education-amount">Example Amount in Naira (₦)</label>
               <div class="field-shell">
                 <span class="field-prefix">₦</span>
-                <input id="service-education-amount" type="number" placeholder="6500" min="100" data-validate="amount" data-service-amount>
+                <input id="service-education-amount" type="text" value="6,500" readonly>
               </div>
-              <span class="field-status" data-default="Use the current vendor price for the selected education product.">Use the current vendor price for the selected education product.</span>
             </div>
             <div class="service-card__checkout">
-              <span class="service-card__total-label">Customer total</span>
-              <strong data-total-amount="education">₦0</strong>
+              <span class="service-card__total-label">Sample checkout total</span>
+              <strong>₦6,650</strong>
             </div>
-            <button class="action-button service-pay-button" type="button" data-pay-button="education" disabled>Enter amount</button>
-            <div class="service-receipt-preview" data-receipt="education" hidden></div>
+            <a class="action-button" href="./login.html">Login to Start</a>
           </article>
 
-          <article class="service-card" data-service-key="transport">
+          <article class="service-card service-card--sample">
+            <span class="service-card__badge">Public Sample</span>
             <span class="service-icon">🚌</span>
-            <h3>Transport</h3>
-            <p class="card-copy">LCC top-ups and interstate bookings keep the wallet loop active.</p>
+            <h3>Transport Example</h3>
+            <p class="card-copy">A sample of LCC tolls and route-based transport requests handled through BR9ja.</p>
             <div class="field-group">
-              <label for="service-transport-id">Enter eTag or Route Reference</label>
+              <label for="service-transport-id">Example eTag or Route Reference</label>
               <div class="field-shell">
-                <input id="service-transport-id" type="text" placeholder="LCC-ETAG-0091">
+                <input id="service-transport-id" type="text" value="LCC-ETAG-0091" readonly>
               </div>
-              <span class="field-status" data-default="Use your toll or booking reference to keep support clean.">Use your toll or booking reference to keep support clean.</span>
+              <span class="field-status">Preview only. Login to submit a live transport request.</span>
             </div>
             <div class="field-group">
-              <label for="service-transport-amount">Enter Amount in Naira (₦)</label>
+              <label for="service-transport-amount">Example Amount in Naira (₦)</label>
               <div class="field-shell">
                 <span class="field-prefix">₦</span>
-                <input id="service-transport-amount" type="number" placeholder="4000" min="100" data-validate="amount" data-service-amount>
+                <input id="service-transport-amount" type="text" value="4,000" readonly>
               </div>
-              <span class="field-status" data-default="Use the top-up or booking amount you want BR9ja to process.">Use the top-up or booking amount you want BR9ja to process.</span>
             </div>
             <div class="service-card__checkout">
-              <span class="service-card__total-label">Customer total</span>
-              <strong data-total-amount="transport">₦0</strong>
+              <span class="service-card__total-label">Sample checkout total</span>
+              <strong>₦4,100</strong>
             </div>
-            <button class="action-button service-pay-button" type="button" data-pay-button="transport" disabled>Enter amount</button>
-            <div class="service-receipt-preview" data-receipt="transport" hidden></div>
+            <a class="action-button" href="./login.html">Login to Start</a>
           </article>
 
-          <article class="service-card" data-service-key="government">
+          <article class="service-card service-card--sample">
+            <span class="service-card__badge">Public Sample</span>
             <span class="service-icon">🏛️</span>
-            <h3>Government Bills</h3>
-            <p class="card-copy">Pay RRRs and civic obligations with one unified checkout total.</p>
+            <h3>Government / RRR Example</h3>
+            <p class="card-copy">A sample government-bill view showing the reference and total users would process after login.</p>
             <div class="field-group">
-              <label for="service-government-rrr">Enter RRR or Bill Reference</label>
+              <label for="service-government-rrr">Example RRR or Bill Reference</label>
               <div class="field-shell">
-                <input id="service-government-rrr" type="text" placeholder="1234 5678 9012">
+                <input id="service-government-rrr" type="text" value="1234 5678 9012" readonly>
               </div>
-              <span class="field-status" data-default="Use the official RRR or civic bill reference.">Use the official RRR or civic bill reference.</span>
+              <span class="field-status">Preview only. Login to pay a live RRR or civic bill.</span>
             </div>
             <div class="field-group">
-              <label for="service-government-amount">Enter Amount in Naira (₦)</label>
+              <label for="service-government-amount">Example Amount in Naira (₦)</label>
               <div class="field-shell">
                 <span class="field-prefix">₦</span>
-                <input id="service-government-amount" type="number" placeholder="15000" min="100" data-validate="amount" data-service-amount>
+                <input id="service-government-amount" type="text" value="15,000" readonly>
               </div>
-              <span class="field-status" data-default="Use the bill amount you were issued by the government portal.">Use the bill amount you were issued by the government portal.</span>
             </div>
             <div class="service-card__checkout">
-              <span class="service-card__total-label">Customer total</span>
-              <strong data-total-amount="government">₦0</strong>
+              <span class="service-card__total-label">Sample checkout total</span>
+              <strong>₦15,150</strong>
             </div>
-            <button class="action-button service-pay-button" type="button" data-pay-button="government" disabled>Enter amount</button>
-            <div class="service-receipt-preview" data-receipt="government" hidden></div>
+            <a class="action-button" href="./login.html">Login to Start</a>
           </article>
         </div>
       </section>
@@ -263,10 +269,12 @@
               <span class="service-audit-pill">Core</span>
             </div>
             <ul class="service-audit-list">
-              <li><strong>Wallet Funding</strong><span>Dedicated account funding rails and wallet balance visibility.</span></li>
+              <li><strong>Wallet Funding</strong><span>Dedicated virtual account funding rails and wallet balance visibility.</span></li>
+              <li><strong>Dedicated Virtual Accounts</strong><span>GTBank / Providus-style account references for inbound deposits.</span></li>
               <li><strong>P2P Buddy Transfer</strong><span>Send money to another BR9ja user by username with receipt logging.</span></li>
               <li><strong>Virtual Cards</strong><span>Markup-controlled virtual card issuance for online purchases.</span></li>
-              <li><strong>BR9 Gold Savings</strong><span>Reward visibility and weekly conversion posture inside the wallet story.</span></li>
+              <li><strong>BR9 Gold Wallet Visibility</strong><span>Weekly reward posture, benchmark tracking, and Monday conversion context.</span></li>
+              <li><strong>Cashback Loops</strong><span>Marketplace and activity cashback feeding back into the BR9 Gold story.</span></li>
             </ul>
           </article>
 
@@ -278,36 +286,73 @@
             <ul class="service-audit-list">
               <li><strong>Airtime</strong><span>Fast top-up across the major Nigerian networks.</span></li>
               <li><strong>Data Bundles</strong><span>Standard data plans and 5G data offers where supported.</span></li>
+              <li><strong>5G Data</strong><span>Higher-tier bundle surfaces where the provider supports next-gen plans.</span></li>
               <li><strong>Electricity Bills</strong><span>Meter verification, DISCO coverage, and electricity vending.</span></li>
-              <li><strong>Cable TV & Internet</strong><span>DSTV, GOtv, StarTimes, Showmax, Smile, Spectranet, and related renewals.</span></li>
+              <li><strong>Electricity DISCOs</strong><span>Coverage across the supported Nigerian distribution companies.</span></li>
+              <li><strong>Cable TV</strong><span>DSTV, GOtv, StarTimes, and bouquet renewals.</span></li>
+              <li><strong>Internet Bundles</strong><span>Smile, Spectranet, Showmax-style internet or media-linked renewals.</span></li>
             </ul>
           </article>
 
           <article class="service-audit-card">
             <div class="service-audit-card__header">
-              <h3>Education, Transport & Government</h3>
+              <h3>Education & Public Sector</h3>
               <span class="service-audit-pill">Guided</span>
             </div>
             <ul class="service-audit-list">
-              <li><strong>Education Pins</strong><span>WAEC, JAMB, NECO, NABTEB, and exam-result products.</span></li>
-              <li><strong>Transport</strong><span>LCC toll top-ups and interstate bus booking requests.</span></li>
-              <li><strong>Government Bills</strong><span>RRR payments, civic obligations, and driver's license-type flows.</span></li>
-              <li><strong>Driver's License & Civic Docs</strong><span>Structured intake for regulated identity and civic-payment surfaces.</span></li>
+              <li><strong>WAEC Result Checker</strong><span>Education-pin support for standard result access.</span></li>
+              <li><strong>WAEC GCE</strong><span>Exam access surfaces for private candidate flows.</span></li>
+              <li><strong>JAMB e-PIN</strong><span>Profile-code aware purchase surfaces for JAMB entries.</span></li>
+              <li><strong>NECO Token</strong><span>Token-style exam payment and access flow.</span></li>
+              <li><strong>NABTEB</strong><span>Vocational education result and pin surfaces.</span></li>
+              <li><strong>Government Bills / RRR</strong><span>Remita-linked RRR, school fees, CAC, passport, and civic-payment flows.</span></li>
+              <li><strong>Traffic Fines & Driver's License</strong><span>Regulated civic obligations and verification-driven payment surfaces.</span></li>
             </ul>
           </article>
 
           <article class="service-audit-card">
             <div class="service-audit-card__header">
-              <h3>Lifestyle & Marketplace</h3>
+              <h3>Transport & Lifestyle</h3>
               <span class="service-audit-pill">Expanding</span>
             </div>
             <ul class="service-audit-list">
-              <li><strong>Marketplace / Daily Needs</strong><span>Bill-pay and wallet checkout for everyday essentials.</span></li>
+              <li><strong>LCC Tolls</strong><span>eTag lookups and toll balance top-ups.</span></li>
+              <li><strong>Inter-state Bus Requests</strong><span>Operator-based booking requests and admin-assisted fulfillment.</span></li>
               <li><strong>Betting Wallet Funding</strong><span>SportyBet, Bet9ja, 1XBet, BetKing, and similar wallet bridges.</span></li>
-              <li><strong>Streaming & Subscriptions</strong><span>Netflix, Showmax, Spotify, and recurring lifestyle renewals.</span></li>
-              <li><strong>Gaming Cards, Gift Cards & Event Tickets</strong><span>Controlled lifestyle inventory with silent markup support.</span></li>
+              <li><strong>Streaming & Subscriptions</strong><span>Netflix, Showmax, Spotify, and similar digital renewals.</span></li>
+              <li><strong>Gift Cards & Gaming Cards</strong><span>Controlled lifestyle inventory with silent markup support.</span></li>
+              <li><strong>Event Tickets</strong><span>Ticket-led lifestyle purchases routed through the BR9ja wallet story.</span></li>
             </ul>
           </article>
+
+          <article class="service-audit-card">
+            <div class="service-audit-card__header">
+              <h3>Marketplace & App-Only Rewards</h3>
+              <span class="service-audit-pill">BR9ja Loop</span>
+            </div>
+            <ul class="service-audit-list">
+              <li><strong>Marketplace / Daily Needs</strong><span>Airtime, utilities, and everyday goods flowing through BR9ja wallet checkout.</span></li>
+              <li><strong>Cashback in BR9 Gold</strong><span>Purchase activity feeding back into the weekly rewards loop.</span></li>
+              <li><strong>Market Runner</strong><span>The primary app-only game driving BR9 Gold accumulation.</span></li>
+              <li><strong>Sunday Live</strong><span>Community engagement and live-code style reward campaigns.</span></li>
+              <li><strong>Trivia Rush</strong><span>Fast app-only quiz play tied to BR9 Gold earning.</span></li>
+              <li><strong>Weekly Monday Payout</strong><span>Benchmark-based BR9 Gold conversion into naira wallet value.</span></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel">
+        <div class="section-header">
+          <span class="kicker">Ready to Start?</span>
+          <h2 class="section-title">Login to use any BR9ja service live.</h2>
+          <p class="section-copy">
+            The public site is for clarity and discovery. Sign in to fund your wallet, pay bills, buy pins, run marketplace actions, or enter the app-only BR9 Gold loop.
+          </p>
+        </div>
+        <div class="auth-row">
+          <a class="auth-button auth-button--login" href="./login.html">Login</a>
+          <a class="auth-button auth-button--signup" href="./signup.html">Sign Up</a>
         </div>
       </section>
 

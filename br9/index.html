@@ -141,42 +141,71 @@
 
       <section class="section-panel">
         <div class="section-header">
-          <span class="kicker">Quick Services</span>
-          <h2 class="section-title">Specific inputs. Clear actions. No drama.</h2>
+          <span class="kicker">Service Examples</span>
+          <h2 class="section-title">Public previews of what users can do after login.</h2>
           <p class="section-copy">
-            BR9ja reduces form anxiety with explicit fields and instant feedback so users know exactly what to enter before they pay.
+            These are sample service flows, not live checkout forms. They show the kind of actions available on BR9ja web and app before a user logs in to start any real transaction.
           </p>
         </div>
 
         <div class="service-grid">
-          <article class="service-card">
+          <article class="service-card service-card--sample">
+            <span class="service-card__badge">Public Sample</span>
             <span class="service-icon">📱</span>
-            <h3>Airtime & Data</h3>
-            <p class="card-copy">Buy cheap data Nigeria style, with a fast top-up path.</p>
+            <h3>Airtime & Data Example</h3>
+            <p class="card-copy">This sample shows the kind of phone-number and amount flow a BR9ja user completes after login.</p>
             <div class="field-group">
-              <label for="home-phone">Enter Phone Number</label>
+              <label for="home-phone">Example Phone Number</label>
               <div class="field-shell">
                 <span class="field-icon">☎</span>
-                <input id="home-phone" type="tel" placeholder="Enter phone number" data-validate="phone">
+                <input id="home-phone" type="text" value="0801 234 5678" readonly>
               </div>
-              <span class="field-status" data-default="We use this to credit your airtime instantly.">We use this to credit your airtime instantly.</span>
+              <span class="field-status">Preview only. Login to run a live top-up.</span>
             </div>
-            <a class="action-button" href="./services.html">Top Up Now</a>
+            <div class="field-group">
+              <label for="home-airtime-amount">Example Amount in Naira (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="home-airtime-amount" type="text" value="1,000" readonly>
+              </div>
+            </div>
+            <div class="service-card__checkout">
+              <span class="service-card__total-label">Sample checkout total</span>
+              <strong>₦1,050</strong>
+            </div>
+            <a class="action-button" href="./login.html">Login to Start</a>
           </article>
 
-          <article class="service-card">
+          <article class="service-card service-card--sample">
+            <span class="service-card__badge">Public Sample</span>
             <span class="service-icon">⚡</span>
-            <h3>Electricity</h3>
-            <p class="card-copy">Verify the meter first, then enter the exact amount in naira.</p>
+            <h3>Electricity Example</h3>
+            <p class="card-copy">This sample shows how a user enters a meter reference and a vending amount before payment.</p>
             <div class="field-group">
-              <label for="home-meter">Enter Meter Number</label>
+              <label for="home-meter">Example Meter Number</label>
               <div class="field-shell">
-                <input id="home-meter" type="text" placeholder="01234567890" data-validate="meter">
+                <input id="home-meter" type="text" value="01234567890" readonly>
               </div>
-              <span class="field-status" data-default="Auto-verification keeps the customer name visible before payment.">Auto-verification keeps the customer name visible before payment.</span>
+              <span class="field-status">Preview only. Login to run a live electricity payment.</span>
             </div>
-            <a class="action-button" href="./services.html">Pay Electricity</a>
+            <div class="field-group">
+              <label for="home-electricity-amount">Example Amount in Naira (₦)</label>
+              <div class="field-shell">
+                <span class="field-prefix">₦</span>
+                <input id="home-electricity-amount" type="text" value="5,000" readonly>
+              </div>
+            </div>
+            <div class="service-card__checkout">
+              <span class="service-card__total-label">Sample checkout total</span>
+              <strong>₦5,100</strong>
+            </div>
+            <a class="action-button" href="./login.html">Login to Start</a>
           </article>
+        </div>
+
+        <div class="auth-row">
+          <a class="auth-button auth-button--login" href="./services.html">View Full Service Catalogue</a>
+          <a class="auth-button auth-button--signup" href="./login.html">Login to Use BR9ja</a>
         </div>
       </section>
 
