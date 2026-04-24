@@ -812,7 +812,7 @@ app.post('/api/site/contact', async (req, res, next) => {
 
     const siteConfig = await readSiteConfig();
     const delivery = await sendSiteMail({
-      to: siteConfig.opsEmail,
+      to: siteConfig.supportEmail,
       subject: `[BR9ja Contact] ${subject}`,
       text: `Name: ${name}\nPhone: ${phoneNumber}\nSubject: ${subject}\n\n${message}`,
       html: `
@@ -830,7 +830,7 @@ app.post('/api/site/contact', async (req, res, next) => {
     res.status(202).json(
       successResponse(
         {
-          routedTo: siteConfig.opsEmail,
+          routedTo: siteConfig.supportEmail,
           deliveryMode: delivery.deliveryMode,
           messageId: delivery.messageId,
         },

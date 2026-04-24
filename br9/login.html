@@ -25,32 +25,93 @@
         <div class="auth-card__header">
           <span class="kicker">Login</span>
           <h1>Welcome back to BR9ja</h1>
-          <p class="auth-card__copy">Use your username or email and password for the first login. After that, the app can unlock quick access with PIN or biometrics.</p>
+          <p class="auth-card__copy">Returning users can sign in with password, 6-digit PIN, or quick access on this device. Your saved identity stays ready so you can get back in fast.</p>
         </div>
 
         <form class="admin-form" data-form="auth-preview" data-auth-mode="login">
           <div class="field-group">
-            <label for="login-identity">Email or Username</label>
+            <label for="login-identity">Email, Username, or Phone Number</label>
             <div class="field-shell">
               <span class="field-icon">👤</span>
-              <input id="login-identity" name="identity" type="text" placeholder="stankings@gmail.com or @stankings" data-validate="username" required>
+              <input id="login-identity" name="identity" type="text" placeholder="Enter your email, username, or phone number" required>
             </div>
           </div>
 
           <div class="field-group">
-            <label for="login-password">Password</label>
+            <label for="login-password">Password or 6-Digit PIN</label>
             <div class="field-shell">
               <span class="field-icon">🔒</span>
-              <input id="login-password" name="password" type="password" placeholder="Enter your password" data-validate="password" required>
+              <input id="login-password" name="secret" type="password" placeholder="Enter your password or 6-digit PIN" required>
             </div>
+          </div>
+
+          <div class="auth-quick-access">
+            <div class="section-header">
+              <span class="kicker">Quick Access</span>
+              <h2 class="section-title">Returning on this device?</h2>
+              <p class="section-copy">Use the saved identity on this phone or browser to jump in faster.</p>
+            </div>
+            <div class="quick-access-row">
+              <button class="verify-button verify-button--confirm" type="button" data-quick-login="face id">Use Face ID</button>
+              <button class="verify-button verify-button--confirm" type="button" data-quick-login="device pin">Use Device PIN</button>
+              <button class="verify-button verify-button--confirm" type="button" data-quick-login="phone pattern">Use Phone Pattern</button>
+            </div>
+            <p class="success-banner" data-quick-login-feedback>Quick access becomes available after your first full sign-in on this device.</p>
           </div>
 
           <button class="action-button" type="submit">Login to BR9ja</button>
 
           <div class="auth-divider"></div>
           <p class="auth-footer-note">New here? <a href="./signup.html">Create your BR9ja account</a>.</p>
-          <div class="success-banner">Login preview ready.</div>
+          <div class="success-banner">Sign in to continue.</div>
         </form>
+
+        <section class="auth-reset-panel">
+          <div class="section-header">
+            <span class="kicker">Password Reset</span>
+            <h2 class="section-title">Reset and log back in fast.</h2>
+            <p class="section-copy">Request a reset code with your email or phone number, enter it here, then set your new password twice.</p>
+          </div>
+
+          <form class="admin-form" data-form="password-reset">
+            <div class="field-group">
+              <label for="reset-identity">Email or Phone Number</label>
+              <div class="field-shell">
+                <span class="field-icon">✉</span>
+                <input id="reset-identity" name="identity" type="text" placeholder="Enter your email or phone number" required>
+              </div>
+            </div>
+
+            <button class="verify-button verify-button--whatsapp" type="button" data-reset-send>Send Reset Code</button>
+
+            <div class="field-group">
+              <label for="reset-code">Reset Code</label>
+              <div class="field-shell">
+                <span class="field-icon">#</span>
+                <input id="reset-code" name="code" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code" data-validate="otp" required>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="reset-password">New Password</label>
+              <div class="field-shell">
+                <span class="field-icon">🔒</span>
+                <input id="reset-password" name="password" type="password" placeholder="Create a new password" data-validate="password" required>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="reset-password-repeat">Repeat New Password</label>
+              <div class="field-shell">
+                <span class="field-icon">🔒</span>
+                <input id="reset-password-repeat" name="confirmPassword" type="password" placeholder="Repeat the new password" data-validate="password" required>
+              </div>
+            </div>
+
+            <button class="action-button" type="submit">Reset and Login</button>
+            <div class="success-banner">Use the reset code flow if you forgot your password.</div>
+          </form>
+        </section>
       </section>
     </main>
 

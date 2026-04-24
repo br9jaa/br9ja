@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contact BR9ja | Support Hub</title>
-  <meta name="description" content="Contact BR9ja support, report a payout issue, or get help with bills and technical problems from the BR9ja ops desk.">
+  <meta name="description" content="Contact BR9ja customer service, report a payout issue, or get help with bills and technical problems without guessing where to send your report.">
   <meta name="theme-color" content="#010A1F">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="https://br9.ng/contact">
   <meta property="og:title" content="BR9ja Support Hub">
-  <meta property="og:description" content="Contact support, report payout issues, and reach the BR9ja ops desk through WhatsApp or email.">
+  <meta property="og:description" content="Contact customer service, report payout issues, and reach BR9ja support through WhatsApp or email fallback.">
   <link rel="icon" type="image/png" href="./assets/favicon.png">
   <link rel="apple-touch-icon" href="./assets/apple_touch_icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,8 +35,8 @@
         <article class="section-panel">
           <div class="section-header">
             <span class="kicker">General Contact</span>
-            <h2 class="section-title">Message the ops desk.</h2>
-            <p class="section-copy">Submissions route to <span data-config="opsEmail">ops@br9.ng</span> via the backend mailer.</p>
+            <h2 class="section-title">Message customer service.</h2>
+            <p class="section-copy">Submissions route to <span data-config="supportEmail">support@br9.ng</span>. If the live API is unavailable, BR9ja opens your email app so the report still goes through.</p>
           </div>
 
           <form class="admin-form" data-form="contact">
@@ -51,8 +51,8 @@
             <div class="field-group">
               <label for="contact-phone">Phone Number</label>
               <div class="field-shell">
-                <span class="field-prefix">+234</span>
-                <input id="contact-phone" name="phoneNumber" type="tel" placeholder="801 234 5678" data-validate="phone" required>
+                <span class="field-icon">☎</span>
+                <input id="contact-phone" name="phoneNumber" type="tel" placeholder="Enter phone number" data-validate="phone" required>
               </div>
               <span class="field-status" data-default="We use this for urgent follow-up only.">We use this for urgent follow-up only.</span>
             </div>

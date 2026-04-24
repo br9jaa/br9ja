@@ -391,6 +391,11 @@ const THEME_KEY = 'br9.theme';
 const CONFIG_KEY = 'br9.siteConfig';
 const ADMIN_TOKEN_KEY = 'br9.adminToken';
 const AUTH_SESSION_KEY = 'br9.authenticated';
+const AUTH_USER_KEY = 'br9.auth.user';
+const PREVIEW_USERS_KEY = 'br9.previewUsers';
+const REMEMBERED_IDENTITY_KEY = 'br9.auth.identity';
+const PASSWORD_RESET_KEY = 'br9.auth.reset';
+const PHONE_VERIFY_KEY = 'br9.auth.phoneVerify';
 let currentPromoSummary = null;
 let promoTicker = null;
 
@@ -462,6 +467,434 @@ function setStoredAdminToken(token) {
   } catch (_error) {
     // Ignore storage failures in preview mode.
   }
+}
+
+function normalisePhoneInput(value) {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (digits.startsWith('234') && digits.length >= 13) {
+    digits = `0${digits.slice(3)}`;
+  }
+  if (digits.length === 10) {
+    digits = `0${digits}`;
+  }
+  return digits.slice(0, 11);
+}
+
+function normaliseEmailInput(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function normaliseUsernameInput(value) {
+  return String(value || '')
+    .trim()
+    .replace(/^@+/g, '')
+    .toLowerCase();
+}
+
+function normaliseIdentityInput(value) {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return '';
+  }
+
+  if (VALIDATORS.email(raw)) {
+    return normaliseEmailInput(raw);
+  }
+
+  const phone = normalisePhoneInput(raw);
+  if (phone.length >= 10) {
+    return phone;
+  }
+
+  return normaliseUsernameInput(raw);
+}
+
+function getStoredPreviewUsers() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PREVIEW_USERS_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+function setStoredPreviewUsers(users) {
+  localStorage.setItem(PREVIEW_USERS_KEY, JSON.stringify(users));
+}
+
+function getStoredAuthUser() {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(AUTH_USER_KEY) || 'null');
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function rememberIdentity(identity) {
+  try {
+    if (!identity) {
+      localStorage.removeItem(REMEMBERED_IDENTITY_KEY);
+      return;
+    }
+    localStorage.setItem(REMEMBERED_IDENTITY_KEY, String(identity).trim());
+  } catch (_error) {
+    // Ignore storage failures in preview mode.
+  }
+}
+
+function getRememberedIdentity() {
+  try {
+    return localStorage.getItem(REMEMBERED_IDENTITY_KEY) || '';
+  } catch (_error) {
+    return '';
+  }
+}
+
+function serialiseAuthUser(user) {
+  if (!user) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    fullName: user.fullName,
+    username: user.username,
+    email: user.email,
+    phoneNumber: user.phoneNumber,
+    phoneVerified: Boolean(user.phoneVerified),
+    phoneVerifiedAt: user.phoneVerifiedAt || null,
+    firstLoginCompleted: Boolean(user.firstLoginCompleted),
+    lastLoginAt: user.lastLoginAt || null,
+  };
+}
+
+function setStoredAuthUser(user) {
+  try {
+    if (!user) {
+      sessionStorage.removeItem(AUTH_USER_KEY);
+      setStoredAuthState(false);
+      return;
+    }
+
+    const safeUser = serialiseAuthUser(user);
+    sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(safeUser));
+    setStoredAuthState(true);
+    rememberIdentity(safeUser.email || safeUser.username || safeUser.phoneNumber || '');
+  } catch (_error) {
+    // Ignore storage failures in preview mode.
+  }
+}
+
+function clearStoredAuthUser() {
+  try {
+    sessionStorage.removeItem(AUTH_USER_KEY);
+  } catch (_error) {
+    // Ignore storage failures in preview mode.
+  }
+  setStoredAuthState(false);
+}
+
+function getStoredResetChallenge() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PASSWORD_RESET_KEY) || 'null');
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function setStoredResetChallenge(challenge) {
+  try {
+    if (!challenge) {
+      localStorage.removeItem(PASSWORD_RESET_KEY);
+      return;
+    }
+    localStorage.setItem(PASSWORD_RESET_KEY, JSON.stringify(challenge));
+  } catch (_error) {
+    // Ignore storage failures in preview mode.
+  }
+}
+
+function getStoredPhoneVerificationChallenge() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PHONE_VERIFY_KEY) || 'null');
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function setStoredPhoneVerificationChallenge(challenge) {
+  try {
+    if (!challenge) {
+      localStorage.removeItem(PHONE_VERIFY_KEY);
+      return;
+    }
+    localStorage.setItem(PHONE_VERIFY_KEY, JSON.stringify(challenge));
+  } catch (_error) {
+    // Ignore storage failures in preview mode.
+  }
+}
+
+function createOneTimeCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+async function hashSecret(value) {
+  const text = String(value || '').trim();
+  if (!text) {
+    return '';
+  }
+
+  if (!globalThis.crypto?.subtle) {
+    return btoa(unescape(encodeURIComponent(text)));
+  }
+
+  const payload = new TextEncoder().encode(text);
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', payload);
+  return Array.from(new Uint8Array(digest))
+    .map((item) => item.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function findPreviewUserByIdentity(identity) {
+  const normalised = normaliseIdentityInput(identity);
+  if (!normalised) {
+    return null;
+  }
+
+  return (
+    getStoredPreviewUsers().find((user) => {
+      return (
+        user.email === normalised ||
+        user.username === normalised ||
+        user.phoneNumber === normalised
+      );
+    }) || null
+  );
+}
+
+function updatePreviewUser(userId, updater) {
+  const users = getStoredPreviewUsers();
+  const index = users.findIndex((user) => user.id === userId);
+  if (index < 0) {
+    return null;
+  }
+
+  const current = users[index];
+  const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater };
+  users[index] = next;
+  setStoredPreviewUsers(users);
+  return next;
+}
+
+async function registerPreviewUser(payload) {
+  const firstName = String(payload.firstName || '').trim();
+  const lastName = String(payload.lastName || '').trim();
+  const fullName = `${firstName} ${lastName}`.trim();
+  const username = normaliseUsernameInput(payload.username);
+  const email = normaliseEmailInput(payload.email);
+  const phoneNumber = normalisePhoneInput(payload.phoneNumber);
+  const password = String(payload.password || '').trim();
+  const confirmPassword = String(payload.confirmPassword || '').trim();
+  const pin = String(payload.pin || '').trim();
+
+  if (!firstName || !lastName || !username || !email || !phoneNumber || !password || !confirmPassword || !pin) {
+    throw new Error('Fill every signup field before continuing.');
+  }
+
+  if (password !== confirmPassword) {
+    throw new Error('Passwords do not match yet. Please check and try again.');
+  }
+
+  if (!VALIDATORS.password(password)) {
+    throw new Error('Password must be at least 8 characters.');
+  }
+
+  if (!VALIDATORS.pin(pin)) {
+    throw new Error('Quick PIN must be exactly 6 digits.');
+  }
+
+  const users = getStoredPreviewUsers();
+  const duplicate = users.find((user) => {
+    return user.email === email || user.username === username || user.phoneNumber === phoneNumber;
+  });
+
+  if (duplicate) {
+    if (duplicate.email === email) {
+      throw new Error('That email has already been used on BR9ja.');
+    }
+    if (duplicate.username === username) {
+      throw new Error('That username has already been used on BR9ja.');
+    }
+    throw new Error('That phone number has already been used on BR9ja.');
+  }
+
+  const nextUser = {
+    id: `br9-user-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    firstName,
+    lastName,
+    fullName,
+    username,
+    email,
+    phoneNumber,
+    passwordHash: await hashSecret(password),
+    pinHash: await hashSecret(pin),
+    phoneVerified: false,
+    phoneVerifiedAt: null,
+    createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
+    firstLoginCompleted: true,
+    quickAccessMode: 'pin-password',
+  };
+
+  users.unshift(nextUser);
+  setStoredPreviewUsers(users);
+  setStoredAuthUser(nextUser);
+  return nextUser;
+}
+
+async function loginPreviewUser(identity, secret) {
+  const user = findPreviewUserByIdentity(identity);
+  if (!user) {
+    throw new Error('No BR9ja account was found for that email, username, or phone number on this device yet.');
+  }
+
+  const secretHash = await hashSecret(secret);
+  const passwordMatch = secretHash === user.passwordHash;
+  const pinMatch = user.firstLoginCompleted && secretHash === user.pinHash;
+
+  if (!passwordMatch && !pinMatch) {
+    throw new Error('Password or 6-digit PIN did not match this BR9ja account.');
+  }
+
+  const updatedUser = updatePreviewUser(user.id, (current) => ({
+    ...current,
+    firstLoginCompleted: true,
+    lastLoginAt: new Date().toISOString(),
+  }));
+
+  setStoredAuthUser(updatedUser);
+  return updatedUser;
+}
+
+async function quickAccessLogin(method) {
+  const remembered = getRememberedIdentity();
+  const user = findPreviewUserByIdentity(remembered);
+
+  if (!remembered || !user) {
+    throw new Error('No returning BR9ja account is saved on this device yet. Log in with password first.');
+  }
+
+  const updatedUser = updatePreviewUser(user.id, (current) => ({
+    ...current,
+    firstLoginCompleted: true,
+    lastLoginAt: new Date().toISOString(),
+    quickAccessMode: method,
+  }));
+
+  setStoredAuthUser(updatedUser);
+  return updatedUser;
+}
+
+async function startPasswordReset(identity) {
+  const user = findPreviewUserByIdentity(identity);
+  if (!user) {
+    throw new Error('We could not find a BR9ja account with that email or phone number.');
+  }
+
+  const code = createOneTimeCode();
+  const channel = VALIDATORS.email(String(identity || '').trim()) ? 'email' : 'phone';
+  setStoredResetChallenge({
+    userId: user.id,
+    channel,
+    expiresAt: Date.now() + 10 * 60 * 1000,
+    codeHash: await hashSecret(code),
+  });
+  return { code, channel, user };
+}
+
+async function completePasswordReset(payload) {
+  const challenge = getStoredResetChallenge();
+  if (!challenge || challenge.expiresAt < Date.now()) {
+    throw new Error('The reset code has expired. Request a fresh code and try again.');
+  }
+
+  const code = String(payload.code || '').trim();
+  const newPassword = String(payload.password || '').trim();
+  const confirmPassword = String(payload.confirmPassword || '').trim();
+
+  if (!VALIDATORS.otp(code)) {
+    throw new Error('Enter the full 6-digit reset code.');
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw new Error('New passwords do not match yet.');
+  }
+
+  if (!VALIDATORS.password(newPassword)) {
+    throw new Error('New password must be at least 8 characters.');
+  }
+
+  const codeHash = await hashSecret(code);
+  if (codeHash !== challenge.codeHash) {
+    throw new Error('Reset code is invalid. Check it and try again.');
+  }
+
+  const passwordHash = await hashSecret(newPassword);
+  const resetUser = updatePreviewUser(challenge.userId, (current) => ({
+    ...current,
+    passwordHash,
+    lastLoginAt: new Date().toISOString(),
+    firstLoginCompleted: true,
+  }));
+
+  if (!resetUser) {
+    throw new Error('The BR9ja account for this reset code was not found anymore.');
+  }
+
+  setStoredResetChallenge(null);
+  setStoredAuthUser(resetUser);
+  return resetUser;
+}
+
+async function startPhoneVerification(userId) {
+  const user = getStoredPreviewUsers().find((item) => item.id === userId);
+  if (!user) {
+    throw new Error('Sign in again before verifying this phone number.');
+  }
+
+  const code = createOneTimeCode();
+  setStoredPhoneVerificationChallenge({
+    userId,
+    expiresAt: Date.now() + 10 * 60 * 1000,
+    codeHash: await hashSecret(code),
+  });
+  return { code, user };
+}
+
+async function completePhoneVerification(userId, code) {
+  const challenge = getStoredPhoneVerificationChallenge();
+  if (!challenge || challenge.userId !== userId || challenge.expiresAt < Date.now()) {
+    throw new Error('Phone verification code expired. Request another one.');
+  }
+
+  if ((await hashSecret(code)) !== challenge.codeHash) {
+    throw new Error('Verification code did not match. Please try again.');
+  }
+
+  const updatedUser = updatePreviewUser(userId, (current) => ({
+    ...current,
+    phoneVerified: true,
+    phoneVerifiedAt: new Date().toISOString(),
+  }));
+
+  setStoredPhoneVerificationChallenge(null);
+  setStoredAuthUser(updatedUser);
+  return updatedUser;
 }
 
 function normaliseIntegerInput(value, fallback) {
@@ -543,6 +976,26 @@ async function loadConfig() {
   };
 }
 
+function buildHeaderAuthMarkup(base) {
+  const authUser = getStoredAuthUser();
+  if (authUser) {
+    const label = authUser.firstName || authUser.username || 'Profile';
+    return `
+      <div class="site-header__quick-auth">
+        <a class="header-auth-button header-auth-button--profile" href="${base}/profile.html">${escapeHtml(label)}</a>
+        <button class="header-auth-button header-auth-button--logout" type="button" data-auth-logout>Logout</button>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="site-header__quick-auth">
+      <a class="header-auth-button header-auth-button--login" href="${base}/login.html">Login</a>
+      <a class="header-auth-button header-auth-button--signup" href="${base}/signup.html">Sign Up</a>
+    </div>
+  `;
+}
+
 function buildHeader(config, theme) {
   const base = getBasePath();
   const current = getPageName();
@@ -565,6 +1018,7 @@ function buildHeader(config, theme) {
       </a>
 
       <div class="site-header__actions">
+        ${buildHeaderAuthMarkup(base)}
         <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
           ${navLinks}
         </nav>
@@ -575,9 +1029,12 @@ function buildHeader(config, theme) {
         </button>
 
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
-          <span></span>
-          <span></span>
-          <span></span>
+          <span class="menu-toggle__stack" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+          <span class="menu-toggle__close" aria-hidden="true">×</span>
         </button>
       </div>
     </header>
@@ -1106,6 +1563,19 @@ function renderAdminSummary(config) {
   });
 }
 
+function bindAuthChrome() {
+  document.querySelectorAll('[data-auth-logout]').forEach((button) => {
+    button.addEventListener('click', () => {
+      clearStoredAuthUser();
+      if (getPageName() === 'profile') {
+        window.location.href = `${getBasePath()}/login.html`;
+        return;
+      }
+      window.location.reload();
+    });
+  });
+}
+
 function renderSiteChrome(config) {
   document.body.dataset.authenticated = getStoredAuthState() ? 'true' : 'false';
   mountShell(config);
@@ -1115,6 +1585,7 @@ function renderSiteChrome(config) {
   bindMenuToggle();
   bindAdminSidebarToggle();
   bindThemeToggle();
+  bindAuthChrome();
   bindWhatsAppVisibility();
   applyTheme(getStoredTheme());
 }
@@ -1223,6 +1694,18 @@ function showSuccess(target, message) {
   target.classList.add('is-visible');
 }
 
+function buildMailtoUrl(to, subject, bodyLines = []) {
+  const subjectText = encodeURIComponent(subject);
+  const bodyText = encodeURIComponent(bodyLines.filter(Boolean).join('\n'));
+  return `mailto:${encodeURIComponent(to)}?subject=${subjectText}&body=${bodyText}`;
+}
+
+function openMailDraft(url) {
+  window.setTimeout(() => {
+    window.location.href = url;
+  }, 120);
+}
+
 function bindContactForms(config) {
   const contactForm = document.querySelector('[data-form="contact"]');
   const payoutForm = document.querySelector('[data-form="payout-issue"]');
@@ -1236,15 +1719,29 @@ function bindContactForms(config) {
 
       try {
         if (window.location.protocol === 'file:') {
-          showSuccess(successNode, `Message captured locally for ${config.opsEmail}.`);
+          showSuccess(successNode, `Customer service draft opened for ${config.supportEmail}.`);
+          openMailDraft(buildMailtoUrl(config.supportEmail, `[BR9ja Contact] ${payload.subject}`, [
+            `Name: ${payload.name || ''}`,
+            `Phone Number: ${payload.phoneNumber || ''}`,
+            `Subject: ${payload.subject || ''}`,
+            '',
+            String(payload.message || '').trim(),
+          ]));
           return;
         }
 
         await postJson('/api/site/contact', payload);
-        showSuccess(successNode, `Message sent successfully to ${config.opsEmail}.`);
+        showSuccess(successNode, `Message sent successfully to ${config.supportEmail}.`);
         contactForm.reset();
       } catch (error) {
-        showSuccess(successNode, error.message);
+        showSuccess(successNode, `We opened your email app so this report can still reach ${config.supportEmail}.`);
+        openMailDraft(buildMailtoUrl(config.supportEmail, `[BR9ja Contact] ${payload.subject}`, [
+          `Name: ${payload.name || ''}`,
+          `Phone Number: ${payload.phoneNumber || ''}`,
+          `Subject: ${payload.subject || ''}`,
+          '',
+          String(payload.message || '').trim(),
+        ]));
       }
     });
   }
@@ -1258,134 +1755,223 @@ function bindContactForms(config) {
 
       try {
         if (window.location.protocol === 'file:') {
-          showSuccess(successNode, 'Payout issue captured locally for follow-up.');
+          showSuccess(successNode, `Payout issue draft opened for ${config.opsEmail}.`);
+          openMailDraft(buildMailtoUrl(config.opsEmail, `[BR9ja Payout Issue] ${payload.transactionId || 'Reference pending'}`, [
+            `Username: ${payload.username || ''}`,
+            `Transaction ID: ${payload.transactionId || ''}`,
+            `Date: ${payload.date || ''}`,
+          ]));
           return;
         }
 
         await postJson('/api/site/payout-issue', payload);
-        showSuccess(successNode, 'Payout issue submitted to the BR9ja ops desk.');
+        showSuccess(successNode, 'Payout issue submitted to BR9ja support.');
         payoutForm.reset();
       } catch (error) {
-        showSuccess(successNode, error.message);
+        showSuccess(successNode, `We opened your email app so the payout issue can still reach ${config.opsEmail}.`);
+        openMailDraft(buildMailtoUrl(config.opsEmail, `[BR9ja Payout Issue] ${payload.transactionId || 'Reference pending'}`, [
+          `Username: ${payload.username || ''}`,
+          `Transaction ID: ${payload.transactionId || ''}`,
+          `Date: ${payload.date || ''}`,
+        ]));
       }
     });
   }
 }
 
 function bindAuthUi(config) {
+  const rememberedIdentity = getRememberedIdentity();
+
   document.querySelectorAll('[data-form="auth-preview"]').forEach((form) => {
     const mode = form.dataset.authMode || 'login';
     const successNode = form.querySelector('.success-banner');
-    const submitButton = form.querySelector('.action-button[type="submit"]');
-    const methodButtons = [...form.querySelectorAll('[data-verify-trigger]')];
-    const otpInput = form.querySelector('[data-otp-input]');
-    const otpVerifyButton = form.querySelector('[data-otp-verify]');
-    const phoneInput = form.querySelector('input[name="phone"]');
-    let selectedMethod = '';
-    let otpVerified = false;
-
-    const updateSubmitState = () => {
-      if (!submitButton) {
-        return;
-      }
-      submitButton.disabled = mode === 'signup' && !otpVerified;
-    };
-
-    const resetOtpVerification = () => {
-      otpVerified = false;
-      if (otpVerifyButton) {
-        otpVerifyButton.classList.remove('is-verified');
-        otpVerifyButton.textContent = 'Verify';
-      }
-      updateSubmitState();
-    };
 
     if (mode === 'signup') {
-      updateSubmitState();
-    }
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const payload = Object.fromEntries(new FormData(form).entries());
 
-    if (mode === 'login' && submitButton) {
-      submitButton.addEventListener('click', () => {
-        if (!form.checkValidity()) {
-          return;
-        }
-        setStoredAuthState(true);
-        bindWhatsAppVisibility();
-      });
-    }
-
-    methodButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        selectedMethod = button.dataset.verifyTrigger || '';
-        methodButtons.forEach((node) => {
-          node.classList.toggle('is-selected', node === button);
-        });
-        resetOtpVerification();
-        const methodLabel = selectedMethod === 'whatsapp' ? 'WhatsApp' : 'SMS';
-        showSuccess(successNode, `${methodLabel} code sent in preview. Enter the 6-digit OTP below, then tap Verify.`);
-      });
-    });
-
-    if (otpInput) {
-      otpInput.addEventListener('input', () => {
-        if (otpVerified) {
-          resetOtpVerification();
+        try {
+          const user = await registerPreviewUser({
+            firstName: payload.firstName,
+            lastName: payload.lastName,
+            username: payload.username,
+            email: payload.email,
+            phoneNumber: payload.phone,
+            password: payload.password,
+            confirmPassword: payload.confirmPassword,
+            pin: payload.pin,
+          });
+          showSuccess(successNode, `Welcome to BR9ja, ${user.firstName}. Your account is ready and you are being taken to your profile.`);
+          setTimeout(() => {
+            window.location.href = `${getBasePath()}/profile.html`;
+          }, 300);
+        } catch (error) {
+          showSuccess(successNode, error.message);
         }
       });
+      return;
     }
 
-    if (phoneInput) {
-      phoneInput.addEventListener('input', () => {
-        if (otpVerified || selectedMethod) {
-          resetOtpVerification();
-        }
-      });
+    const identityInput = form.querySelector('input[name="identity"]');
+    if (identityInput && rememberedIdentity && !identityInput.value) {
+      identityInput.value = rememberedIdentity;
+      updateFieldState(identityInput);
     }
 
-    if (otpVerifyButton) {
-      otpVerifyButton.addEventListener('click', () => {
-        if (mode !== 'signup') {
-          return;
-        }
-
-        if (!selectedMethod) {
-          showSuccess(successNode, 'Choose WhatsApp or SMS first so BR9ja knows where to send the OTP.');
-          return;
-        }
-
-        const otpValue = String(otpInput?.value || '').trim();
-        if (!VALIDATORS.otp(otpValue)) {
-          showSuccess(successNode, 'Enter the full 6-digit OTP before verifying.');
-          return;
-        }
-
-        otpVerified = true;
-        otpVerifyButton.classList.add('is-verified');
-        otpVerifyButton.textContent = 'Verified';
-        updateSubmitState();
-        showSuccess(successNode, `${selectedMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'} OTP verified. You can now create your account.`);
-      });
-    }
-
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (mode === 'signup') {
-        if (!otpVerified) {
-          showSuccess(successNode, 'Verify the OTP first before creating your account.');
-          updateSubmitState();
-          return;
-        }
-        showSuccess(successNode, 'Create Account preview is ready. Connect live verification to activate onboarding.');
-        return;
+      const payload = Object.fromEntries(new FormData(form).entries());
+
+      try {
+        const user = await loginPreviewUser(payload.identity, payload.secret);
+        bindWhatsAppVisibility();
+        showSuccess(
+          successNode,
+          user.phoneVerified
+            ? `Welcome back, ${user.firstName}. Opening your BR9ja profile now.`
+            : `Welcome back, ${user.firstName}. Log in complete. Verify your phone number next inside your profile.`
+        );
+        setTimeout(() => {
+          window.location.href = `${getBasePath()}/profile.html`;
+        }, 300);
+      } catch (error) {
+        showSuccess(successNode, error.message);
       }
-      setStoredAuthState(true);
-      bindWhatsAppVisibility();
-      showSuccess(successNode, `Login preview is ready. Use the app for biometric or PIN quick access after first sign-in.`);
     });
   });
 
+  document.querySelectorAll('[data-quick-login]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const feedback = document.querySelector('[data-quick-login-feedback]');
+      try {
+        const method = button.dataset.quickLogin || 'device';
+        const user = await quickAccessLogin(method);
+        showSuccess(
+          feedback,
+          `${formatModeLabel(method)} accepted for ${user.firstName}. Opening your BR9ja profile now.`
+        );
+        setTimeout(() => {
+          window.location.href = `${getBasePath()}/profile.html`;
+        }, 300);
+      } catch (error) {
+        showSuccess(feedback, error.message);
+      }
+    });
+  });
+
+  const resetForm = document.querySelector('[data-form="password-reset"]');
+  if (resetForm) {
+    const successNode = resetForm.querySelector('.success-banner');
+    const sendButton = resetForm.querySelector('[data-reset-send]');
+
+    sendButton?.addEventListener('click', async () => {
+      const identity = String(resetForm.elements.identity?.value || '').trim();
+      try {
+        const challenge = await startPasswordReset(identity);
+        showSuccess(
+          successNode,
+          `Preview reset code sent by ${challenge.channel}. Use ${challenge.code} below, then set the new password twice.`
+        );
+      } catch (error) {
+        showSuccess(successNode, error.message);
+      }
+    });
+
+    resetForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      try {
+        await completePasswordReset({
+          code: resetForm.elements.code?.value,
+          password: resetForm.elements.password?.value,
+          confirmPassword: resetForm.elements.confirmPassword?.value,
+        });
+        showSuccess(successNode, 'Password reset complete. You are being logged in now.');
+        setTimeout(() => {
+          window.location.href = `${getBasePath()}/profile.html`;
+        }, 300);
+      } catch (error) {
+        showSuccess(successNode, error.message);
+      }
+    });
+  }
+
   document.querySelectorAll('[data-config-link="supportEmail"]').forEach((node) => {
     node.href = `mailto:${config.supportEmail}`;
+  });
+}
+
+function bindProfilePage() {
+  if (getPageName() !== 'profile') {
+    return;
+  }
+
+  const user = getStoredAuthUser();
+  if (!user) {
+    window.location.href = `${getBasePath()}/login.html`;
+    return;
+  }
+
+  const profileMap = {
+    firstName: user.firstName || 'BR9ja User',
+    fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+    username: `@${user.username || 'member'}`,
+    email: user.email || 'No email stored yet',
+    phoneNumber: user.phoneNumber || 'No phone number saved yet',
+    phoneStatus: user.phoneVerified ? 'Verified' : 'Verification pending',
+    quickAccess: user.firstLoginCompleted
+      ? 'Quick access is ready with password, 6-digit PIN, Face ID, device PIN, or pattern on this device.'
+      : 'First sign-in still needs your password before quick access unlocks.',
+  };
+
+  document.querySelectorAll('[data-profile]').forEach((node) => {
+    const key = node.dataset.profile;
+    if (key && profileMap[key] !== undefined) {
+      node.textContent = profileMap[key];
+    }
+  });
+
+  document.querySelectorAll('[data-phone-verification-state]').forEach((node) => {
+    node.classList.toggle('is-verified', user.phoneVerified);
+  });
+
+  const verifyForm = document.querySelector('[data-form="phone-verification"]');
+  if (!verifyForm) {
+    return;
+  }
+
+  const successNode = verifyForm.querySelector('.success-banner');
+  const sendButton = verifyForm.querySelector('[data-phone-send]');
+  const verifyButton = verifyForm.querySelector('[data-phone-verify]');
+  const codeInput = verifyForm.querySelector('input[name="code"]');
+
+  if (user.phoneVerified) {
+    verifyForm.classList.add('is-hidden');
+    return;
+  }
+
+  sendButton?.addEventListener('click', async () => {
+    try {
+      const challenge = await startPhoneVerification(user.id);
+      showSuccess(
+        successNode,
+        `Preview phone verification code sent to ${user.phoneNumber}. Use ${challenge.code} to complete verification.`
+      );
+    } catch (error) {
+      showSuccess(successNode, error.message);
+    }
+  });
+
+  verifyButton?.addEventListener('click', async () => {
+    try {
+      const updatedUser = await completePhoneVerification(user.id, codeInput?.value || '');
+      showSuccess(successNode, `${updatedUser.phoneNumber} is now verified for this BR9ja profile.`);
+      setTimeout(() => {
+        window.location.reload();
+      }, 250);
+    } catch (error) {
+      showSuccess(successNode, error.message);
+    }
   });
 }
 
@@ -2459,6 +3045,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindValidation();
   bindContactForms(config);
   bindAuthUi(config);
+  bindProfilePage(config);
   bindServicePricing(config);
   bindAdminSettings(config);
   await bindAdminRoom(config);
