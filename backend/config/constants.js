@@ -11,6 +11,10 @@ module.exports = {
     WAEC_RESULT: Number(process.env.PRICE_WAEC_RESULT || 4500),
     WAEC_GCE: Number(process.env.PRICE_WAEC_GCE || 18000),
     JAMB: Number(process.env.PRICE_JAMB || 6200),
+    JAMB_UTME: Number(process.env.PRICE_JAMB_UTME || process.env.PRICE_JAMB || 6200),
+    JAMB_DIRECT_ENTRY: Number(
+      process.env.PRICE_JAMB_DIRECT_ENTRY || process.env.PRICE_JAMB || 6200
+    ),
     NECO: Number(process.env.PRICE_NECO || 1500),
     NABTEB: Number(process.env.PRICE_NABTEB || 1500),
   },

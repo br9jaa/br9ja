@@ -9,7 +9,9 @@ import '../logic/auth_provider.dart';
 import '../widgets/br9ja_snackbar.dart';
 
 class SignupPage extends StatefulWidget {
-  const SignupPage({super.key});
+  const SignupPage({super.key, this.initialReferralCode});
+
+  final String? initialReferralCode;
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -23,6 +25,7 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _pinController = TextEditingController();
+  final TextEditingController _referralController = TextEditingController();
   final FocusNode _fullNameFocusNode = FocusNode();
   final FocusNode _usernameFocusNode = FocusNode();
   final FocusNode _phoneFocusNode = FocusNode();
@@ -30,6 +33,7 @@ class _SignupPageState extends State<SignupPage> {
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
   final FocusNode _pinFocusNode = FocusNode();
+  final FocusNode _referralFocusNode = FocusNode();
 
   bool _agreedToTerms = false;
   bool _smsRequested = false;
@@ -45,6 +49,9 @@ class _SignupPageState extends State<SignupPage> {
   @override
   void initState() {
     super.initState();
+    if ((widget.initialReferralCode ?? '').trim().isNotEmpty) {
+      _referralController.text = widget.initialReferralCode!.trim().toUpperCase();
+    }
     _phoneController.addListener(_resetVerificationIfPhoneChanges);
   }
 
@@ -58,6 +65,7 @@ class _SignupPageState extends State<SignupPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _pinController.dispose();
+    _referralController.dispose();
     _fullNameFocusNode.dispose();
     _usernameFocusNode.dispose();
     _phoneFocusNode.dispose();
@@ -65,6 +73,7 @@ class _SignupPageState extends State<SignupPage> {
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     _pinFocusNode.dispose();
+    _referralFocusNode.dispose();
     super.dispose();
   }
 
@@ -268,6 +277,19 @@ class _SignupPageState extends State<SignupPage> {
                       LengthLimitingTextInputFormatter(6),
                     ],
                     successWhen: (value) => value.trim().length == 6,
+                  ),
+                  const SizedBox(height: 16),
+                  _GlassField(
+                    controller: _referralController,
+                    focusNode: _referralFocusNode,
+                    label: 'Referral Code',
+                    hint: 'Referral Code',
+                    icon: Icons.card_giftcard_rounded,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _createAccount(),
+                    successWhen: (value) => value.trim().length >= 4,
+                    highlighted:
+                        (widget.initialReferralCode ?? '').trim().isNotEmpty,
                   ),
                   const SizedBox(height: 18),
                   Container(
@@ -546,6 +568,10 @@ class _SignupPageState extends State<SignupPage> {
       password: _passwordController.text,
       pin: _pinController.text,
       phoneVerificationToken: _phoneVerificationToken!,
+      referralCode:
+          _referralController.text.trim().isEmpty
+              ? null
+              : _referralController.text.trim(),
     );
 
     if (!mounted) {
@@ -610,6 +636,7 @@ class _GlassField extends StatelessWidget {
     this.onSubmitted,
     this.inputFormatters,
     this.successWhen,
+    this.highlighted = false,
   });
 
   final TextEditingController controller;
@@ -624,6 +651,7 @@ class _GlassField extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
   final List<TextInputFormatter>? inputFormatters;
   final bool Function(String)? successWhen;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -641,6 +669,7 @@ class _GlassField extends StatelessWidget {
             valueListenable: controller,
             builder: (context, value, _) {
               final showSuccess = successWhen?.call(value.text) ?? false;
+              final showHighlight = highlighted && value.text.trim().isNotEmpty;
 
               return TextField(
                 controller: controller,
@@ -655,6 +684,10 @@ class _GlassField extends StatelessWidget {
                   labelText: label,
                   hintText: hint,
                   helperText: helperText,
+                  filled: true,
+                  fillColor: showHighlight
+                      ? AppColors.neonGold.withValues(alpha: 0.08)
+                      : Colors.transparent,
                   labelStyle: const TextStyle(color: Colors.white70),
                   hintStyle: const TextStyle(color: Colors.white38),
                   helperStyle: const TextStyle(color: Colors.white54),
@@ -666,11 +699,14 @@ class _GlassField extends StatelessWidget {
                         )
                       : null,
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 18,
                   ),
                 ),
+                cursorColor: AppColors.neonGold,
               );
             },
           ),

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja Partner Bank</title>
+  <meta name="description" content="Private BR9ja partner-bank routing room for earnings destination, referral code, and signup link control.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/apple_touch_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../main.css">
+  <script defer src="../main.js"></script>
+</head>
+<body data-page="admin-partner-bank" data-base=".." data-authenticated="true" data-admin-room="bank">
+  <div class="admin-layout">
+    <div data-admin-shell></div>
+
+    <main class="section-stack admin-room">
+      <section class="section-panel admin-console">
+        <div class="section-header">
+          <span class="kicker">Partner Bank</span>
+          <h1 class="section-title">Control the earnings bank users should join.</h1>
+          <p class="section-copy">Place the referral code, signup link, and settlement details you want the user dashboard to promote. This room drives the bank CTA users see after signup and inside their earnings area.</p>
+        </div>
+
+        <div class="admin-kpi-grid">
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Bank Name</span>
+            <strong data-config="partnerBankName">BR9 Partner Bank</strong>
+            <p class="mini-note">Shown in the user earnings route card.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Referral Code</span>
+            <strong data-config="partnerBankReferralCode">BR9BANK</strong>
+            <p class="mini-note">Users can copy this code before signup.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Settlement Bank</span>
+            <strong data-config="partnerBankSettlementBankName">GTBank</strong>
+            <p class="mini-note">Preferred receiving rail for user earnings.</p>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Settlement Account</span>
+            <strong data-config="partnerBankSettlementAccountNumber">Not set</strong>
+            <p class="mini-note">Visible as the destination reference in the user dashboard.</p>
+          </article>
+        </div>
+      </section>
+
+      <form class="admin-form admin-console-form" data-form="admin-settings">
+        <input name="adminToken" type="hidden">
+
+        <section class="section-panel admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">Signup Route</span>
+              <h2>Referral link and user-facing bank CTA</h2>
+            </div>
+            <p class="section-copy">These values feed the bank card in the user dashboard so people can sign up through the exact referral link you want.</p>
+          </div>
+
+          <div class="admin-field-grid">
+            <div class="field-group">
+              <label for="admin-partner-bank-name">Partner Bank Name</label>
+              <div class="field-shell"><input id="admin-partner-bank-name" name="partnerBankName" type="text" placeholder="GTBank"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-partner-bank-signup-url">Bank Signup URL</label>
+              <div class="field-shell"><input id="admin-partner-bank-signup-url" name="partnerBankSignupUrl" type="url" placeholder="https://bank.example.com/signup"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-partner-bank-referral-code">Referral Code</label>
+              <div class="field-shell"><input id="admin-partner-bank-referral-code" name="partnerBankReferralCode" type="text" placeholder="BR9BANK"></div>
+            </div>
+            <div class="field-group admin-field-grid__full">
+              <label for="admin-partner-bank-referral-link">Referral Link</label>
+              <div class="field-shell"><input id="admin-partner-bank-referral-link" name="partnerBankReferralLink" type="url" placeholder="https://bank.example.com/signup?ref=BR9BANK"></div>
+            </div>
+            <div class="field-group admin-field-grid__full">
+              <label for="admin-partner-bank-note">User Note</label>
+              <div class="field-shell"><textarea id="admin-partner-bank-note" name="partnerBankNote" placeholder="Complete your first clean funding to turn this into your active earnings route."></textarea></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-panel admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">Earnings Route</span>
+              <h2>Where user earnings should land</h2>
+            </div>
+            <p class="section-copy">Use this as the payout destination reference shown to users once they activate their partner route.</p>
+          </div>
+
+          <div class="admin-field-grid">
+            <div class="field-group">
+              <label for="admin-partner-bank-settlement-bank-name">Settlement Bank Name</label>
+              <div class="field-shell"><input id="admin-partner-bank-settlement-bank-name" name="partnerBankSettlementBankName" type="text" placeholder="GTBank"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-partner-bank-settlement-account-name">Settlement Account Name</label>
+              <div class="field-shell"><input id="admin-partner-bank-settlement-account-name" name="partnerBankSettlementAccountName" type="text" placeholder="BayRight9ja Ltd"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-partner-bank-settlement-account-number">Settlement Account Number</label>
+              <div class="field-shell"><input id="admin-partner-bank-settlement-account-number" name="partnerBankSettlementAccountNumber" type="text" placeholder="0123456789"></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="success-banner" aria-live="polite"></div>
+        <button class="action-button" type="submit">Save Partner Bank Setup</button>
+      </form>
+    </main>
+  </div>
+
+  <div data-admin-gate></div>
+</body>
+</html>

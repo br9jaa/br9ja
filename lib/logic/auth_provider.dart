@@ -5,6 +5,21 @@ import '../models/user_model.dart';
 import 'secure_storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
+  static const bool _demoAccessEnabled = bool.fromEnvironment(
+    'DEMO_ACCESS',
+    defaultValue: false,
+  );
+  static const String _demoLoginIdentifier = String.fromEnvironment(
+    'DEMO_LOGIN_IDENTIFIER',
+    defaultValue: 'demo@br9.ng',
+  );
+  static const String _demoLoginPassword = String.fromEnvironment(
+    'DEMO_LOGIN_PASSWORD',
+    defaultValue: 'BR9demo!2026',
+  );
+  static const String _demoAccessToken = 'demo-access-token';
+  static const String _demoRefreshToken = 'demo-refresh-token';
+
   AuthProvider({
     SecureStorageService? secureStorageService,
     BR9ApiClient? apiClient,
@@ -45,6 +60,13 @@ class AuthProvider extends ChangeNotifier {
 
     if ((_accessToken == null || _accessToken!.isEmpty) &&
         (_refreshToken == null || _refreshToken!.isEmpty)) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    if (_usesDemoSession()) {
+      _restoreDemoSession();
       _isLoading = false;
       notifyListeners();
       return;
@@ -100,11 +122,27 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } on BR9ApiException catch (error) {
+      final demoLoggedIn = await _maybeLoginWithDemoUser(
+        identifier: identifier,
+        password: password,
+        rememberMe: rememberMe,
+      );
+      if (demoLoggedIn) {
+        return true;
+      }
       _errorMessage = error.message;
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (_) {
+      final demoLoggedIn = await _maybeLoginWithDemoUser(
+        identifier: identifier,
+        password: password,
+        rememberMe: rememberMe,
+      );
+      if (demoLoggedIn) {
+        return true;
+      }
       _errorMessage = 'Unable to sign in right now. Please try again.';
       _isLoading = false;
       notifyListeners();
@@ -330,5 +368,116 @@ class AuthProvider extends ChangeNotifier {
       return data;
     }
     return response;
+  }
+
+  bool _usesDemoSession() {
+    return _demoAccessEnabled &&
+        ((_accessToken ?? '') == _demoAccessToken ||
+            (_refreshToken ?? '') == _demoRefreshToken);
+  }
+
+  Future<bool> _maybeLoginWithDemoUser({
+    required String identifier,
+    required String password,
+    required bool rememberMe,
+  }) async {
+    if (!_demoAccessEnabled) {
+      return false;
+    }
+
+    final trimmedIdentifier = identifier.trim().toLowerCase();
+    if (trimmedIdentifier != _demoLoginIdentifier.toLowerCase() ||
+        password != _demoLoginPassword) {
+      return false;
+    }
+
+    final demoProfile = _buildDemoUserProfile();
+    _accessToken = _demoAccessToken;
+    _refreshToken = _demoRefreshToken;
+    _userProfile = demoProfile;
+    _isAuthenticated = true;
+    _errorMessage = null;
+    _requiresSecureDeviceTransfer = false;
+    _sessionTransferMessage = null;
+
+    await _secureStorageService.saveAuthTokens(
+      accessToken: _demoAccessToken,
+      refreshToken: _demoRefreshToken,
+    );
+
+    if (rememberMe) {
+      await _secureStorageService.saveRememberedLogin(
+        identifier: demoProfile.email,
+        email: demoProfile.email,
+        displayName: demoProfile.fullName,
+      );
+      await _secureStorageService.saveQuickUnlockPin('246810');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return true;
+  }
+
+  void _restoreDemoSession() {
+    _userProfile = _buildDemoUserProfile();
+    _isAuthenticated = true;
+    _errorMessage = null;
+    _requiresSecureDeviceTransfer = false;
+    _sessionTransferMessage = null;
+  }
+
+  UserProfile _buildDemoUserProfile() {
+    return UserProfile.fromJson({
+      'id': 'demo-user-001',
+      'fullName': 'Stan Kings',
+      'email': _demoLoginIdentifier,
+      'phoneNumber': '08030000001',
+      'phoneVerified': true,
+      'bayrightTag': '@stankings',
+      'accountNumber': '1029384756',
+      'virtualAccount': {
+        'accountNumber': '1029384756',
+        'bankName': 'GTBank',
+        'accountName': 'BR9 - 08030000001',
+        'provider': 'squad',
+        'status': 'active',
+      },
+      'kycTier': 2,
+      'walletBalance': 56390.26,
+      'br9GoldPoints': 1280,
+      'referralCode': 'STANKINGS',
+      'isLivenessVerified': true,
+      'passportPhotoDataUrl': '',
+      'favoriteTeamIds': const <String>[],
+      'transactions': [
+        {
+          'id': 'demo-tx-1',
+          'reference': 'BR9-ELEC-10024',
+          'title': 'Electricity Payment',
+          'description': 'PHCN',
+          'type': 'debit',
+          'status': 'success',
+          'amount': 12000,
+          'balanceAfter': 68390.26,
+          'createdAt': DateTime.now()
+              .subtract(const Duration(hours: 2))
+              .toIso8601String(),
+        },
+        {
+          'id': 'demo-tx-2',
+          'reference': 'BR9-AIR-0915',
+          'title': 'Airtime Purchase',
+          'description': 'MTN Nigeria',
+          'type': 'debit',
+          'status': 'success',
+          'amount': 1500,
+          'balanceAfter': 56390.26,
+          'createdAt': DateTime.now()
+              .subtract(const Duration(hours: 3))
+              .toIso8601String(),
+        },
+      ],
+    });
   }
 }

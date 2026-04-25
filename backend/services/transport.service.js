@@ -2,38 +2,17 @@
 
 const crypto = require('crypto');
 
-const axios = require('axios');
-
 const { TransportBooking } = require('../models');
 const { executeWithProviderFailover } = require('./provider_failover.service');
-
-function vtpassBaseUrl(config = {}) {
-  return (
-    config.endpoints?.vtpassBaseUrl ||
-    process.env.VTPASS_BASE_URL ||
-    'https://vtpass.com/api'
-  ).replace(/\/$/, '');
-}
-
-function vtpassHeaders() {
-  return {
-    'api-key': process.env.VTPASS_API_KEY,
-    'public-key': process.env.VTPASS_PUBLIC_KEY,
-    'secret-key': process.env.VTPASS_SECRET_KEY,
-    'Content-Type': 'application/json',
-  };
-}
+const {
+  hasVTpassCredentials,
+  normaliseVTpassStatus,
+  payService,
+  verifyMerchant,
+} = require('./vtpass.service');
 
 function shouldUseDemoVendor() {
   return process.env.NODE_ENV !== 'production' && process.env.VENDING_DEMO !== 'false';
-}
-
-function hasVtpassCredentials() {
-  return Boolean(
-    process.env.VTPASS_API_KEY ||
-      process.env.VTPASS_PUBLIC_KEY ||
-      process.env.VTPASS_SECRET_KEY
-  );
 }
 
 function reference(prefix) {
@@ -71,22 +50,18 @@ async function verifyLccAccount(accountID) {
         };
       }
 
-      if (provider !== 'vtpass' || !hasVtpassCredentials()) {
+      if (provider !== 'vtpass' || !hasVTpassCredentials()) {
         throw missingProviderCredentials(provider);
       }
 
-      const response = await axios.post(
-        `${vtpassBaseUrl(config)}/merchant-verify`,
+      const response = await verifyMerchant(
         {
           billersCode: accountID,
           serviceID: process.env.VTPASS_LCC_SERVICE_ID || 'lcc',
         },
-        {
-          timeout: Number(process.env.VENDOR_TIMEOUT_MS || 15000),
-          headers: vtpassHeaders(),
-        }
+        { config }
       );
-      const content = response.data?.content || response.data?.data || response.data || {};
+      const content = response?.content || response?.data || response || {};
 
       return {
         accountID,
@@ -123,36 +98,39 @@ async function topupLcc(accountID, amount, phone) {
         };
       }
 
-      if (provider !== 'vtpass' || !hasVtpassCredentials()) {
+      if (provider !== 'vtpass' || !hasVTpassCredentials()) {
         throw missingProviderCredentials(provider);
       }
 
-      const response = await axios.post(
-        `${vtpassBaseUrl(config)}/pay`,
+      const response = await payService(
         {
-          request_id: reference('LCC'),
           serviceID: process.env.VTPASS_LCC_SERVICE_ID || 'lcc',
           billersCode: accountID,
+          requestId: reference('LCC'),
           amount,
           phone,
         },
-        {
-          timeout: Number(process.env.VENDOR_TIMEOUT_MS || 15000),
-          headers: vtpassHeaders(),
-        }
+        { config }
       );
 
       return {
         accountID,
+        status: normaliseVTpassStatus(
+          response?.content?.status ||
+            response?.code ||
+            response?.response_description ||
+            response?.message,
+          'success'
+        ),
         receiptNumber: String(
-          response.data?.requestId ||
-            response.data?.content?.receiptNumber ||
-            response.data?.content?.transactionId ||
+          response?.requestId ||
+            response?.content?.receiptNumber ||
+            response?.content?.transactionId ||
             ''
         ),
         amount,
         provider: 'vtpass',
-        raw: response.data,
+        raw: response,
       };
     },
   });

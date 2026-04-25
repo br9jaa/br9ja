@@ -5,9 +5,25 @@ const crypto = require('crypto');
 const axios = require('axios');
 const mongoose = require('mongoose');
 
-const { Transaction, User, UserNotification } = require('../models');
+const {
+  SecurityEvent,
+  Transaction,
+  User,
+  UserNotification,
+} = require('../models');
+const { grantConfiguredReward } = require('./br9_gold.service');
 const { getProviderConfig } = require('./provider_config.service');
-const { shouldFailover } = require('./provider_failover.service');
+const { sendSendchampMessage, sendSendchampPush } = require('./sendchamp.service');
+const {
+  createTransactionAuditLog,
+  enforceFundingVelocity,
+  logSecurityIncident,
+  readSiteConfigSnapshot,
+  sendAdminEmergencyAlert,
+  shouldRequireAdminFundingApproval,
+  validateWebhookFundingAmount,
+  withTransactionMutex,
+} = require('./transaction_integrity.service');
 
 function createReference(prefix) {
   return `BR9-${prefix}-${Date.now().toString(36).toUpperCase()}-${crypto
@@ -31,9 +47,104 @@ function stableDigits(value, length = 10) {
 }
 
 function accountNameForUser(user) {
-  return String(user.bayrightTag || user.fullName || 'BR9ja User')
+  if (user?.isNameLocked || user?.fullNameLockedAt) {
+    return String(user.fullName || user.bayrightTag || 'BR9ja User')
+      .trim()
+      .toUpperCase();
+  }
+
+  const phoneDigits = String(user?.phoneNumber || '')
+    .replace(/\D/g, '')
+    .slice(-11);
+  return `BR9 - ${phoneDigits || 'USER'}`
     .trim()
     .toUpperCase();
+}
+
+function sanitiseVerifiedName(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+}
+
+function normaliseNameForMatch(value) {
+  return sanitiseVerifiedName(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function levenshteinDistance(source, target) {
+  const left = String(source || '');
+  const right = String(target || '');
+
+  if (left === right) {
+    return 0;
+  }
+
+  if (!left.length) {
+    return right.length;
+  }
+
+  if (!right.length) {
+    return left.length;
+  }
+
+  const grid = Array.from({ length: left.length + 1 }, (_, rowIndex) =>
+    Array.from({ length: right.length + 1 }, (_item, columnIndex) =>
+      rowIndex === 0 ? columnIndex : columnIndex === 0 ? rowIndex : 0
+    )
+  );
+
+  for (let row = 1; row <= left.length; row += 1) {
+    for (let column = 1; column <= right.length; column += 1) {
+      const cost = left[row - 1] === right[column - 1] ? 0 : 1;
+      grid[row][column] = Math.min(
+        grid[row - 1][column] + 1,
+        grid[row][column - 1] + 1,
+        grid[row - 1][column - 1] + cost
+      );
+    }
+  }
+
+  return grid[left.length][right.length];
+}
+
+function calculateNameSimilarity(leftValue, rightValue) {
+  const left = normaliseNameForMatch(leftValue);
+  const right = normaliseNameForMatch(rightValue);
+
+  if (!left || !right) {
+    return 0;
+  }
+
+  if (left === right) {
+    return 1;
+  }
+
+  const leftTokens = left.split(' ').filter(Boolean);
+  const rightTokens = right.split(' ').filter(Boolean);
+  const shorterTokens =
+    leftTokens.length <= rightTokens.length ? leftTokens : rightTokens;
+  const longerTokens =
+    leftTokens.length > rightTokens.length ? leftTokens : rightTokens;
+
+  const containmentScore = shorterTokens.every((token) => longerTokens.includes(token))
+    ? shorterTokens.length / Math.max(longerTokens.length, 1)
+    : 0;
+
+  const firstLastScore =
+    leftTokens[0] === rightTokens[0] &&
+    leftTokens[leftTokens.length - 1] === rightTokens[rightTokens.length - 1]
+      ? 0.75
+      : 0;
+
+  const distance = levenshteinDistance(left, right);
+  const lengthScore = 1 - distance / Math.max(left.length, right.length, 1);
+
+  return Math.max(containmentScore, firstLastScore, lengthScore);
 }
 
 function splitName(fullName) {
@@ -50,12 +161,9 @@ function splitName(fullName) {
 function buildDemoVirtualAccount(user, provider = 'squad', config = {}) {
   const accountNumber = stableDigits(user._id || user.email || user.phoneNumber);
   return {
-    provider: `${provider}-demo`,
+    provider: 'squad-demo',
     accountNumber,
-    bankName:
-      provider === 'monnify'
-        ? 'Providus Bank'
-        : config.funding?.defaultBankLabel || 'GTBank',
+    bankName: config.funding?.defaultBankLabel || 'GTBank',
     accountName: accountNameForUser(user),
     reference: `BR9VA-${String(user._id)}`,
     status: 'provisional',
@@ -90,7 +198,7 @@ function normaliseVirtualAccount(payload, provider, user) {
         data.bank ||
         firstAccount?.bankName ||
         ''
-    ).trim() || (provider === 'squad' ? 'GTBank' : 'Providus Bank'),
+    ).trim() || 'GTBank',
     accountName: String(
       data.account_name ||
         data.accountName ||
@@ -119,16 +227,7 @@ async function createSquadVirtualAccount(user, config) {
   const defaultAddress = process.env.SQUAD_DEFAULT_ADDRESS || '';
   const beneficiaryAccount = process.env.SQUAD_BENEFICIARY_ACCOUNT || '';
 
-  if (
-    shouldUseDemoFunding() ||
-    !apiKey ||
-    !baseUrl ||
-    !defaultBvn ||
-    !defaultDob ||
-    !defaultGender ||
-    !defaultAddress ||
-    !beneficiaryAccount
-  ) {
+  if (shouldUseDemoFunding() || !apiKey || !baseUrl) {
     return buildDemoVirtualAccount(user, 'squad', config);
   }
 
@@ -142,11 +241,11 @@ async function createSquadVirtualAccount(user, config) {
       mobile_num: user.phoneNumber,
       email: user.email,
       account_name: accountNameForUser(user),
-      beneficiary_account: beneficiaryAccount,
-      bvn: defaultBvn,
-      dob: defaultDob,
-      gender: defaultGender,
-      address: defaultAddress,
+      ...(beneficiaryAccount ? { beneficiary_account: beneficiaryAccount } : {}),
+      ...(defaultBvn ? { bvn: defaultBvn } : {}),
+      ...(defaultDob ? { dob: defaultDob } : {}),
+      ...(defaultGender ? { gender: defaultGender } : {}),
+      ...(defaultAddress ? { address: defaultAddress } : {}),
     },
     {
       timeout: Number(process.env.VENDOR_TIMEOUT_MS || 15000),
@@ -160,83 +259,10 @@ async function createSquadVirtualAccount(user, config) {
   return normaliseVirtualAccount(response.data, 'squad', user);
 }
 
-async function getMonnifyToken(config) {
-  const apiKey = process.env.MONNIFY_API_KEY || '';
-  const secretKey = process.env.MONNIFY_SECRET_KEY || '';
-  const baseUrl = String(config.endpoints?.monnifyBaseUrl || '').replace(/\/$/, '');
-
-  if (!apiKey || !secretKey || !baseUrl) {
-    const error = new Error('Monnify credentials are not configured.');
-    error.statusCode = 503;
-    throw error;
-  }
-
-  const response = await axios.post(
-    `${baseUrl}/api/v1/auth/login`,
-    {},
-    {
-      timeout: Number(process.env.VENDOR_TIMEOUT_MS || 15000),
-      auth: {
-        username: apiKey,
-        password: secretKey,
-      },
-    }
-  );
-
-  return response.data?.responseBody?.accessToken || response.data?.accessToken || '';
-}
-
-async function createMonnifyVirtualAccount(user, config) {
-  const baseUrl = String(config.endpoints?.monnifyBaseUrl || '').replace(/\/$/, '');
-  const contractCode = process.env.MONNIFY_CONTRACT_CODE || '';
-
-  if (shouldUseDemoFunding() || !baseUrl || !contractCode) {
-    return buildDemoVirtualAccount(user, 'monnify', config);
-  }
-
-  const accessToken = await getMonnifyToken(config);
-  if (!accessToken) {
-    const error = new Error('Monnify did not return an access token.');
-    error.statusCode = 502;
-    throw error;
-  }
-
-  const response = await axios.post(
-    `${baseUrl}/api/v2/bank-transfer/reserved-accounts`,
-    {
-      accountReference: `BR9VA-${String(user._id)}`,
-      accountName: accountNameForUser(user),
-      currencyCode: 'NGN',
-      contractCode,
-      customerEmail: user.email,
-      customerName: user.fullName,
-      getAllAvailableBanks: false,
-      preferredBanks: ['058', '101'],
-      ...(process.env.MONNIFY_DEFAULT_BVN
-        ? { bvn: process.env.MONNIFY_DEFAULT_BVN }
-        : {}),
-      ...(process.env.MONNIFY_DEFAULT_NIN
-        ? { nin: process.env.MONNIFY_DEFAULT_NIN }
-        : {}),
-    },
-    {
-      timeout: Number(process.env.VENDOR_TIMEOUT_MS || 15000),
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-
-  return normaliseVirtualAccount(response.data, 'monnify', user);
-}
-
 async function createVirtualAccountWithProvider(provider, user, config) {
   switch (provider) {
     case 'squad':
       return createSquadVirtualAccount(user, config);
-    case 'monnify':
-      return createMonnifyVirtualAccount(user, config);
     case 'demo':
       return buildDemoVirtualAccount(user, 'demo', config);
     default: {
@@ -257,36 +283,26 @@ async function ensureUserVirtualAccount(userOrId) {
     return null;
   }
 
+  if (!user.phoneVerifiedAt) {
+    return user;
+  }
+
   if (user.virtualAccountNumber) {
     return user;
   }
 
   const config = await getProviderConfig();
-  const providers = [config.funding.primaryProvider];
-  if (
-    config.funding.backupProvider &&
-    config.funding.backupProvider !== config.funding.primaryProvider
-  ) {
-    providers.push(config.funding.backupProvider);
-  }
-  providers.push('demo');
-
   let account;
   let lastError;
-  for (const provider of [...new Set(providers)]) {
-    try {
-      account = await createVirtualAccountWithProvider(provider, user, config);
-      break;
-    } catch (error) {
-      lastError = error;
-      if (!shouldFailover(error)) {
-        break;
-      }
-    }
+
+  try {
+    account = await createVirtualAccountWithProvider('squad', user, config);
+  } catch (error) {
+    lastError = error;
   }
 
   if (!account) {
-    account = buildDemoVirtualAccount(user, config.funding.primaryProvider, config);
+    account = buildDemoVirtualAccount(user, 'squad', config);
     account.raw = { fallbackReason: lastError?.message || 'unknown' };
   }
 
@@ -309,7 +325,6 @@ function extractDepositPayload(payload = {}, headers = {}) {
     payload.provider ||
       data.provider ||
       (headers['x-squad-signature'] ? 'squad' : '') ||
-      (headers['monnify-signature'] ? 'monnify' : '') ||
       'unknown'
   ).toLowerCase();
 
@@ -357,11 +372,44 @@ function extractDepositPayload(payload = {}, headers = {}) {
         ''
     ).trim(),
     payerName: String(
-      data.senderName ||
+      data.customerName ||
+        data.customer_name ||
+        data.senderName ||
         data.payerName ||
         data.originatorName ||
         data.originatorAccountName ||
         data.sourceAccountName ||
+        ''
+    ).trim(),
+    customerEmail: String(
+      data.customerEmail ||
+        data.customer_email ||
+        data.customer?.email ||
+        data.email ||
+        ''
+    )
+      .trim()
+      .toLowerCase(),
+    senderAccountNumber: String(
+      data.senderAccountNumber ||
+        data.sender_account_number ||
+        data.sourceAccountNumber ||
+        data.source_account_number ||
+        data.originatorAccountNumber ||
+        data.originator_account_number ||
+        data.payerAccountNumber ||
+        data.payer_account_number ||
+        data.sourceAccountDetails?.accountNumber ||
+        ''
+    ).trim(),
+    senderBankName: String(
+      data.senderBankName ||
+        data.sender_bank_name ||
+        data.sourceBankName ||
+        data.source_bank_name ||
+        data.originatorBankName ||
+        data.originator_bank_name ||
+        data.sourceAccountDetails?.bankName ||
         ''
     ).trim(),
     raw: payload,
@@ -369,7 +417,11 @@ function extractDepositPayload(payload = {}, headers = {}) {
 }
 
 function verifyDepositSignature({ headers, rawBody }) {
-  const squadSecret = process.env.SQUAD_WEBHOOK_SECRET || '';
+  const squadSecret =
+    process.env.SQUAD_WEBHOOK_SECRET ||
+    process.env.SQUAD_SECRET_KEY ||
+    process.env.SQUAD_API_KEY ||
+    '';
   const squadSignature = headers['x-squad-signature'];
   if (squadSecret && squadSignature) {
     const digest = crypto
@@ -385,23 +437,229 @@ function verifyDepositSignature({ headers, rawBody }) {
     );
   }
 
-  const monnifySecret = process.env.MONNIFY_WEBHOOK_SECRET || '';
-  const monnifySignature = headers['monnify-signature'];
-  if (monnifySecret && monnifySignature) {
-    const digest = crypto
-      .createHmac('sha512', monnifySecret)
-      .update(rawBody || '')
-      .digest('hex');
-    if (digest.length !== String(monnifySignature).length) {
-      return false;
+  return true;
+}
+
+async function settleWalletFunding({
+  user,
+  creditedAmount,
+  senderName = '',
+  note = 'Wallet funding',
+  metadata = {},
+  notificationTitle = 'Wallet Funded',
+  notificationBody = '',
+  verificationSource = 'transaction_success',
+}) {
+  const providerReference = String(
+    metadata.providerReference || metadata.reference || ''
+  ).trim();
+
+  if (providerReference) {
+    const duplicate = await Transaction.findOne({
+      type: 'Deposit',
+      'metadata.providerReference': providerReference,
+    }).lean();
+
+    if (duplicate) {
+      return {
+        duplicate: true,
+        reference: duplicate.reference,
+        transactionId: duplicate._id?.toString?.() || '',
+        creditedAmount: Number(duplicate.amount || 0),
+        balanceAfter: Number(duplicate.balanceAfter || user.balance || 0),
+        newlyVerified: false,
+        verifiedName: user.fullName,
+      };
     }
-    return crypto.timingSafeEqual(
-      Buffer.from(digest),
-      Buffer.from(String(monnifySignature))
-    );
   }
 
-  return true;
+  const session = await mongoose.startSession();
+  let result;
+  let pushPayload = null;
+
+  try {
+    await session.withTransaction(async () => {
+      const liveUser = await User.findById(user._id).session(session);
+      if (!liveUser) {
+        const error = new Error('User not found for wallet funding settlement.');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      const verifiedName = sanitiseVerifiedName(senderName);
+      const now = new Date();
+      const newlyVerified = Boolean(
+        verifiedName && !liveUser.isVerified
+      );
+
+      if (newlyVerified) {
+        liveUser.fullName = verifiedName;
+        liveUser.isVerified = true;
+        liveUser.verifiedAt = now;
+        liveUser.verifiedNameSource = verificationSource;
+        liveUser.isNameLocked = true;
+        liveUser.fullNameLockedAt = liveUser.fullNameLockedAt || now;
+      }
+
+      if (!liveUser.primaryFundingSourceAccountNumber && metadata.senderAccountNumber) {
+        liveUser.primaryFundingSourceAccountNumber = String(
+          metadata.senderAccountNumber || ''
+        ).trim();
+        liveUser.primaryFundingSourceBankName = String(
+          metadata.senderBankName || ''
+        ).trim();
+        liveUser.primaryFundingSourceName =
+          verifiedName || sanitiseVerifiedName(senderName);
+        liveUser.primaryFundingSourceLinkedAt = now;
+      }
+
+      liveUser.balance = Number(liveUser.balance || 0) + Number(creditedAmount || 0);
+      await liveUser.save({ session });
+
+      const [transaction] = await Transaction.create(
+        [
+          {
+            senderId: liveUser._id,
+            userId: liveUser._id,
+            receiverId: liveUser._id,
+            senderName: verifiedName || senderName || 'Bank Transfer',
+            receiverName: liveUser.fullName,
+            amount: creditedAmount,
+            type: 'Deposit',
+            status: 'success',
+            timestamp: now,
+            reference: createReference('DEP'),
+            note,
+            balanceAfter: liveUser.balance,
+            currency: 'NGN',
+            metadata,
+          },
+        ],
+        { session }
+      );
+
+      await createTransactionAuditLog({
+        transactionId: transaction._id,
+        userId: liveUser._id,
+        step: 'wallet_credited',
+        status: 'success',
+        message: 'Funding webhook credited the user wallet successfully.',
+        metadata: {
+          providerReference,
+          creditedAmount,
+          verificationSource,
+        },
+        session,
+      });
+
+      const body =
+        newlyVerified && verifiedName
+          ? `Wallet Funded! Your profile is now verified as ${verifiedName}.`
+          : notificationBody ||
+            `₦${Number(creditedAmount || 0).toLocaleString()} has landed in your BR9ja wallet.`;
+
+      const [notification] = await UserNotification.create(
+        [
+          {
+            userId: liveUser._id,
+            title: notificationTitle,
+            body,
+            type: newlyVerified ? 'verification' : 'deposit',
+            status: 'queued',
+            metadata: {
+              transactionId: transaction._id.toString(),
+              providerReference,
+              ...metadata,
+            },
+          },
+        ],
+        { session }
+      );
+
+      pushPayload = {
+        user: {
+          id: liveUser._id.toString(),
+          email: liveUser.email,
+          phoneNumber: liveUser.phoneNumber,
+        },
+        title: notification.title,
+        body: notification.body,
+        data: {
+          transactionId: transaction._id.toString(),
+          providerReference,
+        },
+      };
+
+      const firstFundingReward =
+        liveUser.isVerified && Number(creditedAmount || 0) >= 1000
+          ? await grantConfiguredReward({
+              userId: liveUser._id,
+              reason: 'first_deposit',
+              note: 'First funding reward',
+              session,
+              metadata: {
+                trigger: verificationSource,
+                providerReference,
+              },
+            })
+          : { granted: false, points: 0 };
+
+      result = {
+        duplicate: false,
+        userId: liveUser._id.toString(),
+        transactionId: transaction._id.toString(),
+        reference: transaction.reference,
+        creditedAmount: Number(creditedAmount || 0),
+        balanceAfter: liveUser.balance,
+        newlyVerified,
+        verifiedName: liveUser.fullName,
+        rewardGranted: firstFundingReward.granted ? firstFundingReward.points : 0,
+      };
+    });
+  } finally {
+    await session.endSession();
+  }
+
+  if (pushPayload) {
+    sendSendchampPush(pushPayload).catch((error) => {
+      console.warn('Sendchamp push failed for wallet funding.', error?.message || error);
+    });
+
+    const creditAlert = `Your BR9ja wallet has been credited with ₦${Number(
+      result?.creditedAmount || 0
+    ).toLocaleString()}. Current Balance: ₦${Number(
+      result?.balanceAfter || 0
+    ).toLocaleString()}.`;
+
+    sendSendchampMessage({
+      channel: 'sms',
+      to: pushPayload.user.phoneNumber,
+      message: creditAlert,
+    }).catch((error) => {
+      console.warn('Sendchamp SMS alert failed.', error?.message || error);
+    });
+
+    sendSendchampMessage({
+      channel: 'whatsapp',
+      to: pushPayload.user.phoneNumber,
+      message: creditAlert,
+    }).catch((error) => {
+      console.warn('Sendchamp WhatsApp alert failed.', error?.message || error);
+    });
+
+    if (Number(result?.rewardGranted || 0) > 0) {
+      sendSendchampMessage({
+        channel: 'whatsapp',
+        to: pushPayload.user.phoneNumber,
+        message:
+          'Welcome to the Bayright family! 🚀 Your Gold rewards are waiting.',
+      }).catch((error) => {
+        console.warn('Sendchamp first-funding welcome failed.', error?.message || error);
+      });
+    }
+  }
+
+  return result;
 }
 
 async function creditDepositFromWebhook({ payload, headers = {}, rawBody = '' }) {
@@ -429,6 +687,7 @@ async function creditDepositFromWebhook({ payload, headers = {}, rawBody = '' })
             { accountNumber: event.accountNumber },
           ]
         : []),
+      ...(event.customerEmail ? [{ email: event.customerEmail }] : []),
     ],
   };
 
@@ -445,107 +704,259 @@ async function creditDepositFromWebhook({ payload, headers = {}, rawBody = '' })
     throw error;
   }
 
-  const duplicate = await Transaction.findOne({
-    type: 'Deposit',
-    'metadata.providerReference': event.providerReference,
-  }).lean();
+  return withTransactionMutex(`funding:${event.providerReference || event.accountNumber}`, async () => {
+    const amountCheck = await validateWebhookFundingAmount({
+      userId: user._id,
+      provider: event.provider,
+      providerReference: event.providerReference,
+      callbackAmount: event.grossAmount,
+      metadata: {
+        sourceUnit: payload?.data?.currency_unit || payload?.currency_unit || 'naira',
+      },
+    });
 
-  if (duplicate) {
-    return {
-      duplicate: true,
-      reference: duplicate.reference,
-      creditedAmount: Number(duplicate.amount || 0),
-      balanceAfter: Number(duplicate.balanceAfter || user.balance || 0),
-    };
-  }
+    if (!amountCheck.verified) {
+      const error = new Error('Funding amount verification failed.');
+      error.statusCode = 409;
+      throw error;
+    }
 
-  const config = await getProviderConfig();
-  const providerFee = Math.round(
-    event.grossAmount * (Number(config.funding.providerFeeBps || 0) / 10000)
-  );
-  const zeroFeeBalance = config.funding.zeroFeeBalance !== false;
-  const creditedAmount = zeroFeeBalance
-    ? event.grossAmount
-    : Math.max(event.grossAmount - providerFee, 0);
-  const operationalExpense = zeroFeeBalance ? providerFee : 0;
+    const config = await getProviderConfig();
+    const siteConfig = await readSiteConfigSnapshot();
+    const providerFee = Math.round(
+      event.grossAmount * (Number(config.funding.providerFeeBps || 0) / 10000)
+    );
+    const zeroFeeBalance = config.funding.zeroFeeBalance !== false;
+    const creditedAmount = zeroFeeBalance
+      ? event.grossAmount
+      : Math.max(event.grossAmount - providerFee, 0);
+    const operationalExpense = zeroFeeBalance ? providerFee : 0;
+    const nameSimilarity = calculateNameSimilarity(event.payerName, user.fullName);
+    const requiresManualReview =
+      Boolean(user.isVerified) &&
+      Boolean(event.payerName) &&
+      nameSimilarity < 0.7;
+    const highValueHold = shouldRequireAdminFundingApproval(
+      creditedAmount,
+      siteConfig.maxAutoFundLimit
+    );
 
-  const session = await mongoose.startSession();
-  let result;
-
-  try {
-    await session.withTransaction(async () => {
-      user.balance = Number(user.balance || 0) + creditedAmount;
-      await user.save({ session });
-
-      const [transaction] = await Transaction.create(
-        [
-          {
-            senderId: user._id,
-            userId: user._id,
-            receiverId: user._id,
-            senderName: event.payerName || 'Bank Transfer',
-            receiverName: user.fullName,
-            amount: creditedAmount,
-            type: 'Deposit',
-            status: 'success',
-            timestamp: new Date(),
-            reference: createReference('DEP'),
-            note: `${event.provider.toUpperCase()} virtual account funding`,
-            balanceAfter: user.balance,
-            currency: 'NGN',
-            metadata: {
-              provider: event.provider,
-              providerReference: event.providerReference,
-              grossAmount: event.grossAmount,
-              creditedAmount,
-              providerFee,
-              operationalExpense,
-              zeroFeeBalance,
-              accountNumber: event.accountNumber,
-              accountReference: event.accountReference,
-            },
+    if (requiresManualReview) {
+      const [transaction, notification] = await Promise.all([
+        Transaction.create({
+          senderId: user._id,
+          userId: user._id,
+          receiverId: user._id,
+          senderName: event.payerName || 'Bank Transfer',
+          receiverName: user.fullName,
+          amount: creditedAmount,
+          type: 'Deposit',
+          status: 'pending_review',
+          timestamp: new Date(),
+          reference: createReference('DEPREVIEW'),
+          note: 'Deposit flagged for manual review due to funding name mismatch.',
+          balanceAfter: Number(user.balance || 0),
+          currency: 'NGN',
+          metadata: {
+            provider: event.provider,
+            providerReference: event.providerReference,
+            senderAccountNumber: event.senderAccountNumber,
+            senderBankName: event.senderBankName,
+            incomingSenderName: event.payerName,
+            profileName: user.fullName,
+            nameSimilarity,
+            reviewReason: 'funding_name_mismatch',
           },
-        ],
-        { session }
-      );
-
-      await UserNotification.create(
-        [
-          {
-            userId: user._id,
-            title: 'Deposit Received',
-            body: `₦${creditedAmount.toLocaleString()} has landed in your BR9ja wallet.`,
-            type: 'deposit',
-            status: 'queued',
-            metadata: {
-              transactionId: transaction._id.toString(),
-              providerReference: event.providerReference,
-            },
+        }),
+        UserNotification.create({
+          userId: user._id,
+          title: 'Deposit Under Review',
+          body: 'We received a transfer, but the sender name did not match your locked profile. BR9ja support will review it before crediting your wallet.',
+          type: 'security',
+          status: 'queued',
+          metadata: {
+            providerReference: event.providerReference,
+            nameSimilarity,
           },
-        ],
-        { session }
-      );
+        }),
+        SecurityEvent.create({
+          userId: user._id,
+          email: user.email,
+          bayrightTag: user.bayrightTag,
+          eventType: 'funding_name_mismatch',
+          severity: 'high',
+          route: '/api/v1/webhooks/squad-settlement',
+          method: 'POST',
+          message: 'Incoming funding name did not match the locked account profile.',
+          metadata: {
+            provider: event.provider,
+            providerReference: event.providerReference,
+            incomingSenderName: event.payerName,
+            profileName: user.fullName,
+            senderAccountNumber: event.senderAccountNumber,
+            senderBankName: event.senderBankName,
+            nameSimilarity,
+          },
+        }),
+      ]);
 
-      result = {
+      await Promise.all([
+        createTransactionAuditLog({
+          transactionId: transaction._id,
+          userId: user._id,
+          step: 'funding_name_lock_review',
+          status: 'warning',
+          message: 'Incoming funding name failed the 70% similarity check and was queued for admin review.',
+          metadata: {
+            providerReference: event.providerReference,
+            nameSimilarity,
+          },
+        }),
+        logSecurityIncident({
+          userId: user._id,
+          transactionId: transaction._id,
+          incidentType: 'funding-name-mismatch',
+          severity: 'high',
+          message: 'Future deposit name did not match the locked funding identity.',
+          metadata: {
+            providerReference: event.providerReference,
+            incomingSenderName: event.payerName,
+            profileName: user.fullName,
+            nameSimilarity,
+          },
+        }),
+      ]);
+
+      sendSendchampPush({
+        user: {
+          id: user._id.toString(),
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+        },
+        title: notification.title,
+        body: notification.body,
+        data: {
+          transactionId: transaction._id.toString(),
+          providerReference: event.providerReference,
+          reviewReason: 'funding_name_mismatch',
+        },
+      }).catch((error) => {
+        console.warn(
+          'Sendchamp push failed for manual-review funding.',
+          error?.message || error
+        );
+      });
+
+      return {
         duplicate: false,
-        userId: user._id.toString(),
+        manualReview: true,
+        transactionId: transaction._id.toString(),
         reference: transaction.reference,
+        creditedAmount: 0,
+        balanceAfter: Number(user.balance || 0),
+        newlyVerified: false,
+        verifiedName: user.fullName,
+        nameSimilarity,
+      };
+    }
+
+    if (highValueHold) {
+      const transaction = await Transaction.create({
+        senderId: user._id,
+        userId: user._id,
+        receiverId: user._id,
+        senderName: event.payerName || 'Bank Transfer',
+        receiverName: user.fullName,
+        amount: creditedAmount,
+        type: 'Deposit',
+        status: 'pending_admin_approval',
+        timestamp: new Date(),
+        reference: createReference('DEPHOLD'),
+        note: 'Large deposit detected and queued for admin approval.',
+        balanceAfter: Number(user.balance || 0),
+        currency: 'NGN',
+        metadata: {
+          provider: event.provider,
+          providerReference: event.providerReference,
+          grossAmount: event.grossAmount,
+          creditedAmount,
+          senderAccountNumber: event.senderAccountNumber,
+          senderBankName: event.senderBankName,
+          incomingSenderName: event.payerName,
+          approvalReason: 'high_value_deposit',
+        },
+      });
+
+      await createTransactionAuditLog({
+        transactionId: transaction._id,
+        userId: user._id,
+        step: 'high_value_hold',
+        status: 'warning',
+        message: 'Large deposit placed into pending admin approval.',
+        metadata: {
+          creditedAmount,
+          maxAutoFundLimit: Number(siteConfig.maxAutoFundLimit || 0),
+        },
+      });
+
+      await sendAdminEmergencyAlert(
+        `🚨 BR9JA ALERT: High-value deposit (₦${creditedAmount.toLocaleString()}) by User ${user.bayrightTag || user.email}. Wallet has been frozen pending your approval.`
+      ).catch(() => {});
+
+      return {
+        duplicate: false,
+        manualReview: false,
+        pendingApproval: true,
+        transactionId: transaction._id.toString(),
+        reference: transaction.reference,
+        creditedAmount: 0,
+        balanceAfter: Number(user.balance || 0),
+        newlyVerified: false,
+        verifiedName: user.fullName,
+      };
+    }
+
+    const result = await settleWalletFunding({
+      user,
+      creditedAmount,
+      senderName: event.payerName,
+      note: `${event.provider.toUpperCase()} virtual account funding`,
+      notificationTitle: 'Wallet Funded',
+      verificationSource: 'squad_settlement',
+      metadata: {
+        provider: event.provider,
         providerReference: event.providerReference,
         grossAmount: event.grossAmount,
         creditedAmount,
         providerFee,
         operationalExpense,
-        balanceAfter: user.balance,
-      };
+        zeroFeeBalance,
+        accountNumber: event.accountNumber,
+        accountReference: event.accountReference,
+        senderAccountNumber: event.senderAccountNumber,
+        senderBankName: event.senderBankName,
+      },
     });
-  } finally {
-    await session.endSession();
-  }
 
-  return result;
+    const velocity = await enforceFundingVelocity(user._id);
+    if (velocity.flagged) {
+      await sendAdminEmergencyAlert(
+        `🚨 BR9JA ALERT: High funding velocity detected for ${user.bayrightTag || user.email}. ${velocity.count} deposits inside ${velocity.windowMinutes} minutes.`
+      ).catch(() => {});
+    }
+
+    return {
+      ...result,
+      providerReference: event.providerReference,
+      grossAmount: event.grossAmount,
+      providerFee,
+      operationalExpense,
+    };
+  });
 }
 
 module.exports = {
   creditDepositFromWebhook,
   ensureUserVirtualAccount,
+  settleWalletFunding,
 };

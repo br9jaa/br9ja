@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja Trivia Control</title>
+  <meta name="description" content="Private BR9ja trivia control room for Sunday Live sessions and bulk question upload.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/apple_touch_icon.png">
+  <link rel="stylesheet" href="../main.css">
+  <script defer src="../main.js"></script>
+</head>
+<body data-page="admin-trivia" data-base=".." data-authenticated="true" data-admin-room="trivia">
+  <div class="admin-layout">
+    <div data-admin-shell></div>
+
+    <main class="section-stack admin-room">
+      <section class="section-panel admin-console">
+        <div class="section-header">
+          <span class="kicker">Trivia</span>
+          <h1 class="section-title">Load Sunday Live without being at your desk.</h1>
+          <p class="section-copy">Upload CSV questions, tune the next session, and push the scheduler forward when you need a manual nudge.</p>
+        </div>
+
+        <div class="admin-mini-grid" data-trivia-session-summary>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Current Session</span>
+            <strong>Loading…</strong>
+            <span class="mini-note">Unlocking this room loads the Sunday Live queue.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">CSV Upload</span>
+            <h2>Paste question rows in one shot</h2>
+          </div>
+          <p class="section-copy">Header example: question, optionA, optionB, optionC, optionD, correctOption, category, rewardPoints.</p>
+        </div>
+
+        <form class="admin-form" data-form="trivia-upload">
+          <div class="field-group">
+            <label for="trivia-csv-text">CSV Text</label>
+            <div class="field-shell">
+              <textarea id="trivia-csv-text" name="csvText" placeholder="question,optionA,optionB,optionC,optionD,correctOption,category,rewardPoints"></textarea>
+            </div>
+          </div>
+          <div class="admin-submit-row">
+            <p class="success-banner" data-trivia-feedback aria-live="polite"></p>
+            <button class="action-button" type="submit">Upload Questions</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Session Control</span>
+            <h2>Schedule the next Sunday Live run</h2>
+          </div>
+        </div>
+
+        <form class="admin-form" data-form="trivia-session">
+          <div class="admin-field-grid">
+            <div class="field-group">
+              <label for="trivia-session-title">Title</label>
+              <div class="field-shell"><input id="trivia-session-title" name="title" type="text" placeholder="Sunday Live Trivia Rush"></div>
+            </div>
+            <div class="field-group">
+              <label for="trivia-session-state">State</label>
+              <div class="field-shell">
+                <select id="trivia-session-state" name="state">
+                  <option value="scheduled">Scheduled</option>
+                  <option value="waiting_room">Waiting Room</option>
+                  <option value="live">Live</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="trivia-session-scheduled">Scheduled For</label>
+              <div class="field-shell"><input id="trivia-session-scheduled" name="scheduledFor" type="datetime-local"></div>
+            </div>
+            <div class="field-group">
+              <label for="trivia-session-entry">Entry Gold</label>
+              <div class="field-shell"><input id="trivia-session-entry" name="entryGoldCost" type="number" min="0" step="1" placeholder="50"></div>
+            </div>
+            <div class="field-group">
+              <label for="trivia-session-prize">Prize Label</label>
+              <div class="field-shell"><input id="trivia-session-prize" name="rewardLabel" type="text" placeholder="₦5,000 Data"></div>
+            </div>
+            <div class="field-group">
+              <label for="trivia-session-pool">Prize Pool Gold</label>
+              <div class="field-shell"><input id="trivia-session-pool" name="prizePoolGold" type="number" min="0" step="1" placeholder="500"></div>
+            </div>
+          </div>
+          <div class="admin-submit-row">
+            <button class="ghost-button" type="button" data-trivia-advance>Advance Scheduler</button>
+            <button class="action-button" type="submit">Save Session</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Question Bank</span>
+            <h2>Recent trivia questions</h2>
+          </div>
+          <a class="ghost-button" href="#" data-trivia-download>Download CSV</a>
+        </div>
+
+        <div class="admin-table-shell">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Question</th>
+                <th>Category</th>
+                <th>Reward</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody data-trivia-table>
+              <tr><td colspan="4">Unlock this room to load the question bank.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div data-admin-gate></div>
+</body>
+</html>

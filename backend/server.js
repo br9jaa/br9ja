@@ -20,17 +20,30 @@ const envFile =
     : process.env.APP_ENV === 'prod'
       ? '.env.prod'
       : '.env.dev';
-dotenv.config({ path: path.join(__dirname, envFile) });
+dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, envFile), override: true });
 
 const { connectDb } = require('./config/db');
 const { REFERRAL_POINTS } = require('./config/constants');
 const {
   Ad,
+  AdminLog,
+  EmailVerificationChallenge,
+  GamePopupClick,
+  GameScore,
+  GoldAuditLog,
+  GoldTransaction,
   KycRecord,
+  PasswordResetChallenge,
   PhoneVerification,
   Prediction,
+  ServiceCatalog,
+  SecurityIncident,
   SecurityEvent,
   Transaction,
+  TransactionAuditLog,
+  Trivia,
+  TriviaSession,
   User,
   UserNotification,
 } = require('./models');
@@ -65,6 +78,7 @@ const {
 const { startPayoutProcessor } = require('./jobs/payout_processor');
 const {
   maskPhoneNumber,
+  sendVerificationCode,
   sendVerificationSms,
 } = require('./services/sms.service');
 const {
@@ -81,8 +95,80 @@ const {
   creditDepositFromWebhook,
   ensureUserVirtualAccount,
 } = require('./services/funding_rail.service');
+const {
+  bulkUpdateServiceCatalog,
+  ensureDefaultServiceCatalog,
+  getServiceCatalogOverview,
+  listAdminLogs,
+  listServiceCatalog,
+  updateServiceCatalogRow,
+} = require('./services/service_catalog.service');
+const {
+  checkClubkonnectBalance,
+  purchaseDataWithClubkonnect,
+} = require('./services/clubkonnect.service');
+const {
+  BR9_GOLD_TO_NAIRA_RATE,
+  BR9_GOLD_UNLOCK_DAYS,
+  buildGoldDiscountPreview,
+  buildGoldSnapshot,
+  convertGoldToWallet,
+  convertGoldToServiceDiscount,
+  getSuccessfulTransactionCount,
+  grantConfiguredReward,
+  unlockVestedGoldIfDue,
+} = require('./services/br9_gold.service');
+const { getGoldCirculationSnapshot } = require('./services/gold_audit.service');
+const {
+  buildGameOverPrompt,
+  getMarketRunnerLeaderboard,
+  getMarketRunnerState,
+  refillMarketRunnerEnergy,
+  startMarketRunnerEngine,
+  submitMarketRunnerReward,
+  trackGamePopupClick,
+} = require('./services/market_runner.service');
+const {
+  calculateSundayJackpot,
+  getCurrentGameMode,
+  recordAdRevenueContribution,
+  startGameLogicEngine,
+} = require('./services/game_logic.service');
 const { sendSiteMail } = require('./services/site_mailer.service');
+const {
+  sendSendchampMessage,
+  sendSendchampOtp,
+  sendSendchampPush,
+} = require('./services/sendchamp.service');
 const { fetchLiveGames } = require('./services/sports_api.service');
+const {
+  buildDailyReconciliationReport,
+  buildReceiptFilename,
+  checkProviderHealth,
+  createTransactionAuditLog,
+  getLatestReconciliationReport,
+  getCriticalDelaySnapshot,
+  getProviderHealthSnapshot,
+  logSecurityIncident,
+  moveStalePendingTransactionsToAdminReview,
+  notifyCriticalDelays,
+  requeryAndResolvePendingTransaction,
+  requeryPendingProviderTransaction,
+  resolveWithProvider,
+  renderReceiptSvg,
+  requeryPendingTransactions,
+  sendAdminEmergencyAlert,
+  syncLinkedServiceRecord,
+} = require('./services/transaction_integrity.service');
+const {
+  advanceTriviaSessions,
+  ensureUpcomingTriviaSession,
+  exportTriviaQuestionsCsv,
+  getCurrentTriviaSession,
+  uploadTriviaCsv,
+} = require('./services/trivia.service');
+const { verifyMeter } = require('./services/utility_service');
+const { verifyEducationPurchase } = require('./services/vending_service');
 
 const app = express();
 const PORT = Number(process.env.PORT || 5000);
@@ -176,6 +262,12 @@ function createReference(prefix) {
 const PHONE_VERIFICATION_TTL_MS = 10 * 60 * 1000;
 const PHONE_VERIFICATION_RESEND_MS = 45 * 1000;
 const PHONE_VERIFICATION_MAX_ATTEMPTS = 5;
+const EMAIL_VERIFICATION_TTL_MS = 10 * 60 * 1000;
+const EMAIL_VERIFICATION_RESEND_MS = 45 * 1000;
+const EMAIL_VERIFICATION_MAX_ATTEMPTS = 5;
+const PASSWORD_RESET_TTL_MS = 10 * 60 * 1000;
+const PASSWORD_RESET_RESEND_MS = 45 * 1000;
+const PASSWORD_RESET_MAX_ATTEMPTS = 5;
 const PASSPORT_PHOTO_MAX_BYTES = 1500 * 1024;
 const SITE_CONFIG_PATH = path.join(__dirname, '..', 'br9', 'config', 'config.json');
 const DEFAULT_SITE_CONFIG = {
@@ -183,22 +275,42 @@ const DEFAULT_SITE_CONFIG = {
   companyName: 'BayRight9ja Ltd',
   slogan: 'Play for BR9 Gold, Pay Your Bills and Win',
   siteUrl: 'https://br9.ng',
+  apiBaseUrl: '',
   playStoreUrl:
     'https://play.google.com/store/apps/details?id=com.bayright9ja.bayright9ja_mobile',
   appStoreUrl: 'https://apps.apple.com/app/id0000000000',
   platformMode: 'live',
+  maintenanceMode: false,
   maintenanceNotice:
     'All core services are available for wallet-led growth this week.',
   opsEmail: 'ops@br9.ng',
   supportEmail: 'support@br9.ng',
+  adminAlertPhone: '2340000000000',
   whatsappNumber: '2340000000000',
   whatsappPrefill: 'Hi i need help with',
   socialTikTokUrl: 'https://www.tiktok.com/@br9ja',
   socialInstagramUrl: 'https://www.instagram.com/br9ja/',
   socialXUrl: 'https://x.com/br9ja',
   socialYouTubeUrl: 'https://www.youtube.com/@BR9ja',
-  socialFacebookUrl: '',
+  socialFacebookUrl: 'https://www.facebook.com/br9ja',
   officeLocation: 'Lagos, Nigeria',
+  maxAutoFundLimit: 20000,
+  goldToWalletMinimumSuccessfulTransactions: 5,
+  resellerActivationFee: 2500,
+  partnerBankName: 'BR9 Partner Bank',
+  partnerBankSignupUrl: 'https://br9.ng',
+  partnerBankReferralCode: 'BR9BANK',
+  partnerBankReferralLink: 'https://br9.ng/signup?ref=BR9BANK',
+  partnerBankNote:
+    'Complete your first clean funding to turn this into your active earnings route.',
+  partnerBankSettlementBankName: 'GTBank',
+  partnerBankSettlementAccountName: 'BayRight9ja Ltd',
+  partnerBankSettlementAccountNumber: '',
+  gapsCorporateName: 'Bayright9ja Ltd',
+  gapsBankName: 'GTBank',
+  gapsAccountNumber: '',
+  gapsReferenceNote:
+    'Use this for manual top-ups until GTBank GAPS API is fully authorized.',
   mondayBenchmarkGold: 1000,
   mondayBenchmarkNaira: 100,
   payoutRequirements: '10 ads + 1 service transaction',
@@ -225,7 +337,7 @@ const DEFAULT_SITE_CONFIG = {
   serviceCableTvMarkup: 200,
   serviceEducationStatus: 'live',
   serviceEducationNote:
-    'WAEC, JAMB, NECO, and exam-pin vending is visible in marketplace.',
+    'WAEC, JAMB, NECO, NABTEB, and exam-pin vending stay visible and guided.',
   serviceEducationMarkup: 150,
   serviceTransportStatus: 'soft-launch',
   serviceTransportNote:
@@ -341,13 +453,6 @@ const SITE_ADMIN_SERVICE_FIELDS = {
     noteField: 'serviceBettingNote',
     transactionTypes: ['Betting'],
   },
-  marketplace: {
-    label: 'Marketplace',
-    markupField: 'serviceMarketplaceMarkup',
-    statusField: 'serviceMarketplaceStatus',
-    noteField: 'serviceMarketplaceNote',
-    transactionTypes: ['Marketplace'],
-  },
 };
 
 function hashValue(value) {
@@ -445,6 +550,9 @@ async function buildSiteProfitMatrixSummary(siteConfig, dateRange = {}) {
       0
     );
     const totalProfitGenerated = relevantTransactions.reduce((sum, transaction) => {
+      if (Number.isFinite(Number(transaction.metadata?.profit))) {
+        return sum + Number(transaction.metadata.profit);
+      }
       if (Number.isFinite(Number(transaction.metadata?.realizedMargin))) {
         return sum + Number(transaction.metadata.realizedMargin);
       }
@@ -508,6 +616,122 @@ function requireSiteAdminToken(req) {
   if (!providedToken || providedToken !== expectedToken) {
     throw new HttpError(401, 'A valid admin token is required.');
   }
+}
+
+async function resolveOptionalAccessUser(req) {
+  const authHeader = String(req.get('authorization') || '').trim();
+  if (!authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  try {
+    const token = authHeader.slice(7).trim();
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (!payload?.sub) {
+      return null;
+    }
+    return User.findById(payload.sub);
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function enforceMaintenanceMode(req, res, next) {
+  try {
+    const siteConfig = await readSiteConfig();
+    const maintenanceOn =
+      Boolean(siteConfig.maintenanceMode) || String(siteConfig.platformMode) === 'maintenance';
+
+    if (!maintenanceOn) {
+      return next();
+    }
+
+    return res.status(503).json(
+      successResponse(
+        {
+          maintenanceMode: true,
+          maintenanceNotice:
+            siteConfig.maintenanceNotice ||
+            "BR9ja is undergoing a quick tune-up. We'll be back in a few minutes! 🛠️",
+        },
+        siteConfig.maintenanceNotice ||
+          "BR9ja is undergoing a quick tune-up. We'll be back in a few minutes! 🛠️"
+      )
+    );
+  } catch (error) {
+    return next(error);
+  }
+}
+
+function resolveAdminNetProfit(transaction = {}) {
+  if (Number.isFinite(Number(transaction.metadata?.adminNetProfit))) {
+    return Number(transaction.metadata.adminNetProfit);
+  }
+  if (Number.isFinite(Number(transaction.metadata?.profit))) {
+    return Number(transaction.metadata.profit);
+  }
+  if (Number.isFinite(Number(transaction.metadata?.realizedMargin))) {
+    return Number(transaction.metadata.realizedMargin);
+  }
+  return 0;
+}
+
+async function buildPendingApprovals(limit = 50) {
+  const rows = await Transaction.find({
+    status: { $in: ['pending_admin_approval', 'pending_review', 'pending_verification'] },
+  })
+    .sort({ createdAt: 1 })
+    .limit(limit)
+    .lean();
+
+  return rows.map((transaction) => ({
+    id: transaction._id.toString(),
+    userId: transaction.userId ? transaction.userId.toString() : '',
+    reference: transaction.reference,
+    type: transaction.type,
+    status: transaction.status,
+    amount: Number(transaction.amount || 0),
+    senderName: transaction.senderName,
+    receiverName: transaction.receiverName,
+    provider: transaction.metadata?.provider || '',
+    providerReference:
+      transaction.metadata?.providerReference || transaction.metadata?.receiptNumber || '',
+    reason:
+      transaction.metadata?.approvalReason ||
+      transaction.metadata?.reviewReason ||
+      transaction.note ||
+      '',
+    createdAt: transaction.createdAt || transaction.timestamp,
+  }));
+}
+
+function startOfCurrentMonth(now = new Date()) {
+  const date = new Date(now);
+  date.setDate(1);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function parseCsvText(payload = '') {
+  return String(payload || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function startOfNextSundayTrivia(now = new Date()) {
+  const date = new Date(now);
+  const day = date.getDay();
+  const diff = (7 - day) % 7;
+  date.setDate(date.getDate() + diff);
+  date.setHours(19, 0, 0, 0);
+  return date;
+}
+
+function endOfTriviaWindow(startAt) {
+  const date = new Date(startAt);
+  date.setMinutes(date.getMinutes() + 20);
+  return date;
 }
 
 function parseBase64ImageDataUrl(imageDataUrl) {
@@ -601,6 +825,21 @@ function normaliseAmount(value) {
     : Number.parseFloat(String(value ?? 0));
 }
 
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+function calculateDaysUntil(dateValue) {
+  const date = new Date(dateValue || Date.now());
+  const diff = date.getTime() - Date.now();
+  return Math.max(Math.ceil(diff / (24 * 60 * 60 * 1000)), 0);
+}
+
 function normaliseAccountStatus(value) {
   const status = String(value || '').trim().toLowerCase();
   if (!ACCOUNT_STATUS_OPTIONS.has(status)) {
@@ -665,6 +904,8 @@ function mapService(type) {
       return 'BR9 Gold Conversion';
     case 'Reward':
       return 'BR9 Reward';
+    case 'ResellerActivation':
+      return 'Reseller Activation';
     case 'AdminAdjustment':
       return 'Admin Wallet Adjustment';
     case 'Marketplace':
@@ -689,7 +930,108 @@ function serialiseTransaction(transaction) {
     createdAt: transaction.createdAt || transaction.timestamp,
     timestamp: transaction.createdAt || transaction.timestamp,
     metadata: transaction.metadata || {},
+    receiptUrl: `/api/v1/transactions/receipt/${transaction._id.toString()}`,
   };
+}
+
+function buildLivePulseMessage(transaction) {
+  const serviceLabel = mapService(transaction.type);
+  const note = String(transaction.note || '').trim();
+
+  if (transaction.type === 'Data') {
+    return `Someone just bought ${note || serviceLabel} ⚡`;
+  }
+  if (transaction.type === 'Electricity') {
+    return 'Someone just paid an electricity bill 💡';
+  }
+  if (transaction.type === 'Airtime') {
+    return 'Someone just recharged airtime 📱';
+  }
+  if (transaction.type === 'Betting') {
+    return 'A betting wallet just got funded 🎯';
+  }
+
+  return `Someone just completed ${serviceLabel} on BR9ja ✅`;
+}
+
+async function buildLivePulseFeed(limit = 10) {
+  const [transactions, scores] = await Promise.all([
+    Transaction.find({
+      status: 'success',
+      type: {
+        $nin: ['Deposit', 'Reward', 'PointConversion', 'AdminAdjustment'],
+      },
+    })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean(),
+    GameScore.find({
+      gameType: 'market_runner',
+      lastPlayed: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      lastPlayScore: { $gt: 0 },
+    })
+      .sort({ lastPlayed: -1, lastPlayScore: -1 })
+      .limit(Math.max(Math.floor(limit / 3), 2))
+      .lean(),
+  ]);
+
+  const feed = [
+    ...transactions.map((row) => ({
+      id: row._id.toString(),
+      kind: 'transaction',
+      message: buildLivePulseMessage(row),
+      createdAt: row.createdAt || row.timestamp || new Date(),
+      tone: 'success',
+    })),
+    ...scores.map((row) => ({
+      id: `score-${row._id.toString()}`,
+      kind: 'game',
+      message: `New high score on Market Runner! ${Number(row.lastPlayScore || 0).toLocaleString()} pts 🏃`,
+      createdAt: row.lastPlayed || row.updatedAt || row.createdAt || new Date(),
+      tone: 'info',
+    })),
+  ];
+
+  return feed
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
+    .slice(0, limit);
+}
+
+async function buildAdminCommandFeed(limit = 12) {
+  const rows = await Transaction.find({
+    status: {
+      $in: ['success', 'pending_verification', 'pending_review', 'pending_admin_approval'],
+    },
+  })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .limit(limit)
+    .lean();
+
+  return rows.map((row) => {
+    const status = String(row.status || '').toLowerCase();
+    const tone =
+      status === 'success'
+        ? 'success'
+        : status === 'pending_verification'
+          ? 'warning'
+          : 'critical';
+
+    return {
+      id: row._id.toString(),
+      reference: row.reference,
+      type: mapService(row.type),
+      amount: normaliseAmount(row.amount),
+      status: row.status,
+      tone,
+      message:
+        tone === 'success'
+          ? `${mapService(row.type)} cleared successfully.`
+          : tone === 'warning'
+            ? `${mapService(row.type)} is waiting on provider verification.`
+            : `${mapService(row.type)} is on security hold and needs admin review.`,
+      createdAt: row.updatedAt || row.createdAt || row.timestamp || new Date(),
+    };
+  });
 }
 
 async function buildUserProfile(userId) {
@@ -698,11 +1040,20 @@ async function buildUserProfile(userId) {
     throw new HttpError(404, 'User profile not found.');
   }
 
+  user = await unlockVestedGoldIfDue(user);
+
   if (!user.virtualAccountNumber) {
     user = await ensureUserVirtualAccount(user);
   }
 
+  const siteConfig = await readSiteConfig();
+
   const userDoc = user.toObject ? user.toObject() : user;
+  const goldSnapshot = buildGoldSnapshot(userDoc);
+  const goldPreview = buildGoldDiscountPreview({
+    amount: 1000,
+    user: userDoc,
+  });
 
   const transactions = await Transaction.find({
     $or: [{ senderId: userDoc._id }, { receiverId: userDoc._id }],
@@ -710,12 +1061,23 @@ async function buildUserProfile(userId) {
     .sort({ createdAt: -1 })
     .limit(10)
     .lean();
+  const successfulTransactionCount = await getSuccessfulTransactionCount(userDoc._id);
 
   return {
     id: userDoc._id.toString(),
     fullName: userDoc.fullName,
+    isVerified: Boolean(userDoc.isVerified),
+    verifiedAt: userDoc.verifiedAt,
+    verifiedNameSource: userDoc.verifiedNameSource || '',
+    fullNameLocked: Boolean(userDoc.isNameLocked || userDoc.fullNameLockedAt),
+    fullNameLockedAt: userDoc.fullNameLockedAt,
     email: userDoc.email,
     role: userDoc.role,
+    isReseller: String(userDoc.role || '').toLowerCase() === 'reseller',
+    resellerTier: userDoc.resellerTier || 'bronze',
+    resellerActivatedAt: userDoc.resellerActivatedAt || null,
+    resellerActivationFeePaidAt: userDoc.resellerActivationFeePaidAt || null,
+    resellerSavingsMonthToDate: Number(userDoc.resellerSavingsMonthToDate || 0),
     phoneNumber: userDoc.phoneNumber,
     phoneVerified: Boolean(userDoc.phoneVerifiedAt),
     phoneVerifiedAt: userDoc.phoneVerifiedAt,
@@ -726,10 +1088,13 @@ async function buildUserProfile(userId) {
       bankName: userDoc.virtualAccountBankName || 'GTBank',
       accountName:
         userDoc.virtualAccountName ||
-        String(userDoc.bayrightTag || userDoc.fullName || '').toUpperCase(),
-      provider: userDoc.virtualAccountProvider || 'demo',
+        `BR9 - ${String(userDoc.phoneNumber || '').replace(/\D/g, '').slice(-11)}`,
+      provider: userDoc.virtualAccountProvider || 'squad',
       reference: userDoc.virtualAccountReference || '',
       status: userDoc.virtualAccountStatus || 'pending',
+      instantCredit: true,
+      recommended: true,
+      note: 'GTBank virtual account powered by Squad. Copy once and fund your BR9ja wallet instantly.',
     },
     kycTier: userDoc.kycTier,
     accountStatus: userDoc.accountStatus || 'active',
@@ -737,13 +1102,228 @@ async function buildUserProfile(userId) {
     accountStatusUpdatedAt: userDoc.accountStatusUpdatedAt || userDoc.frozenAt || null,
     isFrozen: Boolean(userDoc.isFrozen),
     walletBalance: normaliseAmount(userDoc.balance),
+    br9GoldBalance: goldSnapshot.spendableBalance,
+    br9GoldLockedBalance: goldSnapshot.lockedBalance,
+    br9GoldTotal: goldSnapshot.totalBalance,
+    br9GoldLocked: goldSnapshot.isLocked,
+    goldUnlockDate: goldSnapshot.unlockDate,
+    goldDaysRemaining: goldSnapshot.daysRemaining,
+    br9GoldNairaValue: goldSnapshot.totalNairaValue,
+    br9GoldSpendableNairaValue: goldSnapshot.spendableNairaValue,
+    br9GoldConversionRate: BR9_GOLD_TO_NAIRA_RATE,
+    br9GoldPreviewDiscount: goldPreview,
     br9GoldPoints: Number(userDoc.br9GoldPoints || 0),
     referralCode: userDoc.referralCode || '',
+    referralLink: userDoc.referralCode
+      ? `${siteConfig.siteUrl.replace(/\/$/, '')}/signup?ref=${encodeURIComponent(
+          userDoc.referralCode
+        )}`
+      : '',
+    partnerInviteMessage: userDoc.referralCode
+      ? `Join my BR9ja Network and buy Data at wholesale prices! ${siteConfig.siteUrl.replace(
+          /\/$/,
+          ''
+        )}/signup?ref=${encodeURIComponent(userDoc.referralCode)}`
+      : '',
     isLivenessVerified: Boolean(userDoc.isLivenessVerified),
     passportPhotoDataUrl: userDoc.passportPhotoDataUrl || '',
     passportPhotoUpdatedAt: userDoc.passportPhotoUpdatedAt,
     favoriteTeamIds: userDoc.favoriteTeamIds || [],
     transactions: transactions.map(serialiseTransaction),
+    emailVerified: Boolean(userDoc.emailVerifiedAt),
+    emailVerifiedAt: userDoc.emailVerifiedAt,
+    restrictedMode:
+      Number(userDoc.balance || 0) <= 0 && !Boolean(userDoc.isVerified),
+    canUseServices:
+      Boolean(userDoc.emailVerifiedAt) && Boolean(userDoc.phoneVerifiedAt),
+    canBrowseServices:
+      Boolean(userDoc.emailVerifiedAt) && Boolean(userDoc.phoneVerifiedAt),
+    canPurchaseServices: Boolean(userDoc.isVerified),
+    maintenanceMode:
+      Boolean(siteConfig.maintenanceMode) ||
+      String(siteConfig.platformMode || '').trim().toLowerCase() === 'maintenance',
+    resellerActivationFee: Number(siteConfig.resellerActivationFee || 2500),
+    partnerBank: {
+      name: siteConfig.partnerBankName || DEFAULT_SITE_CONFIG.partnerBankName,
+      signupUrl:
+        siteConfig.partnerBankSignupUrl || DEFAULT_SITE_CONFIG.partnerBankSignupUrl,
+      referralCode:
+        siteConfig.partnerBankReferralCode || DEFAULT_SITE_CONFIG.partnerBankReferralCode,
+      referralLink:
+        siteConfig.partnerBankReferralLink || DEFAULT_SITE_CONFIG.partnerBankReferralLink,
+      note: siteConfig.partnerBankNote || DEFAULT_SITE_CONFIG.partnerBankNote,
+      settlementBankName:
+        siteConfig.partnerBankSettlementBankName ||
+        DEFAULT_SITE_CONFIG.partnerBankSettlementBankName,
+      settlementAccountName:
+        siteConfig.partnerBankSettlementAccountName ||
+        DEFAULT_SITE_CONFIG.partnerBankSettlementAccountName,
+      settlementAccountNumber:
+        siteConfig.partnerBankSettlementAccountNumber ||
+        DEFAULT_SITE_CONFIG.partnerBankSettlementAccountNumber,
+    },
+    marketRunnerEnergyBars: Number(
+      userDoc.marketRunnerEnergyBars !== undefined
+        ? userDoc.marketRunnerEnergyBars
+        : 3
+    ),
+    marketRunnerEnergyUpdatedAt: userDoc.marketRunnerEnergyUpdatedAt || null,
+    isNameLocked: Boolean(userDoc.isNameLocked || userDoc.fullNameLockedAt),
+    primaryFundingSource: {
+      accountNumber: userDoc.primaryFundingSourceAccountNumber || '',
+      bankName: userDoc.primaryFundingSourceBankName || '',
+      accountName: userDoc.primaryFundingSourceName || '',
+      linkedAt: userDoc.primaryFundingSourceLinkedAt || null,
+    },
+    successfulTransactionCount,
+  };
+}
+
+function maskEmailAddress(value) {
+  const email = String(value || '').trim().toLowerCase();
+  const [localPart, domain = ''] = email.split('@');
+  if (!localPart || !domain) {
+    return email;
+  }
+
+  const visibleLocal =
+    localPart.length <= 2
+      ? `${localPart[0] || ''}•`
+      : `${localPart.slice(0, 2)}${'•'.repeat(
+          Math.max(localPart.length - 2, 2)
+        )}`;
+
+  return `${visibleLocal}@${domain}`;
+}
+
+async function issueEmailVerificationChallenge(user, options = {}) {
+  const now = new Date();
+  const existing = await EmailVerificationChallenge.findOne({
+    userId: user._id,
+  }).select('+codeHash');
+
+  if (
+    existing?.lastSentAt &&
+    now.getTime() - existing.lastSentAt.getTime() < EMAIL_VERIFICATION_RESEND_MS
+  ) {
+    throw new HttpError(
+      429,
+      'Please wait a moment before requesting another email code.'
+    );
+  }
+
+  const code = generateOtpCode();
+  const deepLink = `br9ja://verify-email?userId=${encodeURIComponent(
+    user._id.toString()
+  )}&code=${encodeURIComponent(code)}`;
+  const delivery = await sendSendchampOtp({
+    channel: 'email',
+    recipient: user.email,
+    code,
+    purpose: 'email_verification',
+    deepLink,
+    expiresInMinutes: Math.floor(EMAIL_VERIFICATION_TTL_MS / 60000),
+  });
+  const expiresAt = new Date(now.getTime() + EMAIL_VERIFICATION_TTL_MS);
+  const challenge =
+    existing ||
+    new EmailVerificationChallenge({
+      userId: user._id,
+      email: user.email,
+      codeHash: hashValue(code),
+      expiresAt,
+    });
+
+  challenge.email = user.email;
+  challenge.codeHash = hashValue(code);
+  challenge.deliveryMode = delivery.deliveryMode;
+  challenge.providerMessageId = delivery.providerMessageId;
+  challenge.attempts = 0;
+  challenge.sendCount = Number(challenge.sendCount || 0) + 1;
+  challenge.expiresAt = expiresAt;
+  challenge.lastSentAt = now;
+  challenge.verifiedAt = null;
+  challenge.consumedAt = null;
+  await challenge.save();
+
+  return {
+    code,
+    deepLink,
+    maskedEmail: maskEmailAddress(user.email),
+    expiresInSeconds: Math.floor(EMAIL_VERIFICATION_TTL_MS / 1000),
+    deliveryMode: delivery.deliveryMode,
+  };
+}
+
+async function issuePasswordResetChallenge(user, identity) {
+  const now = new Date();
+  const existing = await PasswordResetChallenge.findOne({
+    userId: user._id,
+  }).select('+codeHash');
+
+  if (
+    existing?.lastSentAt &&
+    now.getTime() - existing.lastSentAt.getTime() < PASSWORD_RESET_RESEND_MS
+  ) {
+    throw new HttpError(
+      429,
+      'Please wait a moment before requesting another reset code.'
+    );
+  }
+
+  const code = generateOtpCode();
+  const deepLink = `br9ja://reset-password?identity=${encodeURIComponent(
+    String(identity || user.email).trim()
+  )}&code=${encodeURIComponent(code)}`;
+  const isEmailIdentity = isValidEmail(identity || user.email);
+  const delivery = isEmailIdentity
+    ? await sendSendchampOtp({
+        channel: 'email',
+        recipient: user.email,
+        code,
+        purpose: 'password_reset',
+        deepLink,
+        expiresInMinutes: Math.floor(PASSWORD_RESET_TTL_MS / 60000),
+      })
+    : await sendVerificationCode({
+        phoneNumber: user.phoneNumber,
+        code,
+        channel: 'sms',
+      });
+  const expiresAt = new Date(now.getTime() + PASSWORD_RESET_TTL_MS);
+  const challenge =
+    existing ||
+    new PasswordResetChallenge({
+      userId: user._id,
+      identity: String(identity || user.email).trim().toLowerCase(),
+      channel: isEmailIdentity ? 'email' : 'sms',
+      codeHash: hashValue(code),
+      expiresAt,
+    });
+
+  challenge.identity = String(identity || user.email).trim().toLowerCase();
+  challenge.channel = delivery.deliveryMode === 'dev-log'
+    ? isEmailIdentity
+      ? 'email'
+      : 'sms'
+    : isEmailIdentity
+      ? 'email'
+      : 'sms';
+  challenge.codeHash = hashValue(code);
+  challenge.providerMessageId = delivery.providerMessageId || '';
+  challenge.attempts = 0;
+  challenge.sendCount = Number(challenge.sendCount || 0) + 1;
+  challenge.expiresAt = expiresAt;
+  challenge.lastSentAt = now;
+  challenge.consumedAt = null;
+  await challenge.save();
+
+  return {
+    code,
+    deepLink,
+    channel: isEmailIdentity ? 'email' : 'sms',
+    deliveryMode: delivery.deliveryMode,
+    expiresInSeconds: Math.floor(PASSWORD_RESET_TTL_MS / 1000),
   };
 }
 
@@ -791,6 +1371,24 @@ app.get('/api/site-promo', async (_req, res, next) => {
         promo ? 'Promo summary fetched successfully.' : 'No promo is live right now.'
       )
     );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/site/live-pulse', async (_req, res, next) => {
+  try {
+    const rows = await buildLivePulseFeed(12);
+    res.json(successResponse(rows, 'Live activity feed fetched successfully.'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/site/game-mode', async (_req, res, next) => {
+  try {
+    const mode = getCurrentGameMode();
+    res.json(successResponse(mode, 'Current BR9ja game mode fetched successfully.'));
   } catch (error) {
     next(error);
   }
@@ -904,12 +1502,16 @@ app.post('/api/admin/site-config', async (req, res, next) => {
         ['live', 'featured', 'soft-launch', 'maintenance', 'paused'],
         DEFAULT_SITE_CONFIG.platformMode
       ),
+      maintenanceMode:
+        req.body?.maintenanceMode === true ||
+        String(req.body?.maintenanceMode || '').trim().toLowerCase() === 'true',
       maintenanceNotice:
         String(req.body?.maintenanceNotice || '').trim() ||
         DEFAULT_SITE_CONFIG.maintenanceNotice,
       whatsappNumber: normalisePhoneNumber(req.body?.whatsappNumber),
       opsEmail: String(req.body?.opsEmail || '').trim().toLowerCase(),
       supportEmail: String(req.body?.supportEmail || '').trim().toLowerCase(),
+      adminAlertPhone: normalisePhoneNumber(req.body?.adminAlertPhone),
       whatsappPrefill:
         String(req.body?.whatsappPrefill || '').trim() ||
         DEFAULT_SITE_CONFIG.whatsappPrefill,
@@ -1062,6 +1664,38 @@ app.post('/api/admin/site-config', async (req, res, next) => {
         req.body?.mondayBenchmarkGold,
         DEFAULT_SITE_CONFIG.mondayBenchmarkGold
       ),
+      maxAutoFundLimit: normaliseNonNegativeInteger(
+        req.body?.maxAutoFundLimit,
+        DEFAULT_SITE_CONFIG.maxAutoFundLimit
+      ),
+      goldToWalletMinimumSuccessfulTransactions: normaliseNonNegativeInteger(
+        req.body?.goldToWalletMinimumSuccessfulTransactions,
+        DEFAULT_SITE_CONFIG.goldToWalletMinimumSuccessfulTransactions
+      ),
+      resellerActivationFee: normaliseNonNegativeInteger(
+        req.body?.resellerActivationFee,
+        DEFAULT_SITE_CONFIG.resellerActivationFee
+      ),
+      partnerBankName:
+        String(req.body?.partnerBankName || '').trim() ||
+        DEFAULT_SITE_CONFIG.partnerBankName,
+      partnerBankSignupUrl: String(req.body?.partnerBankSignupUrl || '').trim(),
+      partnerBankReferralCode:
+        String(req.body?.partnerBankReferralCode || '').trim().toUpperCase() ||
+        DEFAULT_SITE_CONFIG.partnerBankReferralCode,
+      partnerBankReferralLink: String(req.body?.partnerBankReferralLink || '').trim(),
+      partnerBankNote:
+        String(req.body?.partnerBankNote || '').trim() ||
+        DEFAULT_SITE_CONFIG.partnerBankNote,
+      partnerBankSettlementBankName:
+        String(req.body?.partnerBankSettlementBankName || '').trim() ||
+        DEFAULT_SITE_CONFIG.partnerBankSettlementBankName,
+      partnerBankSettlementAccountName:
+        String(req.body?.partnerBankSettlementAccountName || '').trim() ||
+        DEFAULT_SITE_CONFIG.partnerBankSettlementAccountName,
+      partnerBankSettlementAccountNumber: String(
+        req.body?.partnerBankSettlementAccountNumber || ''
+      ).trim(),
       mondayBenchmarkNaira: normaliseNonNegativeInteger(
         req.body?.mondayBenchmarkNaira,
         DEFAULT_SITE_CONFIG.mondayBenchmarkNaira
@@ -1090,6 +1724,16 @@ app.post('/api/admin/site-config', async (req, res, next) => {
       quickLoginModes:
         String(req.body?.quickLoginModes || '').trim() ||
         DEFAULT_SITE_CONFIG.quickLoginModes,
+      gapsCorporateName:
+        String(req.body?.gapsCorporateName || '').trim() ||
+        DEFAULT_SITE_CONFIG.gapsCorporateName,
+      gapsBankName:
+        String(req.body?.gapsBankName || '').trim() ||
+        DEFAULT_SITE_CONFIG.gapsBankName,
+      gapsAccountNumber: String(req.body?.gapsAccountNumber || '').trim(),
+      gapsReferenceNote:
+        String(req.body?.gapsReferenceNote || '').trim() ||
+        DEFAULT_SITE_CONFIG.gapsReferenceNote,
     };
 
     SUPER_APP_MARKUP_FIELDS.forEach((field) => {
@@ -1103,7 +1747,10 @@ app.post('/api/admin/site-config', async (req, res, next) => {
       !isValidOptionalUrl(nextConfig.siteUrl) ||
       !isValidOptionalUrl(nextConfig.playStoreUrl) ||
       !isValidOptionalUrl(nextConfig.appStoreUrl) ||
+      !isValidOptionalUrl(nextConfig.partnerBankSignupUrl) ||
+      !isValidOptionalUrl(nextConfig.partnerBankReferralLink) ||
       !nextConfig.whatsappNumber ||
+      !nextConfig.adminAlertPhone ||
       !isValidEmail(nextConfig.opsEmail) ||
       !isValidEmail(nextConfig.supportEmail) ||
       !isValidOptionalUrl(nextConfig.socialTikTokUrl) ||
@@ -1122,6 +1769,65 @@ app.post('/api/admin/site-config', async (req, res, next) => {
     res.json(successResponse(saved, 'Site config updated successfully.'));
   } catch (error) {
     next(error);
+  }
+});
+
+app.post('/api/admin/site-auth', async (req, res, next) => {
+  try {
+    const identifier = normaliseLoginIdentifier(
+      req.body?.identifier || req.body?.email || req.body?.username || ''
+    );
+    const password = String(req.body?.password || '').trim();
+
+    if (!identifier || !password) {
+      throw new HttpError(400, 'Admin username or email plus password are required.');
+    }
+
+    const loginQuery = buildLoginQuery(identifier);
+    const adminUser = await User.findOne({
+      ...loginQuery,
+      role: 'admin',
+      accountDeletedAt: null,
+    }).select('+activeDeviceId');
+
+    if (!adminUser) {
+      throw new HttpError(401, 'Admin credentials did not match.');
+    }
+
+    const storedPasswordHash = adminUser.password || adminUser.passwordHash;
+    const passwordMatch = storedPasswordHash
+      ? await bcrypt.compare(password, storedPasswordHash)
+      : false;
+
+    if (!passwordMatch) {
+      throw new HttpError(401, 'Admin credentials did not match.');
+    }
+
+    requireSiteAdminToken({
+      get(headerName) {
+        if (String(headerName || '').toLowerCase() === 'x-site-admin-token') {
+          return process.env.SITE_ADMIN_TOKEN || 'br9-local-admin';
+        }
+        return '';
+      },
+      body: {
+        adminToken: process.env.SITE_ADMIN_TOKEN || 'br9-local-admin',
+      },
+    });
+
+    return res.json(
+      successResponse(
+        {
+          adminToken: process.env.SITE_ADMIN_TOKEN || 'br9-local-admin',
+          adminId: adminUser._id.toString(),
+          adminLabel: adminUser.fullName,
+          routeBase: '/lex/auth',
+        },
+        'Admin access granted.'
+      )
+    );
+  } catch (error) {
+    return next(error);
   }
 });
 
@@ -1145,7 +1851,7 @@ app.post('/api/admin/provider-config', async (req, res, next) => {
   }
 });
 
-app.post('/api/webhook/deposit', async (req, res, next) => {
+async function handleSquadSettlementWebhook(req, res, next) {
   try {
     const result = await creditDepositFromWebhook({
       payload: req.body || {},
@@ -1159,6 +1865,106 @@ app.post('/api/webhook/deposit', async (req, res, next) => {
         result.duplicate
           ? 'Deposit webhook already processed.'
           : 'Deposit webhook processed successfully.'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+app.post('/api/v1/webhooks/squad-settlement', handleSquadSettlementWebhook);
+app.post('/api/v1/webhooks/funding', handleSquadSettlementWebhook);
+app.post('/api/webhook/deposit', handleSquadSettlementWebhook);
+
+app.post('/api/verify-service', async (req, res, next) => {
+  try {
+    const category = String(
+      req.body?.category || req.body?.serviceKey || req.body?.type || ''
+    )
+      .trim()
+      .toLowerCase();
+
+    if (category === 'electricity') {
+      const meterNumber = String(req.body?.meterNumber || req.body?.billersCode || '').trim();
+      const serviceID = String(req.body?.serviceID || '').trim();
+      const meterType = String(req.body?.meterType || req.body?.type || 'prepaid').trim();
+
+      if (!meterNumber || !serviceID) {
+        throw new HttpError(400, 'meterNumber and serviceID are required.');
+      }
+
+      const data = await verifyMeter(meterNumber, serviceID, meterType);
+      res.json(successResponse(data, 'Meter verified successfully.'));
+      return;
+    }
+
+    if (category === 'education') {
+      const serviceType = String(req.body?.serviceType || req.body?.service || '').trim();
+      const candidateId = String(
+        req.body?.candidateId || req.body?.profileCode || req.body?.billersCode || ''
+      ).trim();
+
+      if (!serviceType || !candidateId) {
+        throw new HttpError(
+          400,
+          'serviceType and candidateId are required for education verification.'
+        );
+      }
+
+      const data = await verifyEducationPurchase(serviceType, candidateId);
+      res.json(successResponse(data, 'Education profile verified successfully.'));
+      return;
+    }
+
+    throw new HttpError(
+      400,
+      'Unsupported verification category. Use electricity or education.'
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/catalog/services', async (req, res, next) => {
+  try {
+    const activeQuery = String(req.query?.activeOnly || 'true').trim().toLowerCase();
+    const activeOnly = activeQuery !== 'false';
+    const baseAmount = normaliseAmount(req.query?.baseAmount);
+    const viewer = await resolveOptionalAccessUser(req);
+
+    const rawRows = await listServiceCatalog({
+      serviceKey: String(req.query?.serviceKey || '').trim(),
+      category: String(req.query?.category || '').trim(),
+      provider: String(req.query?.provider || '').trim(),
+      providerCode: String(req.query?.providerCode || '').trim(),
+      search: String(req.query?.search || '').trim(),
+      activeOnly,
+      baseAmount,
+    });
+    const rows = rawRows.map((row) => {
+      const resellerPreview = row.resellerPreview || {};
+      const viewerTier = String(viewer?.resellerTier || 'bronze').trim().toLowerCase();
+      const viewerWholesale = resellerPreview?.[viewerTier]?.wholesalePrice || row.effectiveSellingPrice;
+      return {
+        ...row,
+        viewerRole: viewer?.role || 'guest',
+        viewerTier,
+        viewerPrice:
+          viewer?.role === 'reseller' ? Number(viewerWholesale || 0) : Number(row.effectiveSellingPrice || 0),
+        viewerPriceLabel:
+          viewer?.role === 'reseller'
+            ? `${String(viewerTier).replace(/\b\w/g, (character) => character.toUpperCase())} Wholesale`
+            : 'Retail',
+      };
+    });
+
+    res.json(
+      successResponse(
+        {
+          rows,
+          totalCount: rows.length,
+        },
+        'Service catalog fetched successfully.'
       )
     );
   } catch (error) {
@@ -1263,6 +2069,13 @@ app.get('/api/admin/site-dashboard', async (req, res, next) => {
       pinFailureCount,
       securityEvents,
       profitMatrix,
+      providerHealth,
+      pendingApprovals,
+      catalogOverview,
+      reconciliationReport,
+      commandFeed,
+      criticalDelays,
+      goldCirculation,
     ] =
       await Promise.all([
         User.countDocuments({}),
@@ -1322,17 +2135,38 @@ app.get('/api/admin/site-dashboard', async (req, res, next) => {
           .limit(8)
           .lean(),
         buildSiteProfitMatrixSummary(siteConfig, { startDate: todayStart }),
+        getProviderHealthSnapshot(),
+        buildPendingApprovals(20),
+        getServiceCatalogOverview(),
+        getLatestReconciliationReport(),
+        buildAdminCommandFeed(14),
+        getCriticalDelaySnapshot({ thresholdMinutes: 15, limit: 8 }),
+        getGoldCirculationSnapshot(),
       ]);
 
     const silentProfitTotal = profitMatrix.reduce(
       (sum, item) => sum + Number(item.totalProfitGenerated || 0),
       0
     );
+    const profitBreakdown = profitMatrix
+      .map((item) => ({
+        key: item.key,
+        label: item.label,
+        value: Number(item.totalProfitGenerated || 0),
+      }))
+      .filter((item) => item.value > 0)
+      .sort((left, right) => right.value - left.value);
+    const profitTotal = profitBreakdown.reduce((sum, item) => sum + item.value, 0);
+    const pieBreakdown = profitBreakdown.map((item) => ({
+      ...item,
+      share: profitTotal > 0 ? Math.round((item.value / profitTotal) * 1000) / 10 : 0,
+    }));
 
     res.json(
       successResponse(
         {
           platformMode: siteConfig.platformMode,
+          maintenanceMode: Boolean(siteConfig.maintenanceMode),
           userCount,
           activeToday,
           transactionCount,
@@ -1353,11 +2187,125 @@ app.get('/api/admin/site-dashboard', async (req, res, next) => {
             createdAt: event.createdAt,
           })),
           silentProfitTotal,
+          pendingApprovalsCount: pendingApprovals.length,
+          pendingApprovals,
           benchmarkGold: siteConfig.mondayBenchmarkGold,
           benchmarkNaira: siteConfig.mondayBenchmarkNaira,
           profitMatrix,
+          providerHealth,
+          liveProfitPulse: {
+            totalRevenue: Number(catalogOverview.totalRevenue || 0),
+            totalCost: Number(catalogOverview.totalCost || 0),
+            netProfit: Number(catalogOverview.netProfit || 0),
+          },
+          pieBreakdown,
+          reconciliationReport,
+          commandFeed,
+          criticalDelays,
+          goldCirculation,
+          goldWalletRule: {
+            minimumSuccessfulTransactions: Number(
+              siteConfig.goldToWalletMinimumSuccessfulTransactions || 5
+            ),
+          },
         },
         'Site admin dashboard fetched successfully.'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/v1/admin/jackpot/calculate', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const snapshot = await calculateSundayJackpot();
+    res.json(successResponse(snapshot, 'Sunday jackpot calculation fetched successfully.'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/admin/service-catalog', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+
+    const activeFilter = String(req.query?.activeOnly || '').trim().toLowerCase();
+    const rows = await listServiceCatalog({
+      serviceKey: String(req.query?.serviceKey || '').trim(),
+      category: String(req.query?.category || '').trim(),
+      provider: String(req.query?.provider || '').trim(),
+      providerCode: String(req.query?.providerCode || '').trim(),
+      search: String(req.query?.search || '').trim(),
+      activeOnly: activeFilter ? activeFilter !== 'false' : false,
+      baseAmount: normaliseAmount(req.query?.baseAmount),
+    });
+    const [overview, recentLogs] = await Promise.all([
+      getServiceCatalogOverview(),
+      listAdminLogs(24),
+    ]);
+    const logs = recentLogs
+      .filter((entry) => String(entry.actionType || '').startsWith('service_catalog'))
+      .slice(0, 12);
+
+    res.json(
+      successResponse(
+        {
+          rows,
+          totalCount: rows.length,
+          overview,
+          logs,
+        },
+        'Service catalog fetched successfully.'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch('/api/admin/service-catalog/:id', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+
+    const row = await updateServiceCatalogRow(
+      req.params.id,
+      {
+        costPrice: req.body?.costPrice,
+        sellingPrice: req.body?.sellingPrice,
+        isActive: req.body?.isActive,
+      },
+      'Site Admin'
+    );
+
+    res.json(successResponse(row, 'Service pricing updated successfully.'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/service-catalog/bulk-update', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+
+    const result = await bulkUpdateServiceCatalog(
+      {
+        productIds: Array.isArray(req.body?.productIds) ? req.body.productIds : [],
+        actionType: String(req.body?.actionType || '').trim(),
+        value: normaliseAmount(req.body?.value),
+      },
+      'Site Admin'
+    );
+    const overview = await getServiceCatalogOverview();
+
+    res.json(
+      successResponse(
+        {
+          ...result,
+          overview,
+        },
+        'Bulk pricing update completed successfully.'
       )
     );
   } catch (error) {
@@ -1406,6 +2354,8 @@ app.get('/api/admin/site-transactions', async (req, res, next) => {
       const promoApplied = Boolean(transaction.metadata?.promoCampaignId);
       const silentProfit = Number.isFinite(Number(transaction.metadata?.realizedMargin))
         ? Number(transaction.metadata.realizedMargin)
+        : Number.isFinite(Number(transaction.metadata?.profit))
+          ? Number(transaction.metadata.profit)
         : markupField
           ? Number(siteConfig[markupField] || 0)
           : 0;
@@ -1420,6 +2370,8 @@ app.get('/api/admin/site-transactions', async (req, res, next) => {
         type: transaction.type,
         service: promoApplied ? `${baseService} • PROMO` : baseService,
         amount: Number(transaction.amount || 0),
+        costPrice: Number(transaction.metadata?.costPrice || transaction.metadata?.vendorAmount || 0),
+        sellingPrice: Number(transaction.metadata?.sellingPrice || transaction.amount || 0),
         silentProfit,
         senderName: transaction.senderName,
         receiverName: transaction.receiverName,
@@ -1439,6 +2391,422 @@ app.get('/api/admin/site-transactions', async (req, res, next) => {
         'Site admin transactions fetched successfully.'
       )
     );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/admin/provider-health', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const snapshot = await getProviderHealthSnapshot();
+    res.json(successResponse(snapshot, 'Provider health fetched successfully.'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/provider-health/check', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const snapshot = await checkProviderHealth();
+    res.json(successResponse(snapshot, 'Provider health check completed.'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/admin/pending-approvals', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const rows = await buildPendingApprovals(
+      Math.min(Math.max(Number(req.query?.limit || 50), 1), 200)
+    );
+    res.json(successResponse({ rows, totalCount: rows.length }, 'Pending approvals fetched.'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/admin/transactions/:id/audit', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const transactionId = String(req.params.id || '').trim();
+    const logs = await TransactionAuditLog.find({ transactionId })
+      .sort({ createdAt: 1 })
+      .lean();
+    res.json(
+      successResponse(
+        logs.map((log) => ({
+          id: log._id.toString(),
+          step: log.step,
+          status: log.status,
+          message: log.message,
+          metadata: log.metadata || {},
+          createdAt: log.createdAt,
+        })),
+        'Transaction audit trail fetched successfully.'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/transactions/:id/force-success', async (req, res, next) => {
+  const session = await mongoose.startSession();
+
+  try {
+    requireSiteAdminToken(req);
+    const transactionId = String(req.params.id || '').trim();
+    let responsePayload = null;
+
+    await session.withTransaction(async () => {
+      const transaction = await Transaction.findById(transactionId).session(session);
+      if (!transaction) {
+        throw new HttpError(404, 'Transaction not found.');
+      }
+
+      if (transaction.status !== 'success' && transaction.type === 'Deposit') {
+        const user = await User.findById(transaction.userId).session(session);
+        if (user) {
+          user.balance = Number(user.balance || 0) + Number(transaction.amount || 0);
+          await user.save({ session });
+          transaction.balanceAfter = Number(user.balance || 0);
+        }
+      }
+
+      transaction.status = 'success';
+      transaction.metadata = {
+        ...(transaction.metadata || {}),
+        forcedResolution: 'success',
+        forcedResolvedAt: new Date(),
+      };
+      await transaction.save({ session });
+
+      await createTransactionAuditLog({
+        transactionId: transaction._id,
+        userId: transaction.userId || null,
+        step: 'admin_force_success',
+        status: 'success',
+        message: 'Admin manually forced this transaction to success.',
+        metadata: {
+          actor: 'Site Admin',
+        },
+        session,
+      });
+
+      responsePayload = serialiseTransaction(transaction);
+    });
+
+    res.json(successResponse(responsePayload, 'Transaction marked as successful.'));
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+});
+
+app.post('/api/admin/transactions/:id/force-refund', async (req, res, next) => {
+  const session = await mongoose.startSession();
+
+  try {
+    requireSiteAdminToken(req);
+    const transactionId = String(req.params.id || '').trim();
+    let responsePayload = null;
+
+    await session.withTransaction(async () => {
+      const transaction = await Transaction.findById(transactionId).session(session);
+      if (!transaction) {
+        throw new HttpError(404, 'Transaction not found.');
+      }
+
+      const user = transaction.userId
+        ? await User.findById(transaction.userId).session(session)
+        : null;
+
+      if (user && transaction.type !== 'Deposit' && transaction.status !== 'failed') {
+        user.balance = Number(user.balance || 0) + Number(transaction.amount || 0);
+        await user.save({ session });
+        transaction.balanceAfter = Number(user.balance || 0);
+      }
+
+      transaction.status = 'failed';
+      transaction.metadata = {
+        ...(transaction.metadata || {}),
+        forcedResolution: 'refund',
+        walletRefundedAt: new Date(),
+      };
+      await transaction.save({ session });
+
+      await createTransactionAuditLog({
+        transactionId: transaction._id,
+        userId: transaction.userId || null,
+        step: 'admin_force_refund',
+        status: 'failed',
+        message: 'Admin manually refunded this transaction.',
+        metadata: {
+          actor: 'Site Admin',
+        },
+        session,
+      });
+
+      responsePayload = serialiseTransaction(transaction);
+    });
+
+    res.json(successResponse(responsePayload, 'Transaction refunded successfully.'));
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+});
+
+app.post('/api/admin/transactions/:id/requery', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const transaction = await Transaction.findById(req.params.id);
+    if (!transaction) {
+      throw new HttpError(404, 'Transaction not found.');
+    }
+
+    if (transaction.status === 'pending_verification') {
+      const result = await requeryAndResolvePendingTransaction(transaction._id);
+      const refreshed = await Transaction.findById(transaction._id);
+      return res.json(
+        successResponse(
+          {
+            ...serialiseTransaction(refreshed || transaction),
+            providerStatus: result.providerStatus,
+            provider: result.provider,
+          },
+          'Provider requery completed.'
+        )
+      );
+    }
+
+    const providerResult = await resolveWithProvider(transaction);
+    await createTransactionAuditLog({
+      transactionId: transaction._id,
+      userId: transaction.userId || null,
+      step: 'admin_manual_requery',
+      status:
+        providerResult.status === 'success'
+          ? 'success'
+          : providerResult.status === 'failed'
+            ? 'failed'
+            : 'pending',
+      message: 'Admin manually triggered a provider requery.',
+      metadata: {
+        provider: providerResult.provider,
+        raw: providerResult.raw || {},
+      },
+    });
+
+    res.json(
+      successResponse(
+        {
+          reference: transaction.reference,
+          providerStatus: providerResult.status,
+          br9Status: providerResult.br9Status,
+          provider: providerResult.provider,
+        },
+        'Provider requery completed.'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/transactions/requery-all-pending', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+
+    const olderThanMinutes = Math.max(
+      Number.parseInt(String(req.body?.olderThanMinutes || '5'), 10) || 5,
+      0
+    );
+    const results = await requeryPendingTransactions({
+      olderThanMinutes,
+      limit: Math.max(
+        Number.parseInt(String(req.body?.limit || '100'), 10) || 100,
+        1
+      ),
+    });
+
+    res.json(
+      successResponse(
+        {
+          olderThanMinutes,
+          checkedCount: results.length,
+          successCount: results.filter((item) => item.status === 'success').length,
+          failedCount: results.filter((item) => item.status === 'failed').length,
+          pendingCount: results.filter((item) => item.status === 'pending_verification').length,
+          reviewCount: results.filter((item) => item.status === 'pending_review').length,
+          rows: results,
+        },
+        'Bulk re-query completed.'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/pending-approvals/:id/approve', async (req, res, next) => {
+  const session = await mongoose.startSession();
+
+  try {
+    requireSiteAdminToken(req);
+    const transactionId = String(req.params.id || '').trim();
+    let responsePayload = null;
+
+    await session.withTransaction(async () => {
+      const transaction = await Transaction.findById(transactionId).session(session);
+      if (!transaction) {
+        throw new HttpError(404, 'Pending approval not found.');
+      }
+
+      if (!['pending_admin_approval', 'pending_review', 'pending_verification'].includes(transaction.status)) {
+        throw new HttpError(409, 'This transaction is no longer pending approval.');
+      }
+
+      if (transaction.type === 'Deposit') {
+        const user = await User.findById(transaction.userId).session(session);
+        if (!user) {
+          throw new HttpError(404, 'User not found for approval.');
+        }
+        user.balance = Number(user.balance || 0) + Number(transaction.amount || 0);
+        await user.save({ session });
+        transaction.balanceAfter = Number(user.balance || 0);
+      }
+
+      transaction.status = 'success';
+      transaction.metadata = {
+        ...(transaction.metadata || {}),
+        approvedAt: new Date(),
+        approvedBy: 'Site Admin',
+      };
+      await transaction.save({ session });
+
+      await createTransactionAuditLog({
+        transactionId: transaction._id,
+        userId: transaction.userId || null,
+        step: 'admin_approval',
+        status: 'success',
+        message: 'Admin approved the pending transaction.',
+        metadata: {
+          actor: 'Site Admin',
+        },
+        session,
+      });
+
+      responsePayload = serialiseTransaction(transaction);
+    });
+
+    res.json(successResponse(responsePayload, 'Pending transaction approved.'));
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+});
+
+app.post('/api/admin/pending-approvals/:id/refund', async (req, res, next) => {
+  const session = await mongoose.startSession();
+
+  try {
+    requireSiteAdminToken(req);
+    const transactionId = String(req.params.id || '').trim();
+    let responsePayload = null;
+
+    await session.withTransaction(async () => {
+      const transaction = await Transaction.findById(transactionId).session(session);
+      if (!transaction) {
+        throw new HttpError(404, 'Pending approval not found.');
+      }
+
+      transaction.status = 'failed';
+      transaction.metadata = {
+        ...(transaction.metadata || {}),
+        approvalRejectedAt: new Date(),
+        approvalRejectedBy: 'Site Admin',
+      };
+      await transaction.save({ session });
+
+      await createTransactionAuditLog({
+        transactionId: transaction._id,
+        userId: transaction.userId || null,
+        step: 'admin_reject_refund',
+        status: 'failed',
+        message: 'Admin rejected the pending transaction and marked it as failed.',
+        metadata: {
+          actor: 'Site Admin',
+        },
+        session,
+      });
+
+      responsePayload = serialiseTransaction(transaction);
+    });
+
+    res.json(successResponse(responsePayload, 'Pending transaction rejected.'));
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+});
+
+app.post('/api/admin/pending-approvals/:id/requery', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const transaction = await Transaction.findById(req.params.id);
+    if (!transaction) {
+      throw new HttpError(404, 'Pending approval not found.');
+    }
+    const providerResult = await resolveWithProvider(transaction);
+    res.json(
+      successResponse(
+        {
+          reference: transaction.reference,
+          providerStatus: providerResult.status,
+          br9Status: providerResult.br9Status,
+          provider: providerResult.provider,
+        },
+        'Pending transaction requery completed.'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/reconcile-today', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const report = await buildDailyReconciliationReport();
+    res.json(successResponse(report, "Today's reconciliation completed."));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/v1/transactions/receipt/:id', async (req, res, next) => {
+  try {
+    const transactionId = String(req.params.id || '').trim();
+    const transaction = await Transaction.findById(transactionId).lean();
+    if (!transaction) {
+      throw new HttpError(404, 'Receipt transaction not found.');
+    }
+
+    const svg = renderReceiptSvg(transaction);
+    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${buildReceiptFilename(transaction)}"`
+    );
+    res.status(200).send(svg);
   } catch (error) {
     next(error);
   }
@@ -1866,6 +3234,227 @@ app.patch('/api/admin/site-user-status', async (req, res, next) => {
   }
 });
 
+app.post('/api/admin/site-freeze-wallet', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+
+    const userId = String(req.body?.userId || '').trim();
+    const freeze = req.body?.freeze !== false;
+    const reason = String(req.body?.reason || '').trim();
+
+    if (!userId) {
+      throw new HttpError(400, 'userId is required.');
+    }
+
+    if (freeze && !reason) {
+      throw new HttpError(400, 'A reason is required when freezing a wallet.');
+    }
+
+    const update = freeze
+      ? {
+          isFrozen: true,
+          isBlacklisted: true,
+          freezeReason: reason,
+          frozenAt: new Date(),
+          fundingSuspendedReason: reason,
+          fundingSuspendedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          accountStatus: 'under_review',
+          accountStatusReason: reason,
+          accountStatusUpdatedAt: new Date(),
+        }
+      : {
+          isFrozen: false,
+          isBlacklisted: false,
+          freezeReason: '',
+          frozenAt: null,
+          fundingSuspendedReason: '',
+          fundingSuspendedUntil: null,
+          accountStatus: 'active',
+          accountStatusReason: '',
+          accountStatusUpdatedAt: new Date(),
+        };
+
+    const user = await User.findByIdAndUpdate(userId, { $set: update }, { new: true });
+    if (!user) {
+      throw new HttpError(404, 'User not found for wallet freeze.');
+    }
+
+    await SecurityEvent.create({
+      userId: user._id,
+      email: user.email,
+      bayrightTag: user.bayrightTag,
+      eventType: freeze ? 'admin-wallet-freeze' : 'admin-wallet-unfreeze',
+      severity: freeze ? 'critical' : 'medium',
+      route: req.originalUrl,
+      method: req.method,
+      ipAddress: req.ip,
+      deviceId: req.get('X-Device-ID') || '',
+      message: freeze
+        ? `Admin froze this wallet: ${reason}`
+        : 'Admin restored this wallet.',
+      metadata: {
+        freeze,
+        reason,
+      },
+    });
+
+    await UserNotification.create({
+      userId: user._id,
+      title: freeze ? 'Wallet Frozen' : 'Wallet Restored',
+      body: freeze
+        ? `Your wallet has been frozen for review. Reason: ${reason}`
+        : 'Your wallet has been restored. You can continue using BR9ja.',
+      type: 'wallet-freeze',
+      status: 'queued',
+      metadata: {
+        freeze,
+        reason,
+      },
+    });
+
+    res.json(
+      successResponse(
+        {
+          userId: user._id.toString(),
+          username: user.bayrightTag,
+          isFrozen: Boolean(user.isFrozen),
+          isBlacklisted: Boolean(user.isBlacklisted),
+          accountStatus: user.accountStatus,
+          reason: user.freezeReason || '',
+        },
+        freeze ? 'Wallet frozen successfully.' : 'Wallet restored successfully.'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/admin/trivia', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const [session, questionCount, latestQuestions] = await Promise.all([
+      getCurrentTriviaSession(),
+      Trivia.countDocuments({}),
+      Trivia.find({}).sort({ createdAt: -1 }).limit(25).lean(),
+    ]);
+
+    res.json(
+      successResponse(
+        {
+          currentSession: session,
+          questionCount,
+          questions: latestQuestions.map((question) => ({
+            id: question._id.toString(),
+            question: question.question,
+            options: question.options,
+            category: question.category,
+            rewardPoints: Number(question.rewardPoints || 0),
+            active: question.active !== false,
+          })),
+        },
+        'Trivia control room loaded.'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/trivia/upload', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const csvText = String(req.body?.csvText || '').trim();
+    if (!csvText || parseCsvText(csvText).length < 2) {
+      throw new HttpError(400, 'Paste a CSV with a header row and at least one question.');
+    }
+
+    const result = await uploadTriviaCsv(csvText);
+    await AdminLog.create({
+      actionType: 'trivia-upload',
+      actorLabel: 'Site Admin',
+      message: `Uploaded ${result.uploadedCount} trivia questions.`,
+      metadata: {
+        uploadedCount: result.uploadedCount,
+      },
+    });
+
+    res.status(201).json(successResponse(result, 'Trivia questions uploaded successfully.'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/trivia/session', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+
+    const scheduledFor = req.body?.scheduledFor
+      ? new Date(req.body.scheduledFor)
+      : startOfNextSundayTrivia(new Date());
+
+    const questionIds = Array.isArray(req.body?.questionIds)
+      ? req.body.questionIds.map((value) => new mongoose.Types.ObjectId(String(value)))
+      : [];
+
+    const session = await TriviaSession.findOneAndUpdate(
+      { scheduledFor },
+      {
+        $set: {
+          title: String(req.body?.title || 'Sunday Live Trivia Rush').trim(),
+          state: String(req.body?.state || 'scheduled').trim(),
+          opensAt: req.body?.opensAt ? new Date(req.body.opensAt) : scheduledFor,
+          closesAt: req.body?.closesAt
+            ? new Date(req.body.closesAt)
+            : endOfTriviaWindow(scheduledFor),
+          entryGoldCost: Math.max(Number(req.body?.entryGoldCost || 50), 0),
+          questionTimeLimitSeconds: Math.max(
+            Number(req.body?.questionTimeLimitSeconds || 15),
+            5
+          ),
+          maxQuestions: Math.max(Number(req.body?.maxQuestions || 10), 1),
+          rewardLabel: String(req.body?.rewardLabel || '₦5,000 Data').trim(),
+          ...(questionIds.length ? { questionIds } : {}),
+          metadata: {
+            prizePoolGold: Math.max(
+              Number(req.body?.prizePoolGold || DEFAULT_TRIVIA_PRIZE_GOLD),
+              0
+            ),
+          },
+        },
+      },
+      { new: true, upsert: true }
+    );
+
+    res.json(successResponse(session, 'Trivia session saved successfully.'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/admin/trivia/advance', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    await advanceTriviaSessions();
+    const session = await getCurrentTriviaSession();
+    res.json(successResponse(session, 'Trivia scheduler advanced successfully.'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/admin/trivia/questions.csv', async (req, res, next) => {
+  try {
+    requireSiteAdminToken(req);
+    const csv = await exportTriviaQuestionsCsv();
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="br9-trivia-questions.csv"');
+    res.status(200).send(csv);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post('/api/auth/send-phone-verification', async (req, res, next) => {
   try {
     const phoneNumber = normalisePhoneNumber(req.body?.phoneNumber);
@@ -1999,6 +3588,244 @@ app.post('/api/auth/verify-phone-code', async (req, res, next) => {
   }
 });
 
+app.post('/api/auth/resend-email-verification', async (req, res, next) => {
+  try {
+    const userId = String(req.body?.userId || '').trim();
+    const email = String(req.body?.email || '').trim().toLowerCase();
+
+    if (!userId && !email) {
+      throw new HttpError(400, 'userId or email is required.');
+    }
+
+    const user = await User.findOne(
+      userId ? { _id: userId } : { email }
+    );
+
+    if (!user) {
+      throw new HttpError(404, 'Account not found for email verification.');
+    }
+
+    if (user.emailVerifiedAt) {
+      return res.json(
+        successResponse(
+          {
+            userId: user._id.toString(),
+            emailVerified: true,
+            maskedEmail: maskEmailAddress(user.email),
+          },
+          'Email is already verified.'
+        )
+      );
+    }
+
+    const challenge = await issueEmailVerificationChallenge(user, {
+      context: 'resend',
+    });
+
+    return res.json(
+      successResponse(
+        {
+          userId: user._id.toString(),
+          maskedEmail: challenge.maskedEmail,
+          expiresInSeconds: challenge.expiresInSeconds,
+          deepLink: challenge.deepLink,
+          ...(challenge.deliveryMode === 'dev-log' ||
+          process.env.NODE_ENV === 'test'
+            ? { devCode: challenge.code }
+            : {}),
+        },
+        'Email verification code sent.'
+      )
+    );
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/auth/verify-email-code', async (req, res, next) => {
+  try {
+    const userId = String(req.body?.userId || '').trim();
+    const code = String(req.body?.code || '').trim();
+
+    if (!userId || !code) {
+      throw new HttpError(400, 'userId and code are required.');
+    }
+
+    const challenge = await EmailVerificationChallenge.findOne({
+      userId,
+    }).select('+codeHash');
+
+    if (!challenge) {
+      throw new HttpError(404, 'No pending email verification was found.');
+    }
+
+    if (challenge.expiresAt.getTime() < Date.now()) {
+      throw new HttpError(410, 'That email verification code has expired.');
+    }
+
+    if (Number(challenge.attempts || 0) >= EMAIL_VERIFICATION_MAX_ATTEMPTS) {
+      throw new HttpError(
+        429,
+        'Too many incorrect attempts. Request a fresh email code.'
+      );
+    }
+
+    if (challenge.codeHash !== hashValue(code)) {
+      challenge.attempts = Number(challenge.attempts || 0) + 1;
+      await challenge.save();
+      throw new HttpError(401, 'That email verification code is incorrect.');
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new HttpError(404, 'Account not found for email verification.');
+    }
+
+    user.emailVerifiedAt = new Date();
+    await user.save();
+
+    challenge.attempts = 0;
+    challenge.verifiedAt = new Date();
+    challenge.consumedAt = new Date();
+    await challenge.save();
+
+    const reward = await grantConfiguredReward({
+      userId: user._id,
+      reason: 'email_verification',
+      note: 'Email verification reward',
+      metadata: {
+        trigger: 'email_verification',
+      },
+    });
+
+    return res.json(
+      successResponse(
+        {
+          userId: user._id.toString(),
+          emailVerified: true,
+          emailVerifiedAt: user.emailVerifiedAt,
+          maskedEmail: maskEmailAddress(user.email),
+          br9GoldGranted: reward.granted ? reward.points : 0,
+          br9GoldUnlockDate: reward.unlockDate || user.goldUnlockDate,
+        },
+        'Email verified successfully.'
+      )
+    );
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/auth/request-password-reset', async (req, res, next) => {
+  try {
+    const identity = normaliseLoginIdentifier(
+      req.body?.identity || req.body?.email || req.body?.phoneNumber || ''
+    );
+
+    if (!identity) {
+      throw new HttpError(400, 'Email or phone number is required.');
+    }
+
+    const user = await User.findOne(buildLoginQuery(identity));
+    if (!user) {
+      throw new HttpError(
+        404,
+        'We could not find a BR9ja account with that email or phone number.'
+      );
+    }
+
+    const challenge = await issuePasswordResetChallenge(user, identity);
+    return res.json(
+      successResponse(
+        {
+          channel: challenge.channel,
+          expiresInSeconds: challenge.expiresInSeconds,
+          deepLink: challenge.deepLink,
+          ...(challenge.deliveryMode === 'dev-log' ||
+          process.env.NODE_ENV === 'test'
+            ? { devCode: challenge.code }
+            : {}),
+        },
+        'Reset code sent.'
+      )
+    );
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/auth/confirm-password-reset', async (req, res, next) => {
+  try {
+    const identity = normaliseLoginIdentifier(
+      req.body?.identity || req.body?.email || req.body?.phoneNumber || ''
+    );
+    const code = String(req.body?.code || '').trim();
+    const password = String(req.body?.password || '').trim();
+
+    if (!identity || !code || !password) {
+      throw new HttpError(400, 'identity, code, and password are required.');
+    }
+
+    if (password.length < 8) {
+      throw new HttpError(400, 'Password must be at least 8 characters long.');
+    }
+
+    const user = await User.findOne(buildLoginQuery(identity));
+    if (!user) {
+      throw new HttpError(404, 'Account not found for password reset.');
+    }
+
+    const challenge = await PasswordResetChallenge.findOne({
+      userId: user._id,
+    }).select('+codeHash');
+
+    if (!challenge) {
+      throw new HttpError(404, 'No active password reset challenge was found.');
+    }
+
+    if (challenge.expiresAt.getTime() < Date.now()) {
+      throw new HttpError(410, 'That reset code has expired.');
+    }
+
+    if (Number(challenge.attempts || 0) >= PASSWORD_RESET_MAX_ATTEMPTS) {
+      throw new HttpError(
+        429,
+        'Too many incorrect attempts. Request a fresh reset code.'
+      );
+    }
+
+    if (challenge.codeHash !== hashValue(code)) {
+      challenge.attempts = Number(challenge.attempts || 0) + 1;
+      await challenge.save();
+      throw new HttpError(401, 'Reset code is invalid.');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    user.password = passwordHash;
+    user.passwordHash = passwordHash;
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    challenge.consumedAt = new Date();
+    challenge.attempts = 0;
+    await challenge.save();
+
+    const profile = await buildUserProfile(user._id);
+    return res.json(
+      successResponse(
+        {
+          accessToken: signAccessToken(user),
+          refreshToken: signRefreshToken(user),
+          user: profile,
+        },
+        'Password reset complete.'
+      )
+    );
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.post('/api/auth/register', async (req, res, next) => {
   try {
     const fullName = String(req.body?.fullName || '').trim();
@@ -2017,18 +3844,10 @@ app.post('/api/auth/register', async (req, res, next) => {
       .trim()
       .toUpperCase();
 
-    if (
-      !fullName ||
-      !email ||
-      !password ||
-      !pin ||
-      !phoneNumber ||
-      !bayrightTag ||
-      !phoneVerificationToken
-    ) {
+    if (!fullName || !email || !password || !pin || !phoneNumber || !bayrightTag) {
       throw new HttpError(
         400,
-        'fullName, email, password, pin, phoneNumber, username, and phoneVerificationToken are required.'
+        'fullName, email, password, pin, phoneNumber, and username are required.'
       );
     }
 
@@ -2062,30 +3881,37 @@ app.post('/api/auth/register', async (req, res, next) => {
       throw new HttpError(409, 'An account with those details already exists.');
     }
 
-    const verificationRecord = await PhoneVerification.findOne({
-      phoneNumber,
-    }).select('+verificationTokenHash');
+    let verifiedPhoneAt = null;
+    if (phoneVerificationToken) {
+      const verificationRecord = await PhoneVerification.findOne({
+        phoneNumber,
+      }).select('+verificationTokenHash');
 
-    if (
-      !verificationRecord ||
-      !verificationRecord.verifiedAt ||
-      verificationRecord.consumedAt ||
-      verificationRecord.expiresAt.getTime() < Date.now()
-    ) {
-      throw new HttpError(
-        400,
-        'Verify this phone number by SMS before creating an account.'
-      );
-    }
+      if (
+        !verificationRecord ||
+        !verificationRecord.verifiedAt ||
+        verificationRecord.consumedAt ||
+        verificationRecord.expiresAt.getTime() < Date.now()
+      ) {
+        throw new HttpError(
+          400,
+          'Phone verification token is invalid or has expired.'
+        );
+      }
 
-    if (
-      verificationRecord.verificationTokenHash !==
-      hashValue(phoneVerificationToken)
-    ) {
-      throw new HttpError(
-        401,
-        'Phone verification token is invalid or has expired.'
-      );
+      if (
+        verificationRecord.verificationTokenHash !==
+        hashValue(phoneVerificationToken)
+      ) {
+        throw new HttpError(
+          401,
+          'Phone verification token is invalid or has expired.'
+        );
+      }
+
+      verificationRecord.consumedAt = new Date();
+      await verificationRecord.save();
+      verifiedPhoneAt = verificationRecord.verifiedAt;
     }
 
     const referredByUser = submittedReferralCode
@@ -2103,7 +3929,7 @@ app.post('/api/auth/register', async (req, res, next) => {
       fullName,
       email,
       phoneNumber,
-      phoneVerifiedAt: verificationRecord.verifiedAt,
+      phoneVerifiedAt: verifiedPhoneAt,
       bayrightTag,
       password: passwordHash,
       passwordHash,
@@ -2111,13 +3937,13 @@ app.post('/api/auth/register', async (req, res, next) => {
       accountNumber: buildAccountNumber({ phoneNumber }),
       referralCode,
       referredBy: referredByUser?._id || null,
+      goldUnlockDate: new Date(
+        Date.now() + BR9_GOLD_UNLOCK_DAYS * 24 * 60 * 60 * 1000
+      ),
       activeDeviceId: deviceId,
       lastDeviceChange: deviceId ? new Date() : null,
-      lastLoginAt: new Date(),
+      lastLoginAt: null,
     });
-
-    verificationRecord.consumedAt = new Date();
-    await verificationRecord.save();
 
     if (referredByUser) {
       await User.updateOne(
@@ -2126,15 +3952,27 @@ app.post('/api/auth/register', async (req, res, next) => {
       );
     }
 
-    const profile = await buildUserProfile(user._id);
+    const emailChallenge = await issueEmailVerificationChallenge(user, {
+      context: 'signup',
+    });
+
     res.status(201).json(
       successResponse(
         {
-          accessToken: signAccessToken(user),
-          refreshToken: signRefreshToken(user),
-          user: profile,
+          userId: user._id.toString(),
+          email,
+          maskedEmail: emailChallenge.maskedEmail,
+          emailVerificationRequired: true,
+          emailVerified: false,
+          phoneVerified: Boolean(verifiedPhoneAt),
+          expiresInSeconds: emailChallenge.expiresInSeconds,
+          deepLink: emailChallenge.deepLink,
+          ...(emailChallenge.deliveryMode === 'dev-log' ||
+          process.env.NODE_ENV === 'test'
+            ? { devCode: emailChallenge.code }
+            : {}),
         },
-        'Account created successfully.'
+        'Account created. Verify your email to unlock login.'
       )
     );
   } catch (error) {
@@ -2152,7 +3990,9 @@ app.post('/api/auth/login', async (req, res, next) => {
     const identifier = normaliseLoginIdentifier(
       req.body?.identifier || req.body?.email || req.body?.username
     );
-    const password = String(req.body?.password || '').trim();
+    const password = String(
+      req.body?.secret || req.body?.password || req.body?.pin || ''
+    ).trim();
 
     if (!identifier || !password) {
       throw new HttpError(400, 'Username or email plus password are required.');
@@ -2175,11 +4015,22 @@ app.post('/api/auth/login', async (req, res, next) => {
       );
     }
 
+    if (!user.emailVerifiedAt) {
+      throw new HttpError(
+        403,
+        'Verify your email address before logging in to BR9ja.'
+      );
+    }
+
     const storedPasswordHash = user.password || user.passwordHash;
-    const isMatch = storedPasswordHash
+    const passwordMatch = storedPasswordHash
       ? await bcrypt.compare(password, storedPasswordHash)
       : false;
-    if (!isMatch) {
+    const pinMatch =
+      /^\d{6}$/.test(password) && user.pinHash
+        ? await bcrypt.compare(password, user.pinHash)
+        : false;
+    if (!passwordMatch && !pinMatch) {
       throw new HttpError(401, 'Invalid username, email, or password.');
     }
 
@@ -2204,6 +4055,10 @@ app.post('/api/auth/login', async (req, res, next) => {
           refreshToken: signRefreshToken(user),
           user: profile,
           sessionTransfer: sessionContext.sessionTransfer,
+          onboarding: {
+            requiresPhoneVerification: !profile.phoneVerified,
+            restrictedMode: Boolean(profile.restrictedMode),
+          },
         },
         'Login successful.'
       )
@@ -2255,6 +4110,167 @@ app.post('/api/auth/refresh', async (req, res, next) => {
   }
 });
 
+app.post(
+  '/api/user/send-phone-verification',
+  authenticateAccessToken,
+  async (req, res, next) => {
+    try {
+      const channel = normaliseAdminChoice(
+        req.body?.channel,
+        ['sms', 'whatsapp'],
+        'sms'
+      );
+      const user = await User.findById(req.user._id);
+
+      if (!user) {
+        throw new HttpError(404, 'User not found.');
+      }
+
+      if (user.phoneVerifiedAt) {
+        return res.json(
+          successResponse(
+            {
+              phoneVerified: true,
+              maskedPhoneNumber: maskPhoneNumber(user.phoneNumber),
+            },
+            'Phone number is already verified.'
+          )
+        );
+      }
+
+      const now = new Date();
+      const existingVerification = await PhoneVerification.findOne({
+        phoneNumber: user.phoneNumber,
+      }).select('+codeHash +verificationTokenHash');
+
+      if (
+        existingVerification?.lastSentAt &&
+        now.getTime() - existingVerification.lastSentAt.getTime() <
+          PHONE_VERIFICATION_RESEND_MS
+      ) {
+        throw new HttpError(
+          429,
+          'Please wait a moment before requesting another verification code.'
+        );
+      }
+
+      const code = generateOtpCode();
+      const delivery = await sendVerificationCode({
+        phoneNumber: user.phoneNumber,
+        code,
+        channel,
+      });
+      const expiresAt = new Date(now.getTime() + PHONE_VERIFICATION_TTL_MS);
+      const record =
+        existingVerification ||
+        new PhoneVerification({
+          phoneNumber: user.phoneNumber,
+          codeHash: hashValue(code),
+          expiresAt,
+        });
+
+      record.codeHash = hashValue(code);
+      record.verificationTokenHash = '';
+      record.deliveryMode = delivery.deliveryMode;
+      record.providerMessageId = delivery.providerMessageId;
+      record.attempts = 0;
+      record.sendCount = Number(record.sendCount || 0) + 1;
+      record.expiresAt = expiresAt;
+      record.lastSentAt = now;
+      record.verifiedAt = null;
+      record.consumedAt = null;
+      await record.save();
+
+      return res.json(
+        successResponse(
+          {
+            maskedPhoneNumber: maskPhoneNumber(user.phoneNumber),
+            channel,
+            expiresInSeconds: Math.floor(PHONE_VERIFICATION_TTL_MS / 1000),
+            resendAvailableInSeconds: Math.floor(
+              PHONE_VERIFICATION_RESEND_MS / 1000
+            ),
+            ...(delivery.deliveryMode === 'dev-log' ||
+            process.env.NODE_ENV === 'test'
+              ? { devCode: code }
+              : {}),
+          },
+          'Verification code sent.'
+        )
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+app.post(
+  '/api/user/verify-phone-code',
+  authenticateAccessToken,
+  async (req, res, next) => {
+    try {
+      const code = String(req.body?.code || '').trim();
+      if (!code) {
+        throw new HttpError(400, 'code is required.');
+      }
+
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        throw new HttpError(404, 'User not found.');
+      }
+
+      const record = await PhoneVerification.findOne({
+        phoneNumber: user.phoneNumber,
+      }).select('+codeHash +verificationTokenHash');
+
+      if (!record) {
+        throw new HttpError(404, 'No pending phone verification was found.');
+      }
+
+      if (record.expiresAt.getTime() < Date.now()) {
+        throw new HttpError(410, 'That verification code has expired.');
+      }
+
+      if (Number(record.attempts || 0) >= PHONE_VERIFICATION_MAX_ATTEMPTS) {
+        throw new HttpError(
+          429,
+          'Too many incorrect attempts. Request a fresh verification code.'
+        );
+      }
+
+      if (record.codeHash !== hashValue(code)) {
+        record.attempts = Number(record.attempts || 0) + 1;
+        await record.save();
+        throw new HttpError(401, 'That verification code is incorrect.');
+      }
+
+      user.phoneVerifiedAt = new Date();
+      await user.save();
+
+      record.attempts = 0;
+      record.verifiedAt = new Date();
+      record.consumedAt = new Date();
+      await record.save();
+
+      await grantConfiguredReward({
+        userId: user._id,
+        reason: 'phone_verification',
+        note: 'Phone verification reward',
+        metadata: {
+          trigger: 'phone_verification',
+        },
+      });
+
+      const profile = await buildUserProfile(user._id);
+      return res.json(
+        successResponse(profile, 'Phone number verified successfully.')
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
 app.get(
   '/api/user/profile',
   authenticateAccessToken,
@@ -2266,6 +4282,510 @@ app.get(
       );
     } catch (error) {
       next(error);
+    }
+  }
+);
+
+app.post(
+  '/api/user/transactions/:id/requery',
+  authenticateAccessToken,
+  async (req, res, next) => {
+    try {
+      const transactionId = String(req.params.id || '').trim();
+      const transaction = await Transaction.findOne({
+        _id: transactionId,
+        userId: req.user._id,
+      });
+
+      if (!transaction) {
+        throw new HttpError(404, 'Transaction not found.');
+      }
+
+      if (transaction.status !== 'pending_verification') {
+        return res.json(
+          successResponse(
+            serialiseTransaction(transaction),
+            'This transaction is no longer awaiting provider verification.'
+          )
+        );
+      }
+
+      const result = await requeryAndResolvePendingTransaction(transaction._id);
+      const refreshed = await Transaction.findById(transaction._id);
+
+      res.json(
+        successResponse(
+          {
+            ...serialiseTransaction(refreshed || transaction),
+            providerStatus: result.providerStatus,
+            provider: result.provider,
+          },
+          result.status === 'success'
+            ? 'Delivery confirmed successfully.'
+            : result.status === 'failed'
+              ? 'Delivery failed. Your wallet has been refunded.'
+              : result.status === 'pending_review'
+                ? 'Provider confirmed delivery, but this transaction now needs manual review before final settlement.'
+              : 'Network delay detected. We are still verifying this transaction.'
+        )
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+app.post(
+  '/api/user/transactions/:id/request-instant-refund',
+  authenticateAccessToken,
+  async (req, res, next) => {
+    const session = await mongoose.startSession();
+
+    try {
+      const transactionId = String(req.params.id || '').trim();
+      const transaction = await Transaction.findOne({
+        _id: transactionId,
+        userId: req.user._id,
+      });
+
+      if (!transaction) {
+        throw new HttpError(404, 'Transaction not found.');
+      }
+
+      if (transaction.status !== 'pending_verification') {
+        throw new HttpError(
+          409,
+          'Only pending verification transactions can request an instant refund.'
+        );
+      }
+
+      const ageMs = Date.now() - new Date(transaction.createdAt || transaction.timestamp || Date.now()).getTime();
+      if (ageMs < 5 * 60 * 1000) {
+        throw new HttpError(
+          409,
+          'Please allow the 5-minute verification window to complete before requesting an instant refund.'
+        );
+      }
+
+      const providerResult = await resolveWithProvider(transaction);
+      const providerStatus = normaliseProviderStatus(providerResult.status);
+      if (providerStatus === 'success') {
+        const result = await requeryAndResolvePendingTransaction(transaction._id);
+        const refreshed = await Transaction.findById(transaction._id);
+        return res.json(
+          successResponse(
+            {
+              ...serialiseTransaction(refreshed || transaction),
+              providerStatus: result.providerStatus,
+              provider: result.provider,
+            },
+            'Provider confirmed success before refund. Your transaction has been completed.'
+          )
+        );
+      }
+
+      if (providerStatus === 'failed') {
+        const result = await requeryAndResolvePendingTransaction(transaction._id);
+        const refreshed = await Transaction.findById(transaction._id);
+        return res.json(
+          successResponse(
+            {
+              ...serialiseTransaction(refreshed || transaction),
+              providerStatus: result.providerStatus,
+              provider: result.provider,
+            },
+            'Provider confirmed failure. Your wallet has been protected automatically.'
+          )
+        );
+      }
+
+      let payload = null;
+      await session.withTransaction(async () => {
+        const liveTransaction = await Transaction.findById(transaction._id).session(session);
+        if (!liveTransaction || liveTransaction.status !== 'pending_verification') {
+          throw new HttpError(409, 'This transaction is no longer awaiting verification.');
+        }
+
+        const walletDebited = liveTransaction.metadata?.walletDebited !== false;
+        const user = await User.findById(req.user._id).session(session);
+        if (!user) {
+          throw new HttpError(404, 'User not found.');
+        }
+
+        if (walletDebited) {
+          user.balance = Number(user.balance || 0) + Number(liveTransaction.amount || 0);
+          await user.save({ session });
+        }
+
+        liveTransaction.status = 'failed';
+        liveTransaction.balanceAfter = Number(user.balance || 0);
+        liveTransaction.metadata = {
+          ...(liveTransaction.metadata || {}),
+          instantRefundRequestedAt: new Date(),
+          instantRefundReason: 'pending-timeout',
+          walletRefundedAt: walletDebited ? new Date() : undefined,
+          refundTriggeredBy: 'user-instant-refund',
+        };
+        await liveTransaction.save({ session });
+        await syncLinkedServiceRecord(
+          liveTransaction,
+          'failed',
+          {
+            providerResponse: providerResult.raw || {},
+          },
+          session
+        );
+
+        await createTransactionAuditLog({
+          transactionId: liveTransaction._id,
+          userId: liveTransaction.userId || null,
+          step: 'instant_refund',
+          status: 'failed',
+          message:
+            'User requested an instant refund after the pending verification window elapsed.',
+          metadata: {
+            provider: liveTransaction.metadata?.provider || '',
+            walletDebited,
+          },
+          session,
+        });
+
+        payload = serialiseTransaction(liveTransaction);
+      });
+
+      res.json(
+        successResponse(
+          payload,
+          'Instant refund completed. Your balance is safe and the transaction has been closed.'
+        )
+      );
+    } catch (error) {
+      next(error);
+    } finally {
+      await session.endSession();
+    }
+  }
+);
+
+app.post(
+  '/api/user/gold-to-wallet',
+  authenticateAccessToken,
+  async (req, res, next) => {
+    const session = await mongoose.startSession();
+
+    try {
+      const siteConfig = await readSiteConfig();
+      let payload = null;
+
+      await session.withTransaction(async () => {
+        payload = await convertGoldToWallet({
+          userId: req.user._id,
+          goldAmount: Number(req.body?.goldAmount || 0),
+          minimumSuccessfulTransactions: Number(
+            siteConfig.goldToWalletMinimumSuccessfulTransactions || 5
+          ),
+          session,
+        });
+      });
+
+      res.json(
+        successResponse(
+          payload,
+          'BR9 Gold converted to wallet balance successfully.'
+        )
+      );
+    } catch (error) {
+      next(error);
+    } finally {
+      await session.endSession();
+    }
+  }
+);
+
+app.post(
+  '/api/user/become-partner',
+  authenticateAccessToken,
+  async (req, res, next) => {
+    const session = await mongoose.startSession();
+
+    try {
+      const siteConfig = await readSiteConfig();
+      const activationFee = Number(siteConfig.resellerActivationFee || 2500);
+
+      let payload;
+      await session.withTransaction(async () => {
+        const user = await User.findById(req.user._id).session(session);
+        if (!user) {
+          throw new HttpError(404, 'User not found.');
+        }
+
+        if (String(user.role || '').toLowerCase() === 'reseller') {
+          payload = {
+            alreadyActive: true,
+            role: user.role,
+            resellerTier: user.resellerTier,
+            activationFee,
+            activatedAt: user.resellerActivatedAt,
+          };
+          return;
+        }
+
+        if (Number(user.balance || 0) < activationFee) {
+          throw new HttpError(
+            422,
+            `Fund your wallet with at least ${formatCurrency(activationFee)} to activate reseller access.`
+          );
+        }
+
+        user.balance = Number(user.balance || 0) - activationFee;
+        user.role = 'reseller';
+        user.resellerTier = 'bronze';
+        user.resellerActivatedAt = new Date();
+        user.resellerActivationFeePaidAt = new Date();
+        await user.save({ session });
+
+        const [transaction] = await Transaction.create(
+          [
+            {
+              senderId: user._id,
+              userId: user._id,
+              senderName: user.fullName,
+              receiverName: 'BR9 Partner Network',
+              amount: activationFee,
+              type: 'ResellerActivation',
+              status: 'success',
+              timestamp: new Date(),
+              reference: createReference('PARTNER'),
+              note: 'Reseller activation fee',
+              balanceAfter: user.balance,
+              currency: 'NGN',
+              metadata: {
+                activationFee,
+                tier: user.resellerTier,
+              },
+            },
+          ],
+          { session }
+        );
+
+        await UserNotification.create(
+          [
+            {
+              userId: user._id,
+              title: 'Partner Access Activated',
+              body: 'You are now a BR9ja reseller. Wholesale pricing is live on your account.',
+              type: 'reseller-activation',
+              status: 'queued',
+              metadata: {
+                transactionId: transaction._id.toString(),
+              },
+            },
+          ],
+          { session }
+        );
+
+        payload = {
+          alreadyActive: false,
+          role: user.role,
+          resellerTier: user.resellerTier,
+          activationFee,
+          balance: Number(user.balance || 0),
+          activatedAt: user.resellerActivatedAt,
+          transactionId: transaction._id.toString(),
+        };
+      });
+
+      res.status(201).json(
+        successResponse(payload, payload.alreadyActive ? 'Partner profile already active.' : 'Partner profile activated successfully.')
+      );
+    } catch (error) {
+      next(error);
+    } finally {
+      await session.endSession();
+    }
+  }
+);
+
+app.get(
+  '/api/user/reseller-ledger',
+  authenticateAccessToken,
+  async (req, res, next) => {
+    try {
+      const monthStart = startOfCurrentMonth();
+      const rows = await Transaction.find({
+        userId: req.user._id,
+        status: 'success',
+        createdAt: { $gte: monthStart },
+        'metadata.role': 'reseller',
+      })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean();
+
+      const totalSavings = rows.reduce(
+        (total, row) => total + Number(row.metadata?.resellerSavings || 0),
+        0
+      );
+
+      await User.findByIdAndUpdate(req.user._id, {
+        $set: {
+          resellerSavingsMonthToDate: totalSavings,
+        },
+      });
+
+      res.json(
+        successResponse(
+          {
+            totalSavings,
+            rows: rows.map((row) => ({
+              id: row._id.toString(),
+              reference: row.reference,
+              service: mapService(row.type),
+              amount: Number(row.amount || 0),
+              wholesalePrice: Number(row.amount || 0),
+              retailPrice: Number(
+                row.metadata?.standardRetailPrice || row.metadata?.sellingPrice || row.amount || 0
+              ),
+              savings: Number(row.metadata?.resellerSavings || 0),
+              createdAt: row.createdAt || row.timestamp,
+            })),
+          },
+          'Reseller earnings ledger loaded.'
+        )
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+app.post(
+  '/api/user/gold/swap-data',
+  authenticateAccessToken,
+  async (req, res, next) => {
+    const session = await mongoose.startSession();
+
+    try {
+      const catalogId = String(req.body?.catalogId || '').trim();
+      const phoneNumber = normalisePhoneNumber(req.body?.phoneNumber || req.user.phoneNumber);
+      const goldToUse = Number(req.body?.goldToUse || 0);
+
+      if (!catalogId || !phoneNumber || !Number.isFinite(goldToUse) || goldToUse < 1000) {
+        throw new HttpError(
+          400,
+          'catalogId, phoneNumber, and at least 1000 BR9 Gold are required.'
+        );
+      }
+
+      let payload;
+      await session.withTransaction(async () => {
+        const [user, catalog] = await Promise.all([
+          User.findById(req.user._id).session(session),
+          ServiceCatalog.findById(catalogId).session(session),
+        ]);
+
+        if (!user) {
+          throw new HttpError(404, 'User not found.');
+        }
+        if (!catalog || String(catalog.serviceKey || '').trim() !== 'data') {
+          throw new HttpError(404, 'Data plan not found for BR9 Gold swap.');
+        }
+        if (user.goldUnlockDate && new Date(user.goldUnlockDate).getTime() > Date.now()) {
+          throw new HttpError(
+            423,
+            `Patience pays! 🚀 Your Gold will be ready to spend in ${calculateDaysUntil(
+              user.goldUnlockDate
+            )} days.`
+          );
+        }
+
+        const goldValue = Number(goldToUse || 0) / BR9_GOLD_TO_NAIRA_RATE;
+        if (goldValue < Number(catalog.sellingPrice || 0)) {
+          throw new HttpError(
+            422,
+            'Selected data plan costs more than the BR9 Gold value you are trying to spend.'
+          );
+        }
+        if (Number(user.br9GoldBalance || 0) < goldToUse) {
+          throw new HttpError(422, 'Not enough spendable BR9 Gold for this swap.');
+        }
+
+        const vendorResult = await purchaseDataWithClubkonnect({
+          network: catalog.serviceId,
+          phoneNumber,
+          planCode: catalog.variationCode,
+          amount: Number(catalog.costPrice || 0),
+        });
+
+        user.br9GoldBalance = Math.max(Number(user.br9GoldBalance || 0) - goldToUse, 0);
+        await user.save({ session });
+
+        const nairaEquivalent = Number(catalog.sellingPrice || 0);
+
+        await GoldTransaction.create(
+          [
+            {
+              userId: user._id,
+              source: 'gold_to_data_swap',
+              amount: goldToUse,
+              direction: 'debit',
+              balanceAfter: Number(user.br9GoldBalance || 0),
+              locked: false,
+              note: `Gold swapped for ${catalog.label}`,
+              reference: createReference('GOLDDATA'),
+              metadata: {
+                catalogId: catalog._id.toString(),
+                phoneNumber,
+                nairaEquivalent,
+              },
+            },
+          ],
+          { session }
+        );
+
+        const [transaction] = await Transaction.create(
+          [
+            {
+              senderId: user._id,
+              userId: user._id,
+              senderName: user.fullName,
+              receiverName: 'BR9 Gold Data Swap',
+              amount: nairaEquivalent,
+              type: 'PointConversion',
+              status: 'success',
+              timestamp: new Date(),
+              reference: createReference('DATASWAP'),
+              note: `${catalog.label} via BR9 Gold`,
+              balanceAfter: Number(user.balance || 0),
+              currency: 'NGN',
+              metadata: {
+                catalogId: catalog._id.toString(),
+                goldUsed: goldToUse,
+                phoneNumber,
+                receiptNumber: vendorResult.receiptNumber,
+                provider: vendorResult.provider,
+              },
+            },
+          ],
+          { session }
+        );
+
+        payload = {
+          transactionId: transaction._id.toString(),
+          reference: transaction.reference,
+          planLabel: catalog.label,
+          phoneNumber,
+          goldUsed: goldToUse,
+          receiptNumber: vendorResult.receiptNumber,
+          remainingGoldBalance: Number(user.br9GoldBalance || 0),
+        };
+      });
+
+      res.status(201).json(successResponse(payload, 'BR9 Gold swapped for data successfully.'));
+    } catch (error) {
+      next(error);
+    } finally {
+      await session.endSession();
     }
   }
 );
@@ -2392,6 +4912,7 @@ app.post(
 app.post(
   '/api/transactions/transfer',
   authenticateAccessToken,
+  enforceMaintenanceMode,
   deviceGuard,
   coolingOutflowLimit,
   checkKycLimit,
@@ -2536,6 +5057,13 @@ app.get(
   async (req, res, next) => {
     try {
       const limit = Math.min(Number(req.query?.limit || 10), 50);
+      const gameType = String(req.query?.gameType || '').trim().toLowerCase();
+      if (gameType === 'market_runner') {
+        const rows = await getMarketRunnerLeaderboard(limit);
+        return res.json(
+          successResponse(rows, 'Market Runner leaderboard fetched successfully.')
+        );
+      }
       const rows = await getWeeklyLeaderboard(limit);
       res.json(
         successResponse(
@@ -2551,6 +5079,173 @@ app.get(
       );
     } catch (error) {
       next(error);
+    }
+  }
+);
+
+app.get(
+  '/api/v1/games/leaderboard',
+  authenticateAccessToken,
+  blockWebGameplay,
+  async (req, res, next) => {
+    try {
+      const limit = Math.min(Number(req.query?.limit || 50), 50);
+      const rows = await getMarketRunnerLeaderboard(limit);
+      return res.json(
+        successResponse(rows, 'Market Runner leaderboard fetched successfully.')
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+app.get(
+  '/api/games/market-runner/state',
+  authenticateAccessToken,
+  blockWebGameplay,
+  async (req, res, next) => {
+    try {
+      const state = await getMarketRunnerState(req.user);
+      return res.json(
+        successResponse(state, 'Market Runner state fetched successfully.')
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+app.get(
+  '/api/games/market-runner/game-over',
+  authenticateAccessToken,
+  blockWebGameplay,
+  async (req, res, next) => {
+    try {
+      const obstacleType = String(req.query?.obstacleType || 'power_outage').trim();
+      const prompt = await buildGameOverPrompt(req.user._id, obstacleType);
+      return res.json(
+        successResponse(prompt, 'Market Runner game-over prompt generated.')
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+app.post(
+  '/api/games/market-runner/popup-click',
+  authenticateAccessToken,
+  blockWebGameplay,
+  async (req, res, next) => {
+    try {
+      const click = await trackGamePopupClick({
+        userId: req.user._id,
+        obstacleType: String(req.body?.obstacleType || '').trim(),
+        scenario: String(req.body?.scenario || '').trim(),
+        cta: String(req.body?.cta || '').trim(),
+        clicked: req.body?.clicked !== false,
+        converted: req.body?.converted === true,
+        metadata: req.body?.metadata || {},
+      });
+
+      return res.status(201).json(
+        successResponse(
+          {
+            id: click._id.toString(),
+            scenario: click.scenario,
+            clicked: click.clicked,
+            converted: click.converted,
+          },
+          'Market Runner popup interaction tracked.'
+        )
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+app.post(
+  '/api/games/market-runner/refill-energy',
+  authenticateAccessToken,
+  blockWebGameplay,
+  async (req, res, next) => {
+    try {
+      const payload = await refillMarketRunnerEnergy(req.user);
+      return res.json(
+        successResponse(payload, 'Market Runner energy refilled successfully.')
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+app.post(
+  '/api/games/ad-watch',
+  authenticateAccessToken,
+  async (req, res, next) => {
+    try {
+      const revenueAmount = Number(req.body?.revenueAmount || process.env.DEFAULT_AD_REVENUE_AMOUNT || 15);
+      const source = String(req.body?.source || 'dashboard_ad_watch').trim();
+
+      await recordAdRevenueContribution({
+        userId: req.user._id,
+        source,
+        revenueAmount,
+        metadata: {
+          channel: 'dashboard',
+          gameMode: getCurrentGameMode().key,
+        },
+      });
+
+      res.status(201).json(
+        successResponse(
+          {
+            source,
+            revenueAmount,
+            gameMode: getCurrentGameMode(),
+          },
+          'Ad multiplier recorded successfully.'
+        )
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+app.post(
+  '/api/games/reward',
+  authenticateAccessToken,
+  blockWebGameplay,
+  async (req, res, next) => {
+    try {
+      const payload = await submitMarketRunnerReward({
+        user: req.user,
+        payload: {
+          gameType: req.body?.gameType,
+          sessionId: req.body?.sessionId,
+          score: req.body?.score,
+          durationSeconds: req.body?.durationSeconds,
+          timestamp: req.body?.timestamp,
+          collectedNotes: req.body?.collectedNotes,
+          obstaclesCleared: req.body?.obstaclesCleared,
+          utilityDeliveries: req.body?.utilityDeliveries,
+          revivedWithAd: req.body?.revivedWithAd,
+          powerUps: req.body?.powerUps,
+        },
+        signature: String(
+          req.body?.signature || req.get('X-Game-Signature') || ''
+        ).trim(),
+      });
+
+      return res.status(201).json(
+        successResponse(payload, 'Market Runner reward credited successfully.')
+      );
+    } catch (error) {
+      return next(error);
     }
   }
 );
@@ -2754,13 +5449,13 @@ app.post(
 );
 
 app.use('/api/admin', authenticateAccessToken, adminRoutes);
-app.use('/api/betting', bettingRoutes);
-app.use('/api/gov', governmentRoutes);
+app.use('/api/betting', enforceMaintenanceMode, bettingRoutes);
+app.use('/api/gov', enforceMaintenanceMode, governmentRoutes);
 app.use('/api/live', liveRoutes);
-app.use('/api/transport', transportRoutes);
+app.use('/api/transport', enforceMaintenanceMode, transportRoutes);
 app.use('/api/trivia', triviaRoutes);
-app.use('/api/vending', vendingRoutes);
-app.use('/api/utility', utilityRoutes);
+app.use('/api/vending', enforceMaintenanceMode, vendingRoutes);
+app.use('/api/utility', enforceMaintenanceMode, utilityRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
@@ -2820,18 +5515,226 @@ async function initializeIndexes() {
     Transaction.collection.createIndex({ userId: 1, createdAt: -1 }),
     Transaction.collection.createIndex({ senderId: 1, createdAt: -1 }),
     Transaction.collection.createIndex({ receiverId: 1, createdAt: -1 }),
+    GameScore.collection.createIndex(
+      { userId: 1, gameType: 1 },
+      { unique: true }
+    ),
+    GameScore.collection.createIndex({ gameType: 1, dailyScore: -1 }),
+    GamePopupClick.collection.createIndex({ userId: 1, createdAt: -1 }),
+    GoldAuditLog.collection.createIndex({ userId: 1, createdAt: -1 }),
+    GoldAuditLog.collection.createIndex({ actionType: 1, createdAt: -1 }),
+    GoldTransaction.collection.createIndex({ userId: 1, createdAt: -1 }),
     SecurityEvent.collection.createIndex({ createdAt: -1 }),
     SecurityEvent.collection.createIndex({ eventType: 1, createdAt: -1 }),
+    SecurityIncident.collection.createIndex({ createdAt: -1 }),
+    TransactionAuditLog.collection.createIndex({ transactionId: 1, createdAt: -1 }),
+    Trivia.collection.createIndex({ active: 1, createdAt: -1 }),
+    TriviaSession.collection.createIndex({ scheduledFor: -1, state: 1 }),
   ]);
+}
+
+async function notifyClubkonnectLowBalance(balance) {
+  const amount = Number(balance || 0);
+  const existing = await SecurityEvent.findOne({
+    eventType: 'clubkonnect_low_balance',
+    createdAt: { $gte: new Date(Date.now() - 30 * 60 * 1000) },
+  }).lean();
+
+  if (existing) {
+    return;
+  }
+
+  const message = `Clubkonnect balance is low at ₦${amount.toLocaleString()}. Top up the provider wallet to keep BR9ja services live.`;
+
+  await SecurityEvent.create({
+    eventType: 'clubkonnect_low_balance',
+    severity: 'high',
+    route: 'clubkonnect-monitor',
+    method: 'SYSTEM',
+    message,
+    metadata: {
+      balance: amount,
+    },
+  });
+
+  const admins = await User.find({ role: 'admin', accountDeletedAt: null })
+    .select('email phoneNumber')
+    .lean();
+
+  await Promise.all(
+    admins.map(async (admin) => {
+      const [notification] = await UserNotification.create([
+        {
+          userId: admin._id,
+          title: 'Clubkonnect Balance Low',
+          body: message,
+          type: 'admin_alert',
+          status: 'queued',
+          metadata: {
+            balance: amount,
+            provider: 'clubkonnect',
+          },
+        },
+      ]);
+
+      await Promise.allSettled([
+        sendSendchampPush({
+          user: {
+            id: admin._id.toString(),
+            email: admin.email,
+            phoneNumber: admin.phoneNumber,
+          },
+          title: notification.title,
+          body: notification.body,
+          data: notification.metadata || {},
+        }),
+        sendSendchampMessage({
+          channel: 'whatsapp',
+          to: admin.phoneNumber,
+          message,
+        }),
+      ]);
+    })
+  );
+}
+
+function startClubkonnectBalanceMonitor() {
+  if (process.env.ENABLE_CLUBKONNECT_MONITOR === 'false') {
+    return;
+  }
+
+  const threshold = Number(process.env.CLUBKONNECT_LOW_BALANCE_THRESHOLD || 2000);
+  const intervalMs = Number(process.env.CLUBKONNECT_BALANCE_INTERVAL_MS || 30 * 60 * 1000);
+
+  const runCheck = async () => {
+    try {
+      const summary = await checkClubkonnectBalance();
+      if (Number(summary.balance || 0) < threshold) {
+        await notifyClubkonnectLowBalance(summary.balance);
+      }
+    } catch (error) {
+      console.warn('Clubkonnect balance monitor failed.', error?.message || error);
+    }
+  };
+
+  void runCheck();
+  setInterval(runCheck, intervalMs);
+}
+
+function startProviderHeartbeatMonitor() {
+  const intervalMs = Number(process.env.PROVIDER_HEALTH_INTERVAL_MS || 10 * 60 * 1000);
+
+  const runCheck = async () => {
+    try {
+      await checkProviderHealth();
+    } catch (error) {
+      console.warn('Provider heartbeat failed.', error?.message || error);
+    }
+  };
+
+  void runCheck();
+  setInterval(runCheck, intervalMs);
+}
+
+function startPendingVerificationWorker() {
+  const intervalMs = Number(process.env.PENDING_REQUERY_INTERVAL_MS || 2 * 60 * 1000);
+
+  const runLoop = async () => {
+    try {
+      await requeryPendingTransactions();
+    } catch (error) {
+      console.warn('Pending verification worker failed.', error?.message || error);
+    }
+  };
+
+  void runLoop();
+  setInterval(runLoop, intervalMs);
+}
+
+function startPendingReviewEscalator() {
+  const intervalMs = Number(process.env.PENDING_REVIEW_INTERVAL_MS || 5 * 60 * 1000);
+
+  const runLoop = async () => {
+    try {
+      await notifyCriticalDelays({
+        thresholdMinutes: 15,
+        limit: 10,
+      });
+      await moveStalePendingTransactionsToAdminReview();
+    } catch (error) {
+      console.warn('Pending review escalator failed.', error?.message || error);
+    }
+  };
+
+  void runLoop();
+  setInterval(runLoop, intervalMs);
+}
+
+function startNightlyReconciliationMonitor() {
+  const intervalMs = Number(process.env.RECONCILIATION_INTERVAL_MS || 60 * 60 * 1000);
+
+  const runLoop = async () => {
+    const now = new Date();
+    if (now.getHours() === 23 && now.getMinutes() >= 45) {
+      try {
+        const report = await buildDailyReconciliationReport();
+        const siteConfig = await readSiteConfig();
+        if (siteConfig.opsEmail) {
+          await sendSiteMail({
+            to: siteConfig.opsEmail,
+            subject: `BR9ja Daily Health Report • ${new Date().toLocaleDateString('en-NG')}`,
+            text: [
+              `Total Wallet Balances: ${formatCurrency(report.totalWalletBalances)}`,
+              `Total Gateway Deposits: ${formatCurrency(report.totalGatewayDeposits)}`,
+              `Total Provider Spend: ${formatCurrency(report.totalProviderSpend)}`,
+              `Expected Ending Balance: ${formatCurrency(report.expectedEndingBalance)}`,
+              `Discrepancy: ${formatCurrency(report.discrepancy)}`,
+              `Healthy: ${report.healthy ? 'YES' : 'NO'}`,
+            ].join('\n'),
+          }).catch(() => {});
+        }
+      } catch (error) {
+        console.warn('Nightly reconciliation failed.', error?.message || error);
+      }
+    }
+  };
+
+  void runLoop();
+  setInterval(runLoop, intervalMs);
+}
+
+function startTriviaScheduler() {
+  const intervalMs = Number(process.env.TRIVIA_SCHEDULER_INTERVAL_MS || 60 * 1000);
+
+  const runLoop = async () => {
+    try {
+      await ensureUpcomingTriviaSession();
+      await advanceTriviaSessions();
+    } catch (error) {
+      console.warn('Trivia scheduler failed.', error?.message || error);
+    }
+  };
+
+  void runLoop();
+  setInterval(runLoop, intervalMs);
 }
 
 async function bootstrap() {
   await connectDb();
   await initializeIndexes();
+  await ensureDefaultServiceCatalog();
   if (process.env.ENABLE_CRON !== 'false') {
     startPayoutEngine();
     startPayoutProcessor();
+    startMarketRunnerEngine();
+    startGameLogicEngine();
   }
+  startClubkonnectBalanceMonitor();
+  startProviderHeartbeatMonitor();
+  startPendingVerificationWorker();
+  startPendingReviewEscalator();
+  startNightlyReconciliationMonitor();
+  startTriviaScheduler();
 
   app.listen(PORT, () => {
     console.log(`Bayright9ja backend listening on port ${PORT}`);

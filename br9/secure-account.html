@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Your Account | BR9ja</title>
+  <meta name="description" content="Secure your BR9ja account by verifying your phone number after your first login.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="canonical" href="https://br9.ng/secure-account">
+  <link rel="icon" type="image/png" href="./assets/favicon.png">
+  <link rel="apple-touch-icon" href="./assets/apple_touch_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./main.css">
+  <script defer src="./main.js"></script>
+</head>
+<body data-page="secure-account" data-base=".">
+  <div class="site-shell">
+    <div data-site-shell></div>
+
+    <main class="auth-shell">
+      <section class="auth-card auth-card--reset" data-auth-card>
+        <div class="auth-card__header">
+          <h1>Secure Your Account</h1>
+          <p class="auth-card__copy">Send a 6-digit code to <span data-secure-phone>your phone</span> so BR9ja can unlock your dashboard fully.</p>
+          <div class="auth-step-strip" aria-label="Phone verification reward">
+            <span class="auth-step-strip__reward">+100 BR9 Gold</span>
+            <span class="auth-step-strip__note">Choose SMS or WhatsApp. Each code expires in 10 minutes.</span>
+          </div>
+        </div>
+
+        <div class="auth-row auth-row--left">
+          <button class="verify-button verify-button--sms" type="button" data-phone-send-channel="sms">Send via SMS</button>
+          <button class="verify-button verify-button--whatsapp" type="button" data-phone-send-channel="whatsapp">Send via WhatsApp</button>
+        </div>
+
+        <div class="otp-verify-row">
+          <div class="field-shell">
+            <span class="field-icon">#</span>
+            <input data-secure-account-code type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code" data-validate="otp" aria-label="Phone verification code">
+          </div>
+          <button class="verify-button verify-button--confirm" type="button" data-secure-account-verify>Verify</button>
+        </div>
+
+        <div class="success-banner" data-secure-account-feedback aria-live="polite"></div>
+      </section>
+    </main>
+
+    <div data-site-footer></div>
+  </div>
+</body>
+</html>

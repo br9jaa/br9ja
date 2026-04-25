@@ -61,15 +61,40 @@
                 <th>Silent Profit</th>
                 <th>Date</th>
                 <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody data-transactions-table>
               <tr>
-                <td colspan="6">Unlock The Vault to load the current ledger.</td>
+                <td colspan="7">Unlock The Vault to load the current ledger.</td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <div class="admin-audit-panel">
+          <div class="section-header section-header--left">
+            <span class="kicker">Audit Trail</span>
+            <h2 class="section-title">Every step on the selected transaction.</h2>
+          </div>
+          <div class="admin-table-shell">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Step</th>
+                  <th>Status</th>
+                  <th>Message</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody data-transaction-audit-table>
+                <tr><td colspan="4">Select a transaction row to inspect the audit trail.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="success-banner" data-transaction-action-feedback aria-live="polite"></div>
       </section>
     </main>
   </div>

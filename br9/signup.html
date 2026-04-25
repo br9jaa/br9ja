@@ -28,58 +28,64 @@
 
         <form class="admin-form" data-form="auth-preview" data-auth-mode="signup">
           <div class="field-group">
-            <label for="signup-full-name">Full Name</label>
             <div class="field-shell">
               <span class="field-icon">👤</span>
-              <input id="signup-full-name" name="fullName" type="text" placeholder="Full name" data-validate="name" required>
+              <input id="signup-full-name" name="fullName" type="text" placeholder="Full Name" aria-label="Full Name" data-validate="name" required>
             </div>
           </div>
 
           <div class="field-group">
-            <label for="signup-username">Username</label>
             <div class="field-shell">
               <span class="field-icon">＠</span>
-              <input id="signup-username" name="username" type="text" placeholder="Username" data-validate="username" required>
+              <input id="signup-username" name="username" type="text" placeholder="Username" aria-label="Username" data-validate="username" required>
             </div>
           </div>
 
           <div class="field-group">
-            <label for="signup-email">Email</label>
             <div class="field-shell">
               <span class="field-icon">✉</span>
-              <input id="signup-email" name="email" type="email" placeholder="Email" data-validate="email" required>
+              <input id="signup-email" name="email" type="email" placeholder="Email" aria-label="Email" data-validate="email" required>
             </div>
           </div>
 
           <div class="field-group">
-            <label for="signup-phone">Phone Number</label>
             <div class="field-shell">
               <span class="field-icon">☎</span>
-              <input id="signup-phone" name="phone" type="tel" placeholder="Phone number" data-validate="phone" required>
+              <input id="signup-phone" name="phone" type="tel" placeholder="Phone Number" aria-label="Phone Number" data-validate="phone" required>
             </div>
           </div>
 
           <div class="field-group">
-            <label for="signup-password">Password</label>
-            <div class="field-shell">
+            <div class="field-shell field-shell--with-action">
               <span class="field-icon">🔒</span>
-              <input id="signup-password" name="password" type="password" placeholder="Password" data-validate="password" required>
+              <input id="signup-password" name="password" type="password" placeholder="Password" aria-label="Password" data-validate="password" required>
+              <button class="field-inline-action" type="button" data-toggle-password="#signup-password" aria-label="Show password" aria-pressed="false">
+                <span class="field-inline-action__icon">👁</span>
+              </button>
             </div>
           </div>
 
           <div class="field-group">
-            <label for="signup-password-confirm">Repeat Password</label>
-            <div class="field-shell">
+            <div class="field-shell field-shell--with-action">
               <span class="field-icon">🔒</span>
-              <input id="signup-password-confirm" name="confirmPassword" type="password" placeholder="Repeat password" data-validate="password" required>
+              <input id="signup-password-confirm" name="confirmPassword" type="password" placeholder="Repeat Password" aria-label="Repeat Password" data-validate="password" required>
+              <button class="field-inline-action" type="button" data-toggle-password="#signup-password-confirm" aria-label="Show repeated password" aria-pressed="false">
+                <span class="field-inline-action__icon">👁</span>
+              </button>
             </div>
           </div>
 
           <div class="field-group">
-            <label for="signup-pin">6-Digit Quick PIN</label>
             <div class="field-shell">
               <span class="field-icon">✦</span>
-              <input id="signup-pin" name="pin" type="password" inputmode="numeric" maxlength="6" placeholder="6-digit PIN" data-validate="pin" required>
+              <input id="signup-pin" name="pin" type="text" inputmode="numeric" maxlength="6" placeholder="6-Digit Quick PIN" aria-label="6-Digit Quick PIN" data-validate="pin" required>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-shell">
+              <span class="field-icon">⤴</span>
+              <input id="signup-referral" name="referralCode" type="text" placeholder="Referral Code" aria-label="Referral Code">
             </div>
           </div>
 

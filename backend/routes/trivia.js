@@ -5,6 +5,15 @@ const mongoose = require('mongoose');
 
 const { authenticateAccessToken } = require('../middleware/security.middleware');
 const { Transaction, Trivia, User } = require('../models');
+const {
+  ensureSeedTriviaQuestions,
+  exportTriviaQuestionsCsv,
+  getCurrentTriviaSession,
+  getTriviaSessionQuestions,
+  joinTriviaSession,
+  submitTriviaSessionAnswers,
+  summariseTriviaSession,
+} = require('../services/trivia.service');
 
 const router = express.Router();
 
@@ -20,40 +29,9 @@ function reference(prefix) {
   return `BR9-${prefix}-${Date.now().toString(36).toUpperCase()}`;
 }
 
-async function ensureSeedTrivia() {
-  const count = await Trivia.countDocuments({});
-  if (count > 0) {
-    return;
-  }
-
-  await Trivia.insertMany([
-    {
-      question: 'Which Nigerian artist is nicknamed African Giant?',
-      options: ['Burna Boy', 'Davido', 'Wizkid', 'Rema'],
-      correctOptionIndex: 0,
-      category: 'pop-culture',
-      rewardPoints: 5,
-    },
-    {
-      question: 'Which sport is the Super Eagles known for?',
-      options: ['Basketball', 'Football', 'Boxing', 'Cricket'],
-      correctOptionIndex: 1,
-      category: 'sports',
-      rewardPoints: 5,
-    },
-    {
-      question: 'What color is strongly associated with Nigerian national teams?',
-      options: ['Blue', 'Green', 'Purple', 'Orange'],
-      correctOptionIndex: 1,
-      category: 'brands',
-      rewardPoints: 5,
-    },
-  ]);
-}
-
 router.get('/questions', async (_req, res, next) => {
   try {
-    await ensureSeedTrivia();
+    await ensureSeedTriviaQuestions();
     const questions = await Trivia.find({ active: true })
       .sort({ createdAt: -1 })
       .limit(10)
@@ -71,6 +49,84 @@ router.get('/questions', async (_req, res, next) => {
       })),
       message: 'Trivia questions fetched.',
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/session/current', async (req, res, next) => {
+  try {
+    const session = await getCurrentTriviaSession();
+    res.json({
+      success: true,
+      data: session ? summariseTriviaSession(session, req.user._id) : null,
+      message: session ? 'Trivia session loaded.' : 'No trivia session is scheduled right now.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/session/join', async (req, res, next) => {
+  try {
+    const sessionId = String(req.body?.sessionId || '').trim();
+    if (!sessionId) {
+      throw httpError(400, 'sessionId is required.');
+    }
+
+    const payload = await joinTriviaSession({
+      sessionId,
+      userId: req.user._id,
+    });
+
+    res.json({
+      success: true,
+      data: payload,
+      message: 'Trivia session joined successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/session/:sessionId/questions', async (req, res, next) => {
+  try {
+    const payload = await getTriviaSessionQuestions(req.params.sessionId, req.user._id);
+    res.json({
+      success: true,
+      data: payload,
+      message: 'Trivia session questions loaded.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/session/:sessionId/complete', async (req, res, next) => {
+  try {
+    const payload = await submitTriviaSessionAnswers({
+      sessionId: req.params.sessionId,
+      userId: req.user._id,
+      answers: Array.isArray(req.body?.answers) ? req.body.answers : [],
+    });
+    res.json({
+      success: true,
+      data: payload,
+      message: payload.perfectScore
+        ? 'Perfect score submitted. Wait for session settlement.'
+        : 'Trivia session submitted successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/questions.csv', async (_req, res, next) => {
+  try {
+    const csv = await exportTriviaQuestionsCsv();
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="br9-trivia-questions.csv"');
+    res.send(csv);
   } catch (error) {
     next(error);
   }

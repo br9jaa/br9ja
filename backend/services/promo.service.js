@@ -24,7 +24,6 @@ const DEFAULT_SITE_MARKUPS = {
   serviceTransportMarkup: 100,
   serviceGovernmentMarkup: 150,
   serviceBettingMarkup: 100,
-  serviceMarketplaceMarkup: 75,
   serviceVirtualCardsMarkup: 250,
   serviceGoldSavingsMarkup: 0,
   serviceFiveGDataMarkup: 75,
@@ -48,7 +47,6 @@ const PROMO_SERVICE_CONFIG = {
   transport: { label: 'Transport', markupField: 'serviceTransportMarkup' },
   government: { label: 'Government', markupField: 'serviceGovernmentMarkup' },
   betting: { label: 'Betting', markupField: 'serviceBettingMarkup' },
-  marketplace: { label: 'Marketplace', markupField: 'serviceMarketplaceMarkup' },
   virtualCards: { label: 'Virtual Cards', markupField: 'serviceVirtualCardsMarkup' },
   goldSavings: { label: 'BR9 Gold Savings', markupField: 'serviceGoldSavingsMarkup' },
   fiveGData: { label: '5G Data', markupField: 'serviceFiveGDataMarkup' },
@@ -338,8 +336,11 @@ async function calculateServicePricing({
   serviceKey,
   amount,
   userId = null,
+  markupOverride = null,
 }) {
-  const markup = await getServiceMarkup(serviceKey);
+  const markup = Number.isFinite(Number(markupOverride))
+    ? Number(markupOverride)
+    : await getServiceMarkup(serviceKey);
   const totalBeforeDiscount = Number(amount || 0) + markup;
   const promo = await getPublicPromoSummary(serviceKey);
 

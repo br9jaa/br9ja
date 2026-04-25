@@ -31,6 +31,17 @@ function missingProviderCredentials(provider) {
   return error;
 }
 
+function normaliseGovernmentStatus(rawStatus = '', defaultStatus = 'pending') {
+  const safe = String(rawStatus || '').trim().toLowerCase();
+  if (['success', 'successful', 'completed', 'paid', 'approved'].includes(safe)) {
+    return 'success';
+  }
+  if (['failed', 'error', 'reversed', 'declined', 'cancelled'].includes(safe)) {
+    return 'failed';
+  }
+  return defaultStatus;
+}
+
 async function generateRRR(serviceType, details = {}) {
   const amount = Number(details.amount || 0);
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -145,6 +156,12 @@ async function payRRR(rrr, amount) {
       return {
         rrr,
         amount,
+        status: normaliseGovernmentStatus(
+          response.data?.status ||
+            response.data?.response_description ||
+            response.data?.message,
+          'success'
+        ),
         receiptNumber: String(
           response.data?.transactionId || response.data?.receiptNumber || ''
         ),

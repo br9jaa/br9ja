@@ -26,7 +26,15 @@ const triviaSchema = new Schema(
     },
     category: {
       type: String,
-      enum: ['pop-culture', 'sports', 'brands'],
+      enum: [
+        'pop-culture',
+        'sports',
+        'brands',
+        'education',
+        'utilities',
+        'transport',
+        'rewards',
+      ],
       default: 'pop-culture',
       index: true,
     },

@@ -138,6 +138,31 @@ class BR9ApiClient {
     return get('/api/vending/education/prices');
   }
 
+  Future<Map<String, dynamic>> fetchServiceCatalog({
+    String? serviceKey,
+    String? category,
+    String? provider,
+    bool activeOnly = true,
+    double? baseAmount,
+    String? search,
+  }) {
+    final query = <String, dynamic>{
+      if (serviceKey?.isNotEmpty ?? false) 'serviceKey': serviceKey,
+      if (category?.isNotEmpty ?? false) 'category': category,
+      if (provider?.isNotEmpty ?? false) 'provider': provider,
+      'activeOnly': activeOnly,
+      if (search?.isNotEmpty ?? false) 'search': search,
+    };
+    if (baseAmount != null) {
+      query['baseAmount'] = baseAmount;
+    }
+
+    return get(
+      '/api/catalog/services',
+      queryParameters: query,
+    );
+  }
+
   Future<Map<String, dynamic>> fetchPromoStatus() {
     return get('/api/site-promo');
   }
@@ -201,6 +226,27 @@ class BR9ApiClient {
 
   Future<Map<String, dynamic>> fetchEducationPinHistory() {
     return get('/api/vending/education/history');
+  }
+
+  Future<Map<String, dynamic>> verifyService({
+    required String category,
+    String? serviceType,
+    String? candidateId,
+    String? meterNumber,
+    String? serviceID,
+    String? meterType,
+  }) {
+    return post(
+      '/api/verify-service',
+      data: {
+        'category': category,
+        'serviceType': serviceType,
+        'candidateId': candidateId,
+        'meterNumber': meterNumber,
+        'serviceID': serviceID,
+        'meterType': meterType,
+      },
+    );
   }
 
   Future<Map<String, dynamic>> purchasePin({
@@ -400,6 +446,12 @@ class BR9ApiClient {
         'transactionPin': transactionPin,
       },
     );
+  }
+
+  Future<Map<String, dynamic>> checkBettingFundingStatus({
+    required String fundingId,
+  }) {
+    return get('/api/betting/fund/$fundingId/status');
   }
 
   Future<Map<String, dynamic>> fetchLiveState() {

@@ -14,7 +14,7 @@ const utilityTransactionSchema = new Schema(
     },
     category: {
       type: String,
-      enum: ['Electricity', 'TV', 'Internet'],
+      enum: ['Airtime', 'Data', 'Electricity', 'TV', 'Internet'],
       required: true,
       index: true,
     },
@@ -48,6 +48,21 @@ const utilityTransactionSchema = new Schema(
       required: true,
       min: 0,
     },
+    costPrice: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    sellingPrice: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    profit: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     token: {
       type: String,
       default: '',
@@ -64,7 +79,7 @@ const utilityTransactionSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'success', 'failed'],
+      enum: ['pending', 'pending_verification', 'pending_review', 'success', 'failed'],
       default: 'success',
       index: true,
     },

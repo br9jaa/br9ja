@@ -32,6 +32,48 @@ const userSchema = new Schema(
       type: Date,
       default: null,
     },
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+    verifiedNameSource: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    fullNameLockedAt: {
+      type: Date,
+      default: null,
+    },
+    primaryFundingSourceAccountNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    primaryFundingSourceBankName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    primaryFundingSourceName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    primaryFundingSourceLinkedAt: {
+      type: Date,
+      default: null,
+    },
     bayrightTag: {
       type: String,
       required: true,
@@ -105,10 +147,33 @@ const userSchema = new Schema(
       default: 0,
       min: 0,
     },
+    br9GoldBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    br9GoldLockedBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    goldUnlockDate: {
+      type: Date,
+      default: null,
+    },
     br9GoldPoints: {
       type: Number,
       default: 0,
       min: 0,
+    },
+    isNameLocked: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    rewardMilestonesGranted: {
+      type: [String],
+      default: [],
     },
     referralCode: {
       type: String,
@@ -125,14 +190,34 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['user', 'reseller', 'admin'],
       default: 'user',
+      index: true,
+    },
+    resellerTier: {
+      type: String,
+      enum: ['bronze', 'silver', 'gold'],
+      default: 'bronze',
       index: true,
     },
     isFrozen: {
       type: Boolean,
       default: false,
       index: true,
+    },
+    isBlacklisted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    fundingSuspendedUntil: {
+      type: Date,
+      default: null,
+    },
+    fundingSuspendedReason: {
+      type: String,
+      default: '',
+      trim: true,
     },
     accountStatus: {
       type: String,
@@ -199,9 +284,32 @@ const userSchema = new Schema(
       type: [String],
       default: [],
     },
+    resellerActivatedAt: {
+      type: Date,
+      default: null,
+    },
+    resellerActivationFeePaidAt: {
+      type: Date,
+      default: null,
+    },
+    resellerSavingsMonthToDate: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     lastLoginAt: {
       type: Date,
       default: null,
+    },
+    marketRunnerEnergyBars: {
+      type: Number,
+      default: 3,
+      min: 0,
+      max: 3,
+    },
+    marketRunnerEnergyUpdatedAt: {
+      type: Date,
+      default: Date.now,
     },
     lastDailyPointAwardAt: {
       type: Date,

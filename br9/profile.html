@@ -20,66 +20,402 @@
   <div class="site-shell">
     <div data-site-shell></div>
 
-    <main class="auth-shell">
-      <section class="auth-card profile-card" data-auth-card>
-        <div class="auth-card__header">
-          <h1><span data-profile="firstName">BR9ja User</span></h1>
+    <main class="dashboard-shell">
+      <section class="user-app" data-auth-card>
+        <header class="user-app-header">
+          <div class="user-app-header__identity">
+            <div class="user-app-header__avatar">B</div>
+            <div class="user-app-header__copy">
+              <span class="user-app-header__eyebrow">br9.ng</span>
+              <h1><span data-profile="firstName">BR9ja User</span></h1>
+              <p data-profile="verificationState">Awaiting first bank-name lock</p>
+            </div>
+          </div>
+          <div class="user-app-header__cluster">
+            <span class="verified-account-badge is-hidden" data-profile-badge>Verified Account</span>
+            <span class="user-app-header__status" data-profile="phoneStatus">Verification pending</span>
+          </div>
+        </header>
+
+        <div class="alert-banner alert-banner--funding is-hidden" data-restricted-banner>
+          🚀 Your account is almost ready. Fund your wallet to unlock services, rewards cashout, and earnings routing.
         </div>
 
-        <div class="profile-summary-grid">
-          <article class="metric-card">
-            <strong data-profile="username">@member</strong>
-            <span class="card-copy">BR9ja username</span>
-          </article>
-          <article class="metric-card">
-            <strong data-profile="email">name@example.com</strong>
-            <span class="card-copy">Email</span>
-          </article>
-          <article class="metric-card">
-            <strong data-profile="phoneNumber">0801 234 5678</strong>
-            <span class="card-copy">Phone Number</span>
-          </article>
-          <article class="metric-card">
-            <strong data-profile="phoneStatus">Verification pending</strong>
-            <span class="card-copy">Verification posture</span>
-          </article>
-        </div>
-
-        <section class="auth-reset-panel" data-phone-verification-state>
-          <div class="section-header">
-            <span class="kicker">Phone Verification</span>
-            <h2 class="section-title">Verify Phone</h2>
+        <section class="user-balance-card" id="dashboard-home">
+          <div class="user-balance-card__top">
+            <div>
+              <span class="kicker">Wallet Balance</span>
+              <h2 class="user-balance-card__amount" data-profile="walletBalance">₦0</h2>
+            </div>
+            <div class="user-balance-card__meta">
+              <span class="user-balance-card__meta-label">Quick access</span>
+              <strong data-profile="quickAccess">Ready.</strong>
+            </div>
           </div>
 
-          <form class="admin-form" data-form="phone-verification">
-            <button class="verify-button verify-button--whatsapp" type="button" data-phone-send>Send Verification Code</button>
+          <button
+            class="br9-gold-chip"
+            type="button"
+            data-gold-chip
+            title="BR9 Gold status"
+            aria-haspopup="dialog"
+            aria-controls="br9-gold-modal"
+          >
+            <span class="br9-gold-chip__label">BR9 Gold</span>
+            <strong data-profile="br9GoldTotal">0</strong>
+            <span class="br9-gold-chip__lock is-hidden" data-gold-lock>🔒</span>
+          </button>
+          <p class="card-copy is-hidden" data-gold-empty-state>
+            🔥 You have 0 BR9 Gold! Fund your wallet to start using your rewards for discounts.
+          </p>
 
-            <div class="otp-verify-row">
-              <div class="field-shell">
-                <span class="field-icon">#</span>
-                <input name="code" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code" data-validate="otp">
-              </div>
-              <button class="verify-button verify-button--confirm" type="button" data-phone-verify>Verify</button>
+          <div class="user-balance-card__actions">
+            <a class="action-button" href="#dashboard-fund">Top Up</a>
+            <button class="ghost-button" type="button" data-dashboard-game-launch>Play Game</button>
+            <button class="ghost-button" type="button" data-cashout-rewards data-restricted-action>Cash Out Rewards</button>
+          </div>
+
+          <div class="user-shortcut-grid">
+            <a class="user-shortcut-card" href="./services.html#data" data-dashboard-action>
+              <span class="user-shortcut-card__icon">📶</span>
+              <strong>Data</strong>
+              <small data-gold-preview="data">Browse first. Fund once to activate checkout and BR9 Gold discounts.</small>
+            </a>
+            <a class="user-shortcut-card" href="./services.html#airtime" data-dashboard-action>
+              <span class="user-shortcut-card__icon">📱</span>
+              <strong>Airtime</strong>
+              <small>Fast reload across all networks.</small>
+            </a>
+            <a class="user-shortcut-card" href="./services.html#electricity" data-dashboard-action>
+              <span class="user-shortcut-card__icon">💡</span>
+              <strong>Electricity</strong>
+              <small data-gold-preview="electricity">Meter verification stays guided before payment.</small>
+            </a>
+            <a class="user-shortcut-card" href="./services.html" data-dashboard-action>
+              <span class="user-shortcut-card__icon">➕</span>
+              <strong>More</strong>
+              <small data-gold-preview="all">See the full BR9ja stack before you pay.</small>
+            </a>
+          </div>
+        </section>
+
+        <nav class="user-app-strip-nav" aria-label="Dashboard sections">
+          <a href="#dashboard-home">Home</a>
+          <a href="#dashboard-fund">Fund</a>
+          <a href="#dashboard-game">Game</a>
+          <a href="#dashboard-transactions">Transactions</a>
+          <a href="#dashboard-profile">Profile</a>
+        </nav>
+
+        <div class="user-dashboard-grid">
+          <section class="user-panel" id="dashboard-fund">
+            <div class="section-header">
+              <span class="kicker">Fund Wallet</span>
+              <h2 class="section-title">GTBank instant funding</h2>
+              <p class="section-copy">Copy your account once and transfer from any Nigerian bank app. The first clean deposit locks your verified name and fully activates BR9ja.</p>
             </div>
 
-            <div class="success-banner" aria-live="polite"></div>
-          </form>
-        </section>
+            <div class="funding-account-card">
+              <div class="funding-account-card__top">
+                <span class="funding-account-card__badge">Instant Credit</span>
+                <span class="funding-account-card__provider" data-profile="virtualProviderLabel">Squad • GTBank</span>
+              </div>
 
-        <section class="auth-reset-panel">
-          <div class="section-header">
-            <span class="kicker">Quick Access</span>
-            <h2 class="section-title">Device Access</h2>
-            <p class="section-copy" data-profile="quickAccess"></p>
-          </div>
-        </section>
+              <div class="funding-account-card__details">
+                <article class="metric-card">
+                  <strong data-profile="virtualBankName">GTBank</strong>
+                  <span class="card-copy">Funding bank</span>
+                </article>
+                <article class="metric-card">
+                  <strong data-profile="virtualAccountNumber">0000000000</strong>
+                  <span class="card-copy">Account number</span>
+                </article>
+                <article class="metric-card">
+                  <strong data-profile="virtualAccountName">BR9 - 08000000000</strong>
+                  <span class="card-copy">Account name</span>
+                </article>
+                <article class="metric-card">
+                  <strong data-profile="virtualAccountStatus">Recommended</strong>
+                  <span class="card-copy">Funding status</span>
+                </article>
+              </div>
 
-        <div class="auth-row">
-          <a class="auth-button auth-button--login" href="./services.html">View Services</a>
-          <button class="auth-button auth-button--signup" type="button" data-auth-logout>Logout</button>
+              <div class="auth-row auth-row--left">
+                <button class="action-button" type="button" data-virtual-copy>Tap to Copy</button>
+                <button class="ghost-button" type="button" data-funding-refund>Request Refund</button>
+              </div>
+
+              <div class="success-banner" data-funding-feedback aria-live="polite"></div>
+              <p class="mini-note">Fund &amp; Use Platform: deposits are non-refundable to bank accounts. One successful bank-name match unlocks purchases, partner earnings routing, and BR9 Gold cashout.</p>
+            </div>
+          </section>
+
+          <section class="user-panel" id="dashboard-game">
+            <div class="section-header">
+              <span class="kicker">Game Room</span>
+              <h2 class="section-title" data-game-mode-title>Market Runner</h2>
+              <p class="section-copy" data-game-mode-copy>Open the current BR9ja game mode, keep your streak moving, and build toward weekly rewards.</p>
+            </div>
+
+            <div class="user-game-card">
+              <div class="user-game-card__top">
+                <span class="user-game-card__badge" data-game-mode-badge>Monday / Friday</span>
+                <span class="user-game-card__pulse"><span class="pending-live-dot"></span> Live rotation</span>
+              </div>
+              <div class="user-game-card__body">
+                <div>
+                  <strong class="user-game-card__headline" data-game-primary-line>Market Runner is live.</strong>
+                  <p class="mini-note" data-game-bonus-note>Make at least one utility payment today and your run bonus increases automatically.</p>
+                </div>
+                <div class="auth-row auth-row--left">
+                  <button class="action-button" type="button" data-dashboard-game-launch>Open Game</button>
+                  <button class="ghost-button is-hidden" type="button" data-game-ad-boost>Ad Multiplier</button>
+                </div>
+                <div class="success-banner" data-game-feedback aria-live="polite"></div>
+              </div>
+            </div>
+
+            <div class="auth-reset-panel dashboard-live-pulse-panel">
+              <div class="section-header">
+                <span class="kicker">Live Pulse</span>
+                <h2 class="section-title">BR9ja is moving right now.</h2>
+              </div>
+              <div class="ticker dashboard-live-pulse" data-live-pulse>
+                <div class="ticker__track" data-live-pulse-track>
+                  <span class="ticker__item">Loading live BR9ja activity…</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="user-panel" id="dashboard-partner-bank">
+            <div class="section-header">
+              <span class="kicker">Partner Bank</span>
+              <h2 class="section-title">Route your earnings through our partner bank.</h2>
+              <p class="section-copy">Use the configured referral link below, keep the visible code when you sign up, and this becomes the preferred route for partner earnings once your account is fully name-locked.</p>
+            </div>
+
+            <div class="profile-summary-grid">
+              <article class="metric-card">
+                <strong data-partner-bank="name">Partner Bank</strong>
+                <span class="card-copy">Bank</span>
+              </article>
+              <article class="metric-card">
+                <strong data-partner-bank="referralCode">BR9BANK</strong>
+                <span class="card-copy">Referral code</span>
+              </article>
+              <article class="metric-card metric-card--wide">
+                <strong data-partner-bank="referralLink">https://br9.ng</strong>
+                <span class="card-copy">Referral link</span>
+              </article>
+              <article class="metric-card">
+                <strong data-partner-bank="settlementBankName">Settlement Bank</strong>
+                <span class="card-copy">Earnings route</span>
+              </article>
+            </div>
+
+            <div class="auth-row auth-row--left">
+              <button class="action-button" type="button" data-partner-bank-open>Open Bank Signup</button>
+              <button class="ghost-button" type="button" data-partner-bank-copy-link>Copy Link</button>
+              <button class="ghost-button" type="button" data-partner-bank-copy-code>Copy Code</button>
+            </div>
+            <div class="success-banner" data-partner-bank-feedback aria-live="polite"></div>
+            <p class="mini-note" data-partner-bank="note">Complete your first clean wallet funding to turn this into your active payout route.</p>
+          </section>
+
+          <section class="user-panel" id="dashboard-transactions">
+            <div class="section-header">
+              <span class="kicker">History</span>
+              <h2 class="section-title">Recent transactions</h2>
+              <p class="section-copy">Download receipts, refresh pending deliveries, or retry a failed order without typing your details again.</p>
+            </div>
+
+            <div class="admin-table-shell">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody data-profile-transactions-table>
+                  <tr><td colspan="5">Your recent transaction history appears here after login.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="success-banner" data-profile-transaction-feedback aria-live="polite"></div>
+          </section>
+
+          <section class="user-panel" id="dashboard-profile">
+            <div class="section-header">
+              <span class="kicker">Profile</span>
+              <h2 class="section-title">Your BR9ja control center</h2>
+              <p class="section-copy">Everything stays visible here, but earnings cashout and partner routing only unlock after your first verified funding lands cleanly.</p>
+            </div>
+
+            <div class="profile-summary-grid">
+              <article class="metric-card">
+                <strong data-profile="username">@member</strong>
+                <span class="card-copy">Username</span>
+              </article>
+              <article class="metric-card">
+                <strong data-profile="email">name@example.com</strong>
+                <span class="card-copy">Email</span>
+              </article>
+              <article class="metric-card">
+                <strong data-profile="phoneNumber">0801 234 5678</strong>
+                <span class="card-copy">Phone Number</span>
+              </article>
+              <article class="metric-card">
+                <strong data-profile="br9GoldState">Locked</strong>
+                <span class="card-copy">Gold state</span>
+              </article>
+              <article class="metric-card">
+                <strong data-profile="partnerRole">User</strong>
+                <span class="card-copy">Partner role</span>
+              </article>
+              <article class="metric-card">
+                <strong data-profile="partnerSavings">₦0</strong>
+                <span class="card-copy">Saved this month</span>
+              </article>
+            </div>
+
+            <div class="user-profile-split">
+              <section class="auth-reset-panel referral-panel">
+                <div class="section-header">
+                  <span class="kicker">Referral</span>
+                  <h2 class="section-title">Invite with your BR9ja link</h2>
+                  <p class="section-copy">Share your code or copy the link below.</p>
+                </div>
+
+                <div class="profile-summary-grid">
+                  <article class="metric-card">
+                    <strong data-profile="referralCode">BR9JA</strong>
+                    <span class="card-copy">Referral code</span>
+                  </article>
+                  <article class="metric-card metric-card--wide">
+                    <strong data-profile="referralLink">https://br9.ng/signup</strong>
+                    <span class="card-copy">Referral link</span>
+                  </article>
+                </div>
+
+                <div class="auth-row auth-row--left">
+                  <button class="action-button" type="button" data-referral-copy-code>Copy Code</button>
+                  <button class="ghost-button" type="button" data-referral-copy-link>Copy Link</button>
+                </div>
+                <div class="success-banner" data-referral-feedback aria-live="polite"></div>
+              </section>
+
+              <section class="auth-reset-panel">
+                <div class="section-header">
+                  <span class="kicker">Partner</span>
+                  <h2 class="section-title">Start your own data business with Bayright9ja.</h2>
+                  <p class="section-copy">Activate partner pricing, then route your earnings through the configured partner bank after your account is funding-verified.</p>
+                </div>
+
+                <div class="profile-summary-grid">
+                  <article class="metric-card">
+                    <strong data-profile="partnerTier">Bronze</strong>
+                    <span class="card-copy">Partner tier</span>
+                  </article>
+                  <article class="metric-card">
+                    <strong data-profile="partnerActivationFee">₦2,500</strong>
+                    <span class="card-copy">Activation fee</span>
+                  </article>
+                  <article class="metric-card">
+                    <strong data-profile="successfulTransactionCount">0</strong>
+                    <span class="card-copy">Successful service transactions</span>
+                  </article>
+                  <article class="metric-card">
+                    <strong data-partner-bank="settlementAccountName">Not configured</strong>
+                    <span class="card-copy">Preferred payout name</span>
+                  </article>
+                </div>
+
+                <div class="field-group">
+                  <div class="field-shell">
+                    <span class="field-icon">✦</span>
+                    <input type="number" min="10" step="10" placeholder="Gold to cash out" data-gold-wallet-input aria-label="Gold to cash out">
+                  </div>
+                </div>
+
+                <div class="auth-row auth-row--left">
+                  <button class="action-button" type="button" data-partner-activate data-restricted-action>Become a Partner</button>
+                  <button class="ghost-button" type="button" data-partner-share>Share Invite</button>
+                  <button class="ghost-button" type="button" data-cashout-rewards data-restricted-action>Cash Out Rewards</button>
+                </div>
+                <div class="success-banner" data-partner-feedback aria-live="polite"></div>
+                <div class="success-banner" data-gold-wallet-feedback aria-live="polite"></div>
+              </section>
+            </div>
+          </section>
         </div>
+
+        <nav class="user-bottom-nav" aria-label="User dashboard navigation">
+          <a href="#dashboard-home" class="user-bottom-nav__link is-active">Home</a>
+          <a href="#dashboard-transactions" class="user-bottom-nav__link">Transaction</a>
+          <a href="#dashboard-game" class="user-bottom-nav__link">Game</a>
+          <a href="#dashboard-profile" class="user-bottom-nav__link">Profile</a>
+        </nav>
       </section>
     </main>
+
+    <div class="br9-gold-modal is-hidden" id="br9-gold-modal" data-gold-modal aria-hidden="true">
+      <div class="br9-gold-modal__backdrop" data-gold-modal-close></div>
+      <div class="br9-gold-modal__card" role="dialog" aria-modal="true" aria-labelledby="br9-gold-modal-title">
+        <button class="br9-gold-modal__close" type="button" data-gold-modal-close aria-label="Close BR9 Gold details">×</button>
+        <span class="kicker">BR9 Gold Status</span>
+        <h2 id="br9-gold-modal-title" class="section-title" data-gold-modal-title>You've earned 0 BR9 Gold.</h2>
+        <p class="section-copy" data-gold-modal-body>
+          Stay with BR9ja for 30 days to unlock your onboarding reward.
+        </p>
+      </div>
+    </div>
+
+    <div class="pending-overlay is-hidden" data-pending-overlay aria-hidden="true">
+      <div class="pending-overlay__backdrop" data-pending-overlay-close></div>
+      <div class="pending-overlay__card" role="dialog" aria-modal="true" aria-labelledby="pending-overlay-title">
+        <button class="pending-overlay__close" type="button" data-pending-overlay-close aria-label="Close verification overlay">×</button>
+        <span class="kicker">Verifying Transaction</span>
+        <h2 id="pending-overlay-title" class="section-title">Network is taking a breath!</h2>
+        <p class="section-copy" data-pending-overlay-body>We are securing your delivery. Want to kill time and earn Gold?</p>
+        <div class="pending-overlay__meta">
+          <span class="pending-live-dot"></span>
+          <strong data-pending-overlay-status>Live connection active</strong>
+          <span class="mini-note" data-pending-overlay-timer>00:00 elapsed</span>
+        </div>
+        <div class="auth-row auth-row--left pending-overlay__actions">
+          <button class="action-button" type="button" data-pending-play>Play Market Runner</button>
+          <button class="ghost-button" type="button" data-pending-refresh>Refresh Status</button>
+          <a class="ghost-button" href="#" data-pending-support>Contact Support</a>
+          <button class="ghost-button danger-button is-hidden" type="button" data-pending-instant-refund>Request Instant Refund</button>
+        </div>
+          <div class="pending-mini-game is-hidden" data-pending-game>
+          <div class="pending-mini-game__lane">
+            <div class="pending-mini-game__status" data-pending-game-status>
+              <span class="pending-live-dot"></span>
+              <strong>Verifying live</strong>
+            </div>
+            <div class="pending-mini-game__confetti" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <span class="pending-mini-game__runner" data-pending-runner>🏃</span>
+            <span class="pending-mini-game__coin pending-mini-game__coin--one">🪙</span>
+            <span class="pending-mini-game__coin pending-mini-game__coin--two">🪙</span>
+          </div>
+          <div class="pending-mini-game__footer">
+            <strong data-pending-game-score>0</strong>
+            <button class="ghost-button" type="button" data-pending-jump>Jump</button>
+          </div>
+          <div class="success-banner" data-pending-game-feedback aria-live="polite"></div>
+        </div>
+        <div class="success-banner" data-pending-overlay-feedback aria-live="polite"></div>
+      </div>
+    </div>
 
     <div data-site-footer></div>
   </div>

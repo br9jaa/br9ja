@@ -1,6 +1,7 @@
 import 'package:bayright9ja_mobile/core/theme/br9_theme.dart';
 import 'package:flutter/material.dart';
 
+import '../core/api/br9_api_client.dart';
 import 'service_ui.dart';
 
 class JambPage extends StatefulWidget {
@@ -12,7 +13,16 @@ class JambPage extends StatefulWidget {
 
 class _JambPageState extends State<JambPage> {
   String _selectedEntry = 'UTME';
-  String _selectedPlan = 'e-PIN';
+  String _selectedPlan = 'JAMB UTME';
+  bool _loadingCatalog = true;
+  String? _catalogError;
+  List<Map<String, dynamic>> _catalogRows = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCatalog();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +31,7 @@ class _JambPageState extends State<JambPage> {
       subtitle:
           'Get JAMB UTME and Direct Entry e-PINs with a cleaner payment flow.',
       heroIcon: Icons.menu_book_rounded,
-      totalAmount: '₦0.00',
+      totalAmount: _resolvedAmountLabel,
       child: Column(
         children: [
           ActionableSelectRow(
@@ -33,6 +43,10 @@ class _JambPageState extends State<JambPage> {
               ['UTME', 'Direct Entry'],
               (value) {
                 _selectedEntry = value;
+                final plans = _plansForEntry(value);
+                if (plans.isNotEmpty) {
+                  _selectedPlan = plans.first;
+                }
               },
             ),
           ),
@@ -43,20 +57,25 @@ class _JambPageState extends State<JambPage> {
             icon: Icons.tune_rounded,
             onTap: () => _showOptions(
               'Select Plan',
-              ['e-PIN', 'Profile Code', 'Admission Processing'],
+              _plansForEntry(_selectedEntry),
               (value) {
                 _selectedPlan = value;
               },
             ),
           ),
           const SizedBox(height: 12),
-          const ActionableInputRow(
+          ActionableInputRow(
             label: 'Enter Details',
             hint: 'Profile Code / Registered Phone',
             icon: Icons.badge_rounded,
+            helperText: _catalogHelperText,
           ),
           const SizedBox(height: 16),
-          ServiceActionButton(onPressed: () async {}, label: 'Proceed'),
+          ServiceActionButton(
+            onPressed: () async {},
+            label: _loadingCatalog ? 'Loading prices...' : 'Proceed',
+            amount: _resolvedAmount,
+          ),
         ],
       ),
     );
@@ -100,5 +119,83 @@ class _JambPageState extends State<JambPage> {
       ),
     );
     if (picked != null) setState(() => setter(picked));
+  }
+
+  Future<void> _loadCatalog() async {
+    setState(() {
+      _loadingCatalog = true;
+      _catalogError = null;
+    });
+
+    try {
+      final response = await BR9ApiClient.instance.fetchServiceCatalog(
+        serviceKey: 'education',
+        search: 'jamb',
+      );
+      final rows = List<Map<String, dynamic>>.from(
+        (response['data']?['rows'] as List? ?? const <dynamic>[]),
+      );
+
+      setState(() {
+        _catalogRows = rows;
+        if (rows.isNotEmpty) {
+          _selectedPlan = _plansForEntry(_selectedEntry).first;
+        }
+        _loadingCatalog = false;
+      });
+    } catch (error) {
+      setState(() {
+        _catalogError = error.toString();
+        _loadingCatalog = false;
+      });
+    }
+  }
+
+  List<String> _plansForEntry(String entry) {
+    final pattern = entry == 'Direct Entry' ? 'DIRECT ENTRY' : 'UTME';
+    final options = _catalogRows
+        .where((row) {
+          final serviceName =
+              row['serviceName']?.toString() ?? row['label']?.toString() ?? '';
+          return serviceName.toUpperCase().contains(pattern);
+        })
+        .map((row) => row['serviceName']?.toString() ?? row['label']?.toString() ?? '')
+        .where((item) => item.isNotEmpty)
+        .toList();
+    return options.isEmpty
+        ? <String>[entry == 'Direct Entry' ? 'JAMB Direct Entry' : 'JAMB UTME']
+        : options;
+  }
+
+  Map<String, dynamic>? get _selectedPlanRow {
+    for (final row in _catalogRows) {
+      final serviceName =
+          row['serviceName']?.toString() ?? row['label']?.toString() ?? '';
+      if (serviceName == _selectedPlan) {
+        return row;
+      }
+    }
+    return null;
+  }
+
+  double get _resolvedAmount =>
+      (_selectedPlanRow?['sellingPrice'] as num?)?.toDouble() ?? 0;
+
+  String get _resolvedAmountLabel => '₦${_resolvedAmount.toStringAsFixed(2)}';
+
+  String get _catalogHelperText {
+    if (_loadingCatalog) {
+      return 'Loading JAMB pricing from your admin catalog.';
+    }
+    if (_catalogError != null) {
+      return 'Live catalog unavailable. Check the backend connection and refresh.';
+    }
+    final row = _selectedPlanRow;
+    if (row == null) {
+      return 'Select a JAMB product to see the current live selling price.';
+    }
+    final margin =
+        (row['sellingPrice'] as num? ?? 0) - (row['costPrice'] as num? ?? 0);
+    return '${row['serviceName']} is live at $_resolvedAmountLabel with ${margin.toStringAsFixed(0)} naira margin.';
   }
 }

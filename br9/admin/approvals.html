@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja Pending Approvals</title>
+  <meta name="description" content="Private BR9ja approvals queue for high-value deposits, pending verification, and manual resolve actions.">
+  <meta name="theme-color" content="#010A1F">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/apple_touch_icon.png">
+  <link rel="stylesheet" href="../main.css">
+  <script defer src="../main.js"></script>
+</head>
+<body data-page="admin-approvals" data-base=".." data-authenticated="true" data-admin-room="approvals">
+  <div class="admin-layout">
+    <div data-admin-shell></div>
+
+    <main class="section-stack admin-room">
+      <section class="section-panel admin-console">
+        <div class="section-header">
+          <span class="kicker">Pending Approvals</span>
+          <h1 class="section-title">Hold, review, approve, or refund with context.</h1>
+          <p class="section-copy">High-value deposits, verification holds, and manual-review items stay here until you decide what happens next.</p>
+        </div>
+
+        <div class="admin-toolbar">
+          <p class="mini-note" data-approvals-summary>0 items waiting</p>
+          <div class="admin-toolbar__actions">
+            <button class="ghost-button" type="button" data-approvals-refresh>Refresh</button>
+          </div>
+        </div>
+
+        <div class="admin-table-shell">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Provider</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody data-approvals-table>
+              <tr><td colspan="7">Unlock this room to load pending approvals.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="success-banner" data-approvals-feedback aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+
+  <div data-admin-gate></div>
+</body>
+</html>

@@ -105,6 +105,10 @@
                 </select>
               </div>
             </div>
+            <label class="admin-check">
+              <input type="checkbox" id="admin-maintenance-mode" name="maintenanceMode">
+              <span>Maintenance Mode: hide purchase actions and show the quick tune-up notice.</span>
+            </label>
             <div class="field-group">
               <label for="admin-site-url">Primary Site URL</label>
               <div class="field-shell"><input id="admin-site-url" name="siteUrl" type="url" placeholder="https://br9.ng"></div>
@@ -120,6 +124,18 @@
             <div class="field-group admin-field-grid__full">
               <label for="admin-maintenance-notice">Ops Notice</label>
               <div class="field-shell"><textarea id="admin-maintenance-notice" name="maintenanceNotice" placeholder="Share any short note for launch or service oversight."></textarea></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-max-auto-fund-limit">Max Auto Fund Limit</label>
+              <div class="field-shell"><input id="admin-max-auto-fund-limit" name="maxAutoFundLimit" type="number" min="0" step="1" placeholder="20000"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-gold-wallet-min-tx">Gold-to-Wallet Minimum Successful Transactions</label>
+              <div class="field-shell"><input id="admin-gold-wallet-min-tx" name="goldToWalletMinimumSuccessfulTransactions" type="number" min="0" step="1" placeholder="5"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-alert-phone">Admin Alert Phone</label>
+              <div class="field-shell"><input id="admin-alert-phone" name="adminAlertPhone" type="text" placeholder="2348012345678"></div>
             </div>
           </div>
         </section>
@@ -196,6 +212,10 @@
               <div class="field-shell"><input id="admin-quick-login-modes" name="quickLoginModes" type="text" placeholder="6-digit PIN, Face ID, fingerprint, device PIN, and pattern"></div>
             </div>
             <div class="field-group">
+              <label for="admin-reseller-activation-fee">Partner Activation Fee</label>
+              <div class="field-shell"><input id="admin-reseller-activation-fee" name="resellerActivationFee" type="number" min="0" step="1" placeholder="2500"></div>
+            </div>
+            <div class="field-group">
               <label for="admin-social-tiktok">TikTok URL</label>
               <div class="field-shell"><input id="admin-social-tiktok" name="socialTikTokUrl" type="url" placeholder="https://www.tiktok.com/@br9ja"></div>
             </div>
@@ -214,6 +234,35 @@
             <div class="field-group admin-field-grid__full">
               <label for="admin-social-facebook">Facebook URL</label>
               <div class="field-shell"><input id="admin-social-facebook" name="socialFacebookUrl" type="url" placeholder="https://www.facebook.com/br9ja"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-panel admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">GTBank GAPS</span>
+              <h2>Monday bank link placeholder</h2>
+            </div>
+            <p class="section-copy">Store your corporate funding details here so ops can copy them fast until the GAPS API goes fully live.</p>
+          </div>
+
+          <div class="admin-field-grid">
+            <div class="field-group">
+              <label for="admin-gaps-corporate-name">Corporate Name</label>
+              <div class="field-shell"><input id="admin-gaps-corporate-name" name="gapsCorporateName" type="text" placeholder="BayRight9ja Ltd"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-gaps-bank-name">Bank Name</label>
+              <div class="field-shell"><input id="admin-gaps-bank-name" name="gapsBankName" type="text" placeholder="GTBank"></div>
+            </div>
+            <div class="field-group">
+              <label for="admin-gaps-account-number">Account Number</label>
+              <div class="field-shell"><input id="admin-gaps-account-number" name="gapsAccountNumber" type="text" placeholder="0000000000"></div>
+            </div>
+            <div class="field-group admin-field-grid__full">
+              <label for="admin-gaps-reference-note">Reference Note</label>
+              <div class="field-shell"><textarea id="admin-gaps-reference-note" name="gapsReferenceNote" placeholder="Use this account for manual provider top-ups until GAPS is automated."></textarea></div>
             </div>
           </div>
 

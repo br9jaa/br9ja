@@ -2,6 +2,7 @@ import 'package:bayright9ja_mobile/core/theme/br9_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/api/br9_api_client.dart';
 import '../models/transaction_model.dart';
 import '../providers/user_provider.dart';
 import 'kyc_helper.dart';
@@ -22,6 +23,15 @@ class _AirtimePageState extends State<AirtimePage> {
   String _network = 'MTN';
   String _plan = 'VTU Airtime';
   bool _phoneInvalid = false;
+  bool _loadingCatalog = true;
+  String? _catalogError;
+  List<Map<String, dynamic>> _catalogRows = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCatalog();
+  }
 
   @override
   void dispose() {
@@ -37,28 +47,21 @@ class _AirtimePageState extends State<AirtimePage> {
       subtitle: 'Buy VTU or Share n Sell airtime with a richer Bayright flow.',
       heroIcon: Icons.phone_iphone_rounded,
       serviceHeroTag: 'service-airtime',
-      totalAmount: _amountController.text.isEmpty
-          ? '₦0.00'
-          : '₦${_amountController.text}',
+      totalAmount: formatCurrencyValue(_resolvedAmount),
       child: Column(
         children: [
           ActionableSelectRow(
             label: 'Select Network',
             value: _network,
             icon: Icons.network_cell_rounded,
-            onTap: () => _pick('Select Network', [
-              'MTN',
-              'Airtel',
-              'Glo',
-              '9mobile',
-            ], (value) => _network = value),
+            onTap: () => _pick('Select Network', _networkOptions, (value) => _network = value),
           ),
           const SizedBox(height: 12),
           ActionableSelectRow(
             label: 'Select Plan',
             value: _plan,
             icon: Icons.tune_rounded,
-            onTap: () => _pick('Select Plan', [
+            onTap: () => _pick('Select Plan', const [
               'VTU Airtime',
               'Share n Sell',
             ], (value) => _plan = value),
@@ -84,14 +87,14 @@ class _AirtimePageState extends State<AirtimePage> {
             icon: Icons.payments_outlined,
             controller: _amountController,
             keyboardType: TextInputType.number,
+            helperText: _catalogHelperText,
+            onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
           ServiceActionButton(
             onPressed: _confirmAirtimePurchase,
-            label: 'Confirm Airtime',
-            amount:
-                double.tryParse(_amountController.text.replaceAll(',', '')) ??
-                0,
+            label: _loadingCatalog ? 'Loading prices...' : 'Confirm Airtime',
+            amount: _resolvedAmount,
           ),
         ],
       ),
@@ -138,6 +141,35 @@ class _AirtimePageState extends State<AirtimePage> {
     if (picked != null) setState(() => setter(picked));
   }
 
+  Future<void> _loadCatalog() async {
+    setState(() {
+      _loadingCatalog = true;
+      _catalogError = null;
+    });
+
+    try {
+      final response = await BR9ApiClient.instance.fetchServiceCatalog(
+        serviceKey: 'airtime',
+      );
+      final rows = List<Map<String, dynamic>>.from(
+        (response['data']?['rows'] as List? ?? const <dynamic>[]),
+      );
+
+      setState(() {
+        _catalogRows = rows;
+        if (rows.isNotEmpty) {
+          _network = _networkOptions.first;
+        }
+        _loadingCatalog = false;
+      });
+    } catch (error) {
+      setState(() {
+        _catalogError = error.toString();
+        _loadingCatalog = false;
+      });
+    }
+  }
+
   Future<void> _confirmAirtimePurchase() async {
     final phone = _phoneController.text.trim();
     final amount = _amountController.text.trim();
@@ -147,7 +179,7 @@ class _AirtimePageState extends State<AirtimePage> {
       return;
     }
     final parsedAmount = double.tryParse(amount.replaceAll(',', '')) ?? 0;
-    if (checkKycRequirement(parsedAmount)) {
+    if (checkKycRequirement(_resolvedAmount)) {
       await showKycRequiredSheet(context);
       return;
     }
@@ -178,8 +210,70 @@ class _AirtimePageState extends State<AirtimePage> {
     );
   }
 
+  List<String> get _networkOptions {
+    final options = _catalogRows
+        .map(
+          (row) =>
+              (row['metadata'] as Map?)?['network']?.toString() ??
+              row['serviceId']?.toString() ??
+              '',
+        )
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList();
+
+    return options.isEmpty ? const ['MTN', 'Airtel', 'Glo', '9mobile'] : options;
+  }
+
+  Map<String, dynamic>? get _selectedCatalogRow {
+    for (final row in _catalogRows) {
+      final network =
+          (row['metadata'] as Map?)?['network']?.toString() ??
+          row['serviceId']?.toString() ??
+          '';
+      if (network.toUpperCase() == _network.toUpperCase()) {
+        return row;
+      }
+    }
+    return null;
+  }
+
+  double get _resolvedAmount {
+    final enteredAmount =
+        double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0;
+    final row = _selectedCatalogRow;
+    final margin =
+        row == null
+            ? 0
+            : (row['sellingPrice'] as num? ?? 0) - (row['costPrice'] as num? ?? 0);
+    if (enteredAmount <= 0) {
+      return 0;
+    }
+    return enteredAmount + margin.toDouble();
+  }
+
+  String get _catalogHelperText {
+    if (_loadingCatalog) {
+      return 'Loading live airtime pricing from your control center.';
+    }
+    if (_catalogError != null) {
+      return 'Live catalog unavailable. Check the backend connection and refresh.';
+    }
+    final row = _selectedCatalogRow;
+    if (row == null) {
+      return 'Enter an amount to preview the live selling price.';
+    }
+    final margin =
+        (row['sellingPrice'] as num? ?? 0) - (row['costPrice'] as num? ?? 0);
+    return 'Current live margin on $_network is ${formatCurrencyValue(margin.toDouble())}.';
+  }
+
   bool _isValidPhone(String value) {
     final digits = value.replaceAll(RegExp(r'\D'), '');
     return digits.length >= 10 && digits.length <= 11;
+  }
+
+  String formatCurrencyValue(double amount) {
+    return '₦${amount.toStringAsFixed(2)}';
   }
 }

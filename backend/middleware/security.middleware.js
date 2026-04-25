@@ -93,6 +93,14 @@ async function authenticateAccessToken(req, res, next) {
       return sendError(res, 401, 'Account not found for this token.');
     }
 
+    if (user.isBlacklisted && !req.originalUrl.startsWith('/api/admin')) {
+      return sendError(
+        res,
+        423,
+        'This account has been frozen by BR9ja security. Please contact support.'
+      );
+    }
+
     const accountStatus = user.accountStatus || 'active';
     if (
       FULLY_BLOCKED_ACCOUNT_STATUSES.has(accountStatus) &&

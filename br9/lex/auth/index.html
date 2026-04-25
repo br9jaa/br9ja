@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR9ja Admin Access</title>
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #010A1F;
+    }
+    .admin-proxy-frame {
+      display: block;
+      width: 100%;
+      height: 100vh;
+      border: 0;
+      background: #010A1F;
+    }
+  </style>
+</head>
+<body>
+  <iframe
+    id="proxy-frame"
+    class="admin-proxy-frame"
+    src="../../admin/index.html?embedded=1"
+    title="BR9ja Admin Dashboard"
+    loading="eager"
+    referrerpolicy="same-origin"
+  ></iframe>
+  <script>
+    (function () {
+      var frame = document.getElementById('proxy-frame');
+      if (!frame) return;
+      var search = window.location.search || '';
+      frame.src = '../../admin/index.html?embedded=1' + (search ? '&' + search.replace(/^\?/, '') : '');
+    })();
+  </script>
+</body>
+</html>

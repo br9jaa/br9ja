@@ -13,6 +13,8 @@ const {
   listEducationPins,
   purchaseExamPin,
 } = require('../services/education.service');
+const { listServiceCatalog } = require('../services/service_catalog.service');
+const { verifyEducationPurchase } = require('../services/vending_service');
 
 const router = express.Router();
 
@@ -34,16 +36,35 @@ function estimateEducationOutflow(req, _res, next) {
   return next();
 }
 
-router.get('/education/prices', (_req, res) => {
-  res.json({
-    success: true,
-    data: Object.entries(EDUCATION_PRICES).map(([serviceType, amount]) => ({
-      serviceType,
-      amount,
-      convenienceFee: EDUCATION_CONVENIENCE_FEE,
-    })),
-    message: 'Education PIN prices fetched successfully.',
-  });
+router.get('/education/prices', async (_req, res, next) => {
+  try {
+    const rows = await listServiceCatalog({
+      serviceKey: 'education',
+      activeOnly: true,
+    });
+
+    const data = rows.map((row) => ({
+      id: row.id,
+      serviceType: row.serviceName.toUpperCase().replace(/[^A-Z0-9]+/g, '_'),
+      serviceName: row.serviceName,
+      amount: row.sellingPrice,
+      costPrice: row.costPrice,
+      convenienceFee: Math.max(row.sellingPrice - row.costPrice, 0),
+      provider: row.provider,
+      providerCode: row.providerCode,
+      serviceId: row.serviceId,
+      variationCode: row.variationCode,
+      purchaseEnabled: row.purchaseEnabled,
+    }));
+
+    res.json({
+      success: true,
+      data,
+      message: 'Education PIN prices fetched successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get('/education/history', async (req, res, next) => {
@@ -68,6 +89,30 @@ router.get('/education/history', async (req, res, next) => {
   }
 });
 
+router.post('/education/verify', async (req, res, next) => {
+  try {
+    const serviceType = String(req.body?.serviceType || req.body?.type || '').trim();
+    const candidateId = String(
+      req.body?.candidateId || req.body?.profileCode || req.body?.billersCode || ''
+    ).trim();
+
+    if (!serviceType || !candidateId) {
+      const error = new Error('serviceType and candidateId are required.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const payload = await verifyEducationPurchase(serviceType, candidateId);
+    res.json({
+      success: true,
+      data: payload,
+      message: 'Education verification completed successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/education/purchase', deviceGuard, estimateEducationOutflow, coolingOutflowLimit, requireTransactionPin, async (req, res, next) => {
   try {
     const payload = await purchaseExamPin(
@@ -76,13 +121,17 @@ router.post('/education/purchase', deviceGuard, estimateEducationOutflow, coolin
       {
         profileCode: req.body?.profileCode,
         quantity: req.body?.quantity,
+        user: req.user,
       }
     );
 
-    res.status(201).json({
+    res.status(payload.status === 'pending_verification' ? 202 : 201).json({
       success: true,
       data: payload,
-      message: 'Education PIN purchased successfully.',
+      message:
+        payload.status === 'pending_verification'
+          ? 'Network delay detected. We are verifying this education purchase before charging your wallet.'
+          : 'Education PIN purchased successfully.',
     });
   } catch (error) {
     next(error);
@@ -97,13 +146,17 @@ router.post('/purchase-pin', deviceGuard, estimateEducationOutflow, coolingOutfl
       {
         profileCode: req.body?.profileCode,
         quantity: req.body?.quantity,
+        user: req.user,
       }
     );
 
-    res.status(201).json({
+    res.status(payload.status === 'pending_verification' ? 202 : 201).json({
       success: true,
       data: payload,
-      message: 'Education PIN purchased successfully.',
+      message:
+        payload.status === 'pending_verification'
+          ? 'Network delay detected. We are verifying this education purchase before charging your wallet.'
+          : 'Education PIN purchased successfully.',
     });
   } catch (error) {
     next(error);

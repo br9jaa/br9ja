@@ -34,14 +34,36 @@ const bettingFundingSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['success', 'pending', 'failed'],
+      enum: ['success', 'pending', 'pending_verification', 'pending_review', 'failed'],
       default: 'success',
       index: true,
+    },
+    provider: {
+      type: String,
+      default: '',
+      trim: true,
     },
     providerReference: {
       type: String,
       default: '',
       trim: true,
+    },
+    statusMessage: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    debitedAt: {
+      type: Date,
+      default: null,
+    },
+    resolvedAt: {
+      type: Date,
+      default: null,
+    },
+    metadata: {
+      type: Schema.Types.Mixed,
+      default: {},
     },
   },
   { timestamps: true }

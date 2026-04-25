@@ -1,6 +1,7 @@
 'use strict';
 
 const axios = require('axios');
+const { sendSendchampOtp } = require('./sendchamp.service');
 
 function normaliseSmsPhoneNumber(value) {
   const digits = String(value || '').replace(/\D/g, '');
@@ -42,7 +43,17 @@ function buildVerificationMessage(code) {
   return `${code} is your BR9ja verification code. It expires in 10 minutes.`;
 }
 
-async function sendVerificationSms({ phoneNumber, code }) {
+async function sendVerificationCode({ phoneNumber, code, channel = 'sms' }) {
+  const safeChannel = channel === 'whatsapp' ? 'whatsapp' : 'sms';
+  if (process.env.SENDCHAMP_KEY && process.env.NODE_ENV !== 'test') {
+    return sendSendchampOtp({
+      channel: safeChannel,
+      recipient: phoneNumber,
+      code,
+      purpose: safeChannel === 'whatsapp' ? 'phone_verification_whatsapp' : 'phone_verification_sms',
+    });
+  }
+
   const providerUrl = String(process.env.SMS_PROVIDER_URL || '').trim();
   const apiKey = String(process.env.SMS_API_KEY || '').trim();
   const senderId = String(process.env.SMS_SENDER_ID || 'BR9ja').trim();
@@ -63,7 +74,7 @@ async function sendVerificationSms({ phoneNumber, code }) {
       to: recipient,
       message,
       sender: senderId,
-      channel: 'sms',
+      channel: safeChannel,
     },
     {
       timeout: Number(process.env.SMS_TIMEOUT_MS || 12000),
@@ -83,8 +94,13 @@ async function sendVerificationSms({ phoneNumber, code }) {
   };
 }
 
+async function sendVerificationSms({ phoneNumber, code }) {
+  return sendVerificationCode({ phoneNumber, code, channel: 'sms' });
+}
+
 module.exports = {
   maskPhoneNumber,
   normaliseSmsPhoneNumber,
+  sendVerificationCode,
   sendVerificationSms,
 };

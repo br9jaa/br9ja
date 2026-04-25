@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:bayright9ja_mobile/core/theme/br9_theme.dart';
+import '../screens/marketplace/betting_funding_screen.dart';
 import 'airtime_page.dart';
-import 'betting_page.dart';
 import 'broadband_page.dart';
 import 'cable_page.dart';
 import 'data_page.dart';
@@ -94,7 +94,7 @@ class AllServicesPage extends StatelessWidget {
         subtitle: 'Quick betting wallet funding',
         icon: Icons.sports_esports_rounded,
         color: const Color(0xFFEC4899),
-        page: const BettingPage(),
+        page: const BettingFundingScreen(),
       ),
     ];
 

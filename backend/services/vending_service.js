@@ -6,14 +6,33 @@ const axios = require('axios');
 
 const { EDUCATION_PRICES } = require('../config/constants');
 const { executeWithProviderFailover } = require('./provider_failover.service');
+const {
+  normaliseVTpassStatus,
+  payService,
+  verifyMerchant,
+} = require('./vtpass.service');
 
 const serviceMap = {
   WAEC_RESULT: { peyflex: 'waec-result', vtpass: 'waec' },
   WAEC_GCE: { peyflex: 'waec-gce', vtpass: 'waec-gce' },
-  JAMB: { peyflex: 'jamb', vtpass: 'jamb' },
+  JAMB: { peyflex: 'jamb', vtpass: 'jamb', variation: 'utme' },
+  JAMB_UTME: { peyflex: 'jamb', vtpass: 'jamb', variation: 'utme' },
+  JAMB_DIRECT_ENTRY: {
+    peyflex: 'jamb-direct-entry',
+    vtpass: 'jamb',
+    variation: 'direct-entry',
+  },
   NECO: { peyflex: 'neco', vtpass: 'neco' },
   NABTEB: { peyflex: 'nabteb', vtpass: 'nabteb' },
 };
+
+function normaliseEducationServiceType(serviceType) {
+  const normalised = String(serviceType || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
+  return normalised === 'JAMB' ? 'JAMB_UTME' : normalised;
+}
 
 function assertSupportedEducationService(serviceType) {
   if (!serviceMap[serviceType]) {
@@ -56,6 +75,16 @@ function normaliseVendorPin(payload, serviceType, provider, profileCode) {
     profileCode,
     amount: Number(content.amount || data.amount || EDUCATION_PRICES[serviceType]),
     provider,
+    status:
+      provider === 'vtpass'
+        ? normaliseVTpassStatus(
+            content.status ||
+              data.code ||
+              data.response_description ||
+              data.message,
+            'success'
+          )
+        : 'success',
     vendorReference: String(
       data.requestId || data.request_id || data.transactionId || data.reference || ''
     ),
@@ -88,57 +117,84 @@ async function callPeyflex(serviceType, profileCode) {
 }
 
 async function callVtpass(serviceType, profileCode) {
-  const baseUrl = process.env.VTPASS_BASE_URL || 'https://vtpass.com/api';
-  const apiKey = process.env.VTPASS_API_KEY;
-  const publicKey = process.env.VTPASS_PUBLIC_KEY;
-  const secretKey = process.env.VTPASS_SECRET_KEY;
-
-  if (!apiKey && !publicKey && !secretKey) {
-    throw new Error('VTPass credentials are not configured.');
-  }
-
-  const response = await axios.post(
-    `${baseUrl.replace(/\/$/, '')}/pay`,
+  const mapping = serviceMap[serviceType];
+  const response = await payService(
     {
-      request_id: `BR9-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
-      serviceID: serviceMap[serviceType].vtpass,
-      variation_code: serviceMap[serviceType].vtpass,
+      serviceID: mapping.vtpass,
+      variationCode: mapping.variation || mapping.vtpass,
       billersCode: profileCode || 'BR9JA',
       phone: process.env.VTPASS_DEFAULT_PHONE || '08000000000',
       amount: EDUCATION_PRICES[serviceType],
-    },
-    {
-      timeout: Number(process.env.VENDOR_TIMEOUT_MS || 15000),
-      headers: {
-        'api-key': apiKey,
-        'public-key': publicKey,
-        'secret-key': secretKey,
-        'Content-Type': 'application/json',
-      },
     }
   );
 
-  return normaliseVendorPin(response.data, serviceType, 'vtpass', profileCode);
+  return normaliseVendorPin(response, serviceType, 'vtpass', profileCode);
+}
+
+async function verifyEducationPurchase(serviceType, candidateId = '') {
+  const normalisedServiceType = normaliseEducationServiceType(serviceType);
+  assertSupportedEducationService(normalisedServiceType);
+
+  const mapping = serviceMap[normalisedServiceType];
+  const identifier = String(candidateId || '').trim();
+  if (!identifier) {
+    const error = new Error('A student profile or candidate ID is required.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (shouldUseDemoVendor()) {
+    return {
+      serviceType: normalisedServiceType,
+      provider: 'demo',
+      candidateId: identifier,
+      customerName: 'BR9JA DEMO STUDENT',
+      status: 'verified',
+      raw: {},
+    };
+  }
+
+  const payload = await verifyMerchant({
+    billersCode: identifier,
+    serviceID: mapping.vtpass,
+    variationCode: mapping.variation || mapping.vtpass,
+  });
+
+  const content = payload?.content || payload?.data || payload || {};
+  return {
+    serviceType: normalisedServiceType,
+    provider: 'vtpass',
+    candidateId: identifier,
+    customerName:
+      content.Customer_Name || content.customerName || content.name || '',
+    status:
+      content.status ||
+      payload?.code ||
+      payload?.response_description ||
+      'verified',
+    raw: payload,
+  };
 }
 
 async function fetchPinFromVendor(serviceType, profileCode = null) {
-  assertSupportedEducationService(serviceType);
+  const normalisedServiceType = normaliseEducationServiceType(serviceType);
+  assertSupportedEducationService(normalisedServiceType);
 
   if (shouldUseDemoVendor()) {
-    return demoPin(serviceType, profileCode || '');
+    return demoPin(normalisedServiceType, profileCode || '');
   }
 
   return executeWithProviderFailover({
     serviceKey: 'education',
     attempt: async (provider) => {
       if (provider === 'peyflex') {
-        return callPeyflex(serviceType, profileCode || '');
+        return callPeyflex(normalisedServiceType, profileCode || '');
       }
       if (provider === 'vtpass') {
-        return callVtpass(serviceType, profileCode || '');
+        return callVtpass(normalisedServiceType, profileCode || '');
       }
       if (provider === 'demo') {
-        return demoPin(serviceType, profileCode || '');
+        return demoPin(normalisedServiceType, profileCode || '');
       }
 
       const error = new Error(`${provider} is not configured for education PINs.`);
@@ -151,4 +207,6 @@ async function fetchPinFromVendor(serviceType, profileCode = null) {
 module.exports = {
   EDUCATION_PRICES,
   fetchPinFromVendor,
+  normaliseEducationServiceType,
+  verifyEducationPurchase,
 };

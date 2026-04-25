@@ -13,14 +13,19 @@ let connectDb;
 let disconnectDb;
 let runMondayPayout;
 let runWeeklyRewardResurrection;
+let ensureDefaultServiceCatalog;
+let AdminLog;
 let AppSetting;
 let BettingFunding;
 let EducationPin;
 let EducationTransaction;
+let EmailVerificationChallenge;
 let GovernmentPayment;
 let LiveEvent;
+let PasswordResetChallenge;
 let PhoneVerification;
 let SecurityEvent;
+let ServiceCatalog;
 let Transaction;
 let TransportBooking;
 let Trivia;
@@ -47,10 +52,26 @@ async function createUser(overrides = {}) {
     accountNumber: overrides.accountNumber || '',
     kycTier: overrides.kycTier || 1,
     balance: overrides.balance ?? 0,
+    br9GoldBalance: overrides.br9GoldBalance ?? 0,
+    br9GoldLockedBalance: overrides.br9GoldLockedBalance ?? 0,
+    goldUnlockDate: overrides.goldUnlockDate || null,
     br9GoldPoints: overrides.br9GoldPoints ?? 0,
     referralCode: overrides.referralCode || `T${Date.now().toString(36)}`,
     referredBy: overrides.referredBy || null,
     role: overrides.role || 'user',
+    isVerified: overrides.isVerified ?? false,
+    verifiedAt: overrides.verifiedAt || null,
+    fullNameLockedAt: overrides.fullNameLockedAt || null,
+    isNameLocked: overrides.isNameLocked ?? false,
+    rewardMilestonesGranted: overrides.rewardMilestonesGranted || [],
+    emailVerifiedAt:
+      overrides.emailVerifiedAt === undefined
+        ? new Date()
+        : overrides.emailVerifiedAt,
+    phoneVerifiedAt:
+      overrides.phoneVerifiedAt === undefined
+        ? new Date()
+        : overrides.phoneVerifiedAt,
   });
 }
 
@@ -65,6 +86,8 @@ beforeAll(async () => {
   process.env.ENABLE_CRON = 'false';
   process.env.GOLD_TO_NAIRA_RATIO = '0.1';
   process.env.VENDING_DEMO = 'true';
+  process.env.FUNDING_DEMO = 'true';
+  process.env.CLUBKONNECT_DEMO = 'true';
 
   replSet = await MongoMemoryReplSet.create({
     replSet: { count: 1, storageEngine: 'wiredTiger' },
@@ -75,15 +98,25 @@ beforeAll(async () => {
   ({ connectDb, disconnectDb } = require('../config/db'));
   ({ runMondayPayout } = require('../jobs/payout_engine'));
   ({ runWeeklyRewardResurrection } = require('../jobs/payout_processor'));
+  ({ ensureDefaultServiceCatalog } = require('../services/service_catalog.service'));
+
+  process.env.VENDING_DEMO = 'true';
+  process.env.FUNDING_DEMO = 'true';
+  process.env.CLUBKONNECT_DEMO = 'true';
+
   ({
+    AdminLog,
     AppSetting,
     BettingFunding,
     EducationPin,
     EducationTransaction,
+    EmailVerificationChallenge,
     GovernmentPayment,
     LiveEvent,
+    PasswordResetChallenge,
     PhoneVerification,
     SecurityEvent,
+    ServiceCatalog,
     Transaction,
     TransportBooking,
     Trivia,
@@ -96,16 +129,24 @@ beforeAll(async () => {
   await initializeIndexes();
 });
 
+beforeEach(async () => {
+  await ensureDefaultServiceCatalog();
+});
+
 afterEach(async () => {
   await Promise.all([
+    AdminLog.deleteMany({}),
     EducationPin.deleteMany({}),
     EducationTransaction.deleteMany({}),
     AppSetting.deleteMany({}),
     BettingFunding.deleteMany({}),
     GovernmentPayment.deleteMany({}),
     LiveEvent.deleteMany({}),
+    EmailVerificationChallenge.deleteMany({}),
+    PasswordResetChallenge.deleteMany({}),
     PhoneVerification.deleteMany({}),
     SecurityEvent.deleteMany({}),
+    ServiceCatalog.deleteMany({}),
     TransportBooking.deleteMany({}),
     Trivia.deleteMany({}),
     Transaction.deleteMany({}),
@@ -164,49 +205,94 @@ describe('BR9 backend integration', () => {
     expect(loginResponse.body.data.sessionTransfer.required).toBe(false);
   });
 
-  test('Auth: signup requires SMS verification before account creation', async () => {
-    const sendResponse = await request(app)
-      .post('/api/auth/send-phone-verification')
-      .send({ phoneNumber: '08030000088' });
-
-    expect(sendResponse.status).toBe(200);
-    expect(sendResponse.body.data.devCode).toHaveLength(6);
-
-    const verifyResponse = await request(app)
-      .post('/api/auth/verify-phone-code')
-      .send({
-        phoneNumber: '08030000088',
-        code: sendResponse.body.data.devCode,
-      });
-
-    expect(verifyResponse.status).toBe(200);
-    expect(verifyResponse.body.data.phoneVerificationToken).toBeTruthy();
-
+  test('Auth: signup creates an account and requires email verification before login', async () => {
     const registerResponse = await request(app)
       .post('/api/auth/register')
       .send({
-        fullName: 'SMS Verified User',
-        username: 'smsverified',
-        email: 'sms.verified@br9.test',
+        fullName: 'Email Verified User',
+        username: 'emailverified',
+        email: 'email.verified@br9.test',
         phoneNumber: '08030000088',
         password: 'StrongPass123!',
         pin: '654321',
-        phoneVerificationToken:
-          verifyResponse.body.data.phoneVerificationToken,
       });
 
     expect(registerResponse.status).toBe(201);
-    expect(registerResponse.body.data.user.phoneVerified).toBe(true);
-    expect(registerResponse.body.data.user.bayrightTag).toBe('@smsverified');
-    expect(registerResponse.body.data.user.virtualAccount.accountNumber).toBeTruthy();
-    expect(registerResponse.body.data.user.virtualAccount.bankName).toBe('GTBank');
+    expect(registerResponse.body.data.emailVerificationRequired).toBe(true);
+    expect(registerResponse.body.data.userId).toBeTruthy();
+    expect(registerResponse.body.data.devCode).toHaveLength(6);
 
     const storedUser = await User.findOne({
-      email: 'sms.verified@br9.test',
+      email: 'email.verified@br9.test',
     }).lean();
-    expect(storedUser.phoneVerifiedAt).toBeTruthy();
+    expect(storedUser.emailVerifiedAt).toBeFalsy();
     expect(storedUser.pinHash).toBeTruthy();
-    expect(storedUser.virtualAccountNumber).toBeTruthy();
+    expect(storedUser.virtualAccountNumber || '').toBe('');
+
+    const blockedLogin = await request(app).post('/api/auth/login').send({
+      identifier: 'email.verified@br9.test',
+      password: 'StrongPass123!',
+    });
+
+    expect(blockedLogin.status).toBe(403);
+
+    const verifyEmailResponse = await request(app)
+      .post('/api/auth/verify-email-code')
+      .send({
+        userId: registerResponse.body.data.userId,
+        code: registerResponse.body.data.devCode,
+      });
+
+    expect(verifyEmailResponse.status).toBe(200);
+    expect(verifyEmailResponse.body.data.br9GoldGranted).toBe(100);
+
+    const loginResponse = await request(app).post('/api/auth/login').send({
+      identifier: 'email.verified@br9.test',
+      password: 'StrongPass123!',
+    });
+
+    expect(loginResponse.status).toBe(200);
+    expect(loginResponse.body.data.onboarding.requiresPhoneVerification).toBe(true);
+  });
+
+  test('Auth: email and phone onboarding rewards are locked for 30 days', async () => {
+    const registerResponse = await request(app)
+      .post('/api/auth/register')
+      .send({
+        fullName: 'Rewarded User',
+        username: 'rewardeduser',
+        email: 'rewarded@br9.test',
+        phoneNumber: '08030000888',
+        password: 'StrongPass123!',
+        pin: '654321',
+      });
+
+    await request(app).post('/api/auth/verify-email-code').send({
+      userId: registerResponse.body.data.userId,
+      code: registerResponse.body.data.devCode,
+    });
+
+    const loginResponse = await request(app).post('/api/auth/login').send({
+      identifier: 'rewarded@br9.test',
+      password: 'StrongPass123!',
+    });
+
+    const token = loginResponse.body.data.accessToken;
+    const sendResponse = await request(app)
+      .post('/api/user/send-phone-verification')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ channel: 'sms' });
+
+    const verifyPhoneResponse = await request(app)
+      .post('/api/user/verify-phone-code')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ code: sendResponse.body.data.devCode });
+
+    expect(verifyPhoneResponse.status).toBe(200);
+    expect(verifyPhoneResponse.body.data.br9GoldLockedBalance).toBe(200);
+    expect(verifyPhoneResponse.body.data.br9GoldBalance).toBe(0);
+    expect(verifyPhoneResponse.body.data.br9GoldLocked).toBe(true);
+    expect(verifyPhoneResponse.body.data.goldDaysRemaining).toBeGreaterThanOrEqual(29);
   });
 
   test('Auth: signup rejects reused email, phone number, and username', async () => {
@@ -223,21 +309,6 @@ describe('BR9 backend integration', () => {
       phoneAttempt += 1;
       const phoneNumber =
         overrides.phoneNumber || `08030000${String(phoneAttempt).padStart(3, '0')}`;
-      const sendResponse = await request(app)
-        .post('/api/auth/send-phone-verification')
-        .send({ phoneNumber });
-
-      if (sendResponse.status !== 200) {
-        return sendResponse;
-      }
-
-      const verifyResponse = await request(app)
-        .post('/api/auth/verify-phone-code')
-        .send({
-          phoneNumber,
-          code: sendResponse.body.data.devCode,
-        });
-
       return request(app)
         .post('/api/auth/register')
         .send({
@@ -247,8 +318,6 @@ describe('BR9 backend integration', () => {
           phoneNumber,
           password: 'StrongPass123!',
           pin: '654321',
-          phoneVerificationToken:
-            verifyResponse.body.data.phoneVerificationToken,
         });
     };
 
@@ -263,6 +332,92 @@ describe('BR9 backend integration', () => {
     const usernameResponse = await attempt({ username: 'existinguser' });
     expect(usernameResponse.status).toBe(409);
     expect(usernameResponse.body.message).toContain('username');
+  });
+
+  test('Auth: first login can complete post-login phone verification via SMS', async () => {
+    const user = await createUser({
+      fullName: 'Phone Step User',
+      email: 'phone.step@br9.test',
+      phoneNumber: '08030000221',
+      bayrightTag: '@phonestep',
+      referralCode: 'PHONESTEP',
+      phoneVerifiedAt: null,
+    });
+
+    const loginResponse = await login(user.email);
+    expect(loginResponse.status).toBe(200);
+    expect(loginResponse.body.data.onboarding.requiresPhoneVerification).toBe(true);
+
+    const token = loginResponse.body.data.accessToken;
+    const sendResponse = await request(app)
+      .post('/api/user/send-phone-verification')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ channel: 'sms' });
+
+    expect(sendResponse.status).toBe(200);
+    expect(sendResponse.body.data.devCode).toHaveLength(6);
+
+    const verifyResponse = await request(app)
+      .post('/api/user/verify-phone-code')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ code: sendResponse.body.data.devCode });
+
+    expect(verifyResponse.status).toBe(200);
+    expect(verifyResponse.body.data.phoneVerified).toBe(true);
+    expect(verifyResponse.body.data.br9GoldLockedBalance).toBe(100);
+    expect(verifyResponse.body.data.virtualAccount.accountNumber).toBeTruthy();
+    expect(verifyResponse.body.data.virtualAccount.bankName).toBe('GTBank');
+  });
+
+  test('Funding rail: mismatch after silent name-lock is flagged for manual review', async () => {
+    const user = await createUser({
+      fullName: 'Stan Kings',
+      email: 'mismatch@br9.test',
+      phoneNumber: '08030000231',
+      bayrightTag: '@mismatch',
+      referralCode: 'MISMATCH',
+      balance: 0,
+      isVerified: true,
+      verifiedAt: new Date(),
+      fullNameLockedAt: new Date(),
+    });
+
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          virtualAccountNumber: '1234567890',
+          virtualAccountBankName: 'GTBank',
+          virtualAccountName: 'STAN KINGS',
+          virtualAccountReference: 'BR9VA-MISMATCH',
+          virtualAccountStatus: 'active',
+        },
+      }
+    );
+
+    const response = await request(app)
+      .post('/api/webhook/deposit')
+      .send({
+        provider: 'squad',
+        data: {
+          amount: 2500,
+          transactionReference: 'SQD-MISMATCH-001',
+          virtualAccountNumber: '1234567890',
+          senderName: 'Different Person',
+          senderAccountNumber: '0099887766',
+        },
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.manualReview).toBe(true);
+
+    const freshUser = await User.findById(user._id).lean();
+    const depositLedger = await Transaction.findOne({
+      'metadata.providerReference': 'SQD-MISMATCH-001',
+    }).lean();
+
+    expect(freshUser.balance).toBe(0);
+    expect(depositLedger.status).toBe('pending_review');
   });
 
   test('Funding rail: deposit webhook credits virtual account and logs operational expense', async () => {
@@ -301,6 +456,7 @@ describe('BR9 backend integration', () => {
     expect(depositResponse.body.data.providerFee).toBe(10);
     expect(depositResponse.body.data.operationalExpense).toBe(10);
     expect(depositResponse.body.data.balanceAfter).toBe(10200);
+    expect(depositResponse.body.data.rewardGranted).toBe(300);
 
     const freshUser = await User.findById(user._id).lean();
     const depositLedger = await Transaction.findOne({
@@ -309,8 +465,36 @@ describe('BR9 backend integration', () => {
     }).lean();
 
     expect(freshUser.balance).toBe(10200);
+    expect(freshUser.br9GoldLockedBalance).toBe(300);
+    expect(freshUser.isNameLocked).toBe(true);
     expect(depositLedger.metadata.zeroFeeBalance).toBe(true);
     expect(depositLedger.metadata.operationalExpense).toBe(10);
+  });
+
+  test('BR9 Gold vesting unlocks locked reward balance after 30 days', async () => {
+    const pastUnlockDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const user = await createUser({
+      fullName: 'Unlocked Reward User',
+      email: 'unlock@br9.test',
+      phoneNumber: '08030000991',
+      bayrightTag: '@unlockreward',
+      referralCode: 'UNLOCKR',
+      br9GoldBalance: 0,
+      br9GoldLockedBalance: 500,
+      goldUnlockDate: pastUnlockDate,
+      rewardMilestonesGranted: ['email_verification', 'phone_verification', 'first_deposit'],
+    });
+
+    const loginResponse = await login(user.email);
+    const profileResponse = await request(app)
+      .get('/api/user/profile')
+      .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`);
+
+    expect(profileResponse.status).toBe(200);
+    expect(profileResponse.body.data.br9GoldBalance).toBe(500);
+    expect(profileResponse.body.data.br9GoldLockedBalance).toBe(0);
+    expect(profileResponse.body.data.br9GoldLocked).toBe(false);
+    expect(profileResponse.body.data.br9GoldNairaValue).toBe(50);
   });
 
   test('Admin provider config: saves funding rails and service API failover routes', async () => {
@@ -320,12 +504,13 @@ describe('BR9 backend integration', () => {
       .send({
         funding: {
           primaryProvider: 'squad',
-          backupProvider: 'monnify',
+          backupProvider: 'demo',
           zeroFeeBalance: false,
           providerFeeBps: 10,
           defaultBankLabel: 'GTBank',
         },
         endpoints: {
+          clubkonnectBaseUrl: 'https://www.clubkonnect.com',
           peyflexBaseUrl: 'https://primary.example.test',
           vtpassBaseUrl: 'https://backup.example.test',
         },
@@ -649,17 +834,48 @@ describe('BR9 backend integration', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data.pins).toHaveLength(1);
-    expect(response.body.data.amountCharged).toBe(6450);
+    expect(response.body.data.amountCharged).toBe(5760);
     expect(response.body.data.promoApplied).toBe(false);
-    expect(response.body.data.walletBalance).toBe(3550);
-    expect(response.body.data.br9GoldPoints).toBe(124);
+    expect(response.body.data.walletBalance).toBe(4240);
+    expect(response.body.data.br9GoldPoints).toBe(112);
 
     const savedPin = await EducationPin.findOne({ userId: user._id }).lean();
     const ledger = await Transaction.findOne({ type: 'Education' }).lean();
 
-    expect(savedPin.service).toBe('JAMB');
+    expect(savedPin.service).toBe('JAMB_UTME');
     expect(savedPin.profileCode).toBe('1234567890');
-    expect(ledger.amount).toBe(6450);
+    expect(ledger.amount).toBe(5760);
+    expect(ledger.metadata.costPrice).toBe(5640);
+    expect(ledger.metadata.sellingPrice).toBe(5760);
+    expect(ledger.metadata.profit).toBe(120);
+    expect(ledger.metadata.costPrice).toBeGreaterThan(0);
+    expect(ledger.metadata.sellingPrice).toBeGreaterThan(0);
+    expect(ledger.metadata.profit).toBeGreaterThanOrEqual(0);
+  });
+
+  test('Validator route: verifies electricity and education identifiers before payment', async () => {
+    const electricityResponse = await request(app)
+      .post('/api/verify-service')
+      .send({
+        category: 'electricity',
+        meterNumber: '12345678901',
+        serviceID: 'ikeja-electric',
+        meterType: 'prepaid',
+      });
+
+    expect(electricityResponse.status).toBe(200);
+    expect(electricityResponse.body.data.customerName).toBe('CHUKWUMA OKORIE');
+
+    const educationResponse = await request(app)
+      .post('/api/verify-service')
+      .send({
+        category: 'education',
+        serviceType: 'JAMB_DIRECT_ENTRY',
+        candidateId: '1234567890',
+      });
+
+    expect(educationResponse.status).toBe(200);
+    expect(educationResponse.body.data.serviceType).toBe('JAMB_DIRECT_ENTRY');
   });
 
   test('Electricity vending: verify and pay creates token ledger entry', async () => {
@@ -702,10 +918,100 @@ describe('BR9 backend integration', () => {
     expect(payResponse.body.data.walletBalance).toBe(3900);
     expect(payResponse.body.data.br9GoldPoints).toBe(10);
     expect(payResponse.body.data.token).toHaveLength(20);
+    expect(payResponse.body.data.costPrice).toBe(1000);
+    expect(payResponse.body.data.sellingPrice).toBe(1100);
+    expect(payResponse.body.data.profit).toBe(100);
 
     const utilityLedger = await UtilityTransaction.findOne({ userId: user._id }).lean();
     expect(utilityLedger.category).toBe('Electricity');
     expect(utilityLedger.amount).toBe(1000);
+    expect(utilityLedger.profit).toBe(100);
+  });
+
+  test('Clubkonnect routes: airtime and data purchases debit wallet and create ledgers', async () => {
+    const user = await createUser({
+      fullName: 'Bundle Buyer',
+      email: 'bundle@br9.test',
+      phoneNumber: '08030000066',
+      bayrightTag: '@bundlebuyer',
+      balance: 6000,
+      referralCode: 'BUNDLE',
+    });
+    const loginResponse = await login(user.email);
+    const token = loginResponse.body.data.accessToken;
+
+    const airtimeResponse = await request(app)
+      .post('/api/utility/pay-airtime')
+      .set('Authorization', `Bearer ${token}`)
+      .set('X-Device-ID', testDeviceId)
+      .send({
+        network: 'MTN',
+        phoneNumber: user.phoneNumber,
+        amount: 1000,
+        transactionPin: '654321',
+      });
+
+    expect(airtimeResponse.status).toBe(201);
+    expect(airtimeResponse.body.data.amountCharged).toBe(1050);
+
+    const dataResponse = await request(app)
+      .post('/api/utility/pay-data')
+      .set('Authorization', `Bearer ${token}`)
+      .set('X-Device-ID', testDeviceId)
+      .send({
+        network: 'MTN',
+        planCode: 'SME500MB',
+        phoneNumber: user.phoneNumber,
+        amount: 500,
+        transactionPin: '654321',
+      });
+
+    expect(dataResponse.status).toBe(201);
+    expect(dataResponse.body.data.amountCharged).toBe(550);
+
+    const ledgers = await UtilityTransaction.find({ userId: user._id })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    expect(ledgers.map((item) => item.category)).toEqual(['Airtime', 'Data']);
+  });
+
+  test('Electricity vending: unlocked BR9 Gold can cover up to 5 percent of an internal payment', async () => {
+    const user = await createUser({
+      fullName: 'Gold Utility Buyer',
+      email: 'gold.utility@br9.test',
+      phoneNumber: '08030000061',
+      bayrightTag: '@goldutility',
+      balance: 2000,
+      br9GoldBalance: 500,
+      goldUnlockDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      referralCode: 'GUTILITY',
+    });
+    const loginResponse = await login(user.email);
+    const token = loginResponse.body.data.accessToken;
+
+    const payResponse = await request(app)
+      .post('/api/utility/pay-electricity')
+      .set('Authorization', `Bearer ${token}`)
+      .set('X-Device-ID', testDeviceId)
+      .send({
+        meterNumber: '12345678901',
+        serviceID: 'ikeja-electric',
+        type: 'prepaid',
+        amount: 1000,
+        goldToRedeem: 500,
+        phone: user.phoneNumber,
+        customerName: 'CHUKWUMA OKORIE',
+        transactionPin: '654321',
+      });
+
+    expect(payResponse.status).toBe(201);
+    expect(payResponse.body.data.goldUsed).toBe(500);
+    expect(payResponse.body.data.goldDiscountNaira).toBe(50);
+    expect(payResponse.body.data.amountCharged).toBe(1050);
+
+    const freshUser = await User.findById(user._id).lean();
+    expect(freshUser.br9GoldBalance).toBe(0);
   });
 
   test('TV and internet vending: smartcard verification returns plans and renews subscription', async () => {
@@ -745,9 +1051,9 @@ describe('BR9 backend integration', () => {
       });
 
     expect(payResponse.status).toBe(201);
-    expect(payResponse.body.data.amountCharged).toBe(12700);
+    expect(payResponse.body.data.amountCharged).toBe(12750);
     expect(payResponse.body.data.promoApplied).toBe(false);
-    expect(payResponse.body.data.walletBalance).toBe(7300);
+    expect(payResponse.body.data.walletBalance).toBe(7250);
     expect(payResponse.body.data.br9GoldPoints).toBe(187);
     expect(payResponse.body.data.receiptNumber).toBeTruthy();
 
@@ -886,6 +1192,38 @@ describe('BR9 backend integration', () => {
     expect(fundResponse.body.data.walletBalance).toBe(3900);
     expect(fundResponse.body.data.br9GoldPoints).toBe(10);
     expect(await BettingFunding.countDocuments({ userId: user._id })).toBe(1);
+  });
+
+  test('Betting: funding is blocked until the verified account name is confirmed', async () => {
+    const user = await createUser({
+      fullName: 'Bet Safety',
+      email: 'betsafety@br9.test',
+      phoneNumber: '08030000019',
+      bayrightTag: '@betsafety',
+      balance: 6000,
+      referralCode: 'BETSAFE',
+    });
+    const loginResponse = await login(user.email);
+    const token = loginResponse.body.data.accessToken;
+
+    const fundResponse = await request(app)
+      .post('/api/betting/fund')
+      .set('Authorization', `Bearer ${token}`)
+      .set('X-Device-ID', testDeviceId)
+      .send({
+        bookmaker: 'SportyBet',
+        customerId: 'SB124',
+        amount: 2000,
+        phone: user.phoneNumber,
+        transactionPin: '654321',
+      });
+
+    expect(fundResponse.status).toBe(409);
+    expect(fundResponse.body.message).toMatch(/confirm/i);
+
+    const unchangedUser = await User.findById(user._id).lean();
+    expect(unchangedUser.balance).toBe(6000);
+    expect(await BettingFunding.countDocuments({ userId: user._id })).toBe(0);
   });
 
   test('Live and trivia: admin can trigger code and users can earn BR9 GOLD', async () => {

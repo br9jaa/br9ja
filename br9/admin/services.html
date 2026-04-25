@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BR9ja Profit Matrix</title>
-  <meta name="description" content="Private BR9ja profit matrix for service markups, service posture, and realized silent-profit counters.">
+  <title>BR9ja Pricing Control Center</title>
+  <meta name="description" content="Private BR9ja pricing control center for service pricing, bulk updates, profit protection, and revenue overview.">
   <meta name="theme-color" content="#010A1F">
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" type="image/png" href="../assets/favicon.png">
@@ -22,162 +22,236 @@
     <main class="section-stack admin-room">
       <section class="section-panel admin-console">
         <div class="section-header">
-          <span class="kicker">Profit Matrix</span>
-          <h1 class="section-title">Control silent markup on every BR9ja service line.</h1>
-          <p class="section-copy">Each service carries one internal markup field, one status switch, one internal note, and one realized counter so the frontend stays one-price and drama-free.</p>
+          <span class="kicker">Pricing Control Center</span>
+          <h1 class="section-title">Price fast. Protect margin. Watch profit live.</h1>
+          <p class="section-copy">Every live product now pulls from one catalog, so what you edit here is what the user app sees on Airtime, Data, Electricity, and Education.</p>
         </div>
 
-        <form class="admin-form admin-console-form" data-form="admin-settings">
-          <input name="adminToken" type="hidden">
+        <section class="admin-kpi-grid pricing-overview-grid" data-admin-catalog-overview>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Total Revenue</span>
+            <strong data-catalog-overview="totalRevenue">₦0</strong>
+            <span class="mini-note">What users have paid across live service sales.</span>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Total Cost</span>
+            <strong data-catalog-overview="totalCost">₦0</strong>
+            <span class="mini-note">Provider-side spend recorded at time of purchase.</span>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Net Profit</span>
+            <strong data-catalog-overview="netProfit">₦0</strong>
+            <span class="mini-note">Your realized gain after provider expense.</span>
+          </article>
+          <article class="admin-kpi-card">
+            <span class="admin-kpi-card__label">Catalog Health</span>
+            <strong><span data-catalog-overview="activeCount">0</span> / <span data-catalog-overview="totalCount">0</span></strong>
+            <span class="mini-note"><span data-catalog-overview="flaggedCount">0</span> products need attention.</span>
+          </article>
+        </section>
 
-          <section class="admin-section-card">
-            <div class="admin-section-card__header">
-              <div>
-                <span class="kicker">Service Matrix</span>
-                <h2>10 services. One silent margin engine.</h2>
+        <section class="admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">Current Lineup</span>
+              <h2>Everything BR9ja offers, separated from what is actually priced.</h2>
+            </div>
+            <p class="section-copy">This removes the old Marketplace confusion. The list below shows the real product lanes, while the matrix underneath controls every sellable item and its margin.</p>
+          </div>
+
+          <div class="service-audit-grid">
+            <article class="service-audit-card">
+              <div class="service-audit-card__header">
+                <h3>Wallet & Core Access</h3>
+                <span class="service-audit-pill">Core</span>
               </div>
-              <p class="section-copy">The public checkout only shows the final customer total. This room is where the internal markup is actually controlled.</p>
-            </div>
+              <ul class="service-audit-list">
+                <li><strong>Wallet Funding</strong><span>Squad virtual account funding and live balance updates.</span></li>
+                <li><strong>P2P Transfers</strong><span>Buddy transfers inside BR9ja with receipts and admin logs.</span></li>
+                <li><strong>Virtual Accounts</strong><span>Dedicated account numbers for inbound deposits.</span></li>
+                <li><strong>Virtual USD Cards</strong><span>Premium card lane, kept in the pricing matrix as a paused finance item.</span></li>
+              </ul>
+            </article>
 
-            <div class="admin-service-grid">
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">WL</span><div><h3>Wallet & Transfers</h3><p class="mini-note">P2P movement and balance flow.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="wallet">₦0</strong><span data-profit-count="wallet">0 txns</span><span data-profit-volume="wallet">₦0</span></div>
-                <div class="field-group"><label for="profit-wallet-status">Status</label><div class="field-shell"><select id="profit-wallet-status" name="serviceWalletStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-wallet-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-wallet-markup" name="serviceWalletMarkup" type="number" min="0" step="1" placeholder="0"></div></div>
-                <div class="field-group"><label for="profit-wallet-note">Ops Note</label><div class="field-shell"><input id="profit-wallet-note" name="serviceWalletNote" type="text" placeholder="Internal transfers, balance sync, and payout visibility stay active."></div></div>
-              </article>
-
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">AT</span><div><h3>Airtime</h3><p class="mini-note">Fast recharge loop.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="airtime">₦0</strong><span data-profit-count="airtime">0 txns</span><span data-profit-volume="airtime">₦0</span></div>
-                <div class="field-group"><label for="profit-airtime-status">Status</label><div class="field-shell"><select id="profit-airtime-status" name="serviceAirtimeStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-airtime-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-airtime-markup" name="serviceAirtimeMarkup" type="number" min="0" step="1" placeholder="50"></div></div>
-                <div class="field-group"><label for="profit-airtime-note">Ops Note</label><div class="field-shell"><input id="profit-airtime-note" name="serviceAirtimeNote" type="text" placeholder="Instant recharge across MTN, Airtel, Glo, and 9mobile."></div></div>
-              </article>
-
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">DT</span><div><h3>Data Bundles</h3><p class="mini-note">Daily bundle spend loop.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="data">₦0</strong><span data-profit-count="data">0 txns</span><span data-profit-volume="data">₦0</span></div>
-                <div class="field-group"><label for="profit-data-status">Status</label><div class="field-shell"><select id="profit-data-status" name="serviceDataStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-data-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-data-markup" name="serviceDataMarkup" type="number" min="0" step="1" placeholder="50"></div></div>
-                <div class="field-group"><label for="profit-data-note">Ops Note</label><div class="field-shell"><input id="profit-data-note" name="serviceDataNote" type="text" placeholder="Fast bundle vending with wallet-first checkout."></div></div>
-              </article>
-
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">EL</span><div><h3>Electricity</h3><p class="mini-note">Meter and token flows.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="electricity">₦0</strong><span data-profit-count="electricity">0 txns</span><span data-profit-volume="electricity">₦0</span></div>
-                <div class="field-group"><label for="profit-electricity-status">Status</label><div class="field-shell"><select id="profit-electricity-status" name="serviceElectricityStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-electricity-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-electricity-markup" name="serviceElectricityMarkup" type="number" min="0" step="1" placeholder="100"></div></div>
-                <div class="field-group"><label for="profit-electricity-note">Ops Note</label><div class="field-shell"><input id="profit-electricity-note" name="serviceElectricityNote" type="text" placeholder="Meter verification and token delivery stay enabled."></div></div>
-              </article>
-
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">TV</span><div><h3>Cable TV & Internet</h3><p class="mini-note">Subscription renewals and bundles.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="cableTv">₦0</strong><span data-profit-count="cableTv">0 txns</span><span data-profit-volume="cableTv">₦0</span></div>
-                <div class="field-group"><label for="profit-cable-status">Status</label><div class="field-shell"><select id="profit-cable-status" name="serviceCableTvStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-cable-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-cable-markup" name="serviceCableTvMarkup" type="number" min="0" step="1" placeholder="200"></div></div>
-                <div class="field-group"><label for="profit-cable-note">Ops Note</label><div class="field-shell"><input id="profit-cable-note" name="serviceCableTvNote" type="text" placeholder="DSTV, GOtv, StarTimes, and internet subscription flows are available."></div></div>
-              </article>
-
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">ED</span><div><h3>Education Pins</h3><p class="mini-note">Exam pin vending.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="education">₦0</strong><span data-profit-count="education">0 txns</span><span data-profit-volume="education">₦0</span></div>
-                <div class="field-group"><label for="profit-education-status">Status</label><div class="field-shell"><select id="profit-education-status" name="serviceEducationStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-education-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-education-markup" name="serviceEducationMarkup" type="number" min="0" step="1" placeholder="150"></div></div>
-                <div class="field-group"><label for="profit-education-note">Ops Note</label><div class="field-shell"><input id="profit-education-note" name="serviceEducationNote" type="text" placeholder="WAEC, JAMB, NECO, and exam-pin vending is visible in marketplace."></div></div>
-              </article>
-
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">TR</span><div><h3>Transport</h3><p class="mini-note">LCC and route requests.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="transport">₦0</strong><span data-profit-count="transport">0 txns</span><span data-profit-volume="transport">₦0</span></div>
-                <div class="field-group"><label for="profit-transport-status">Status</label><div class="field-shell"><select id="profit-transport-status" name="serviceTransportStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-transport-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-transport-markup" name="serviceTransportMarkup" type="number" min="0" step="1" placeholder="100"></div></div>
-                <div class="field-group"><label for="profit-transport-note">Ops Note</label><div class="field-shell"><input id="profit-transport-note" name="serviceTransportNote" type="text" placeholder="LCC top-up and interstate booking intake remain supervised."></div></div>
-              </article>
-
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">GV</span><div><h3>Government</h3><p class="mini-note">RRR and civic bill flow.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="government">₦0</strong><span data-profit-count="government">0 txns</span><span data-profit-volume="government">₦0</span></div>
-                <div class="field-group"><label for="profit-government-status">Status</label><div class="field-shell"><select id="profit-government-status" name="serviceGovernmentStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-government-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-government-markup" name="serviceGovernmentMarkup" type="number" min="0" step="1" placeholder="150"></div></div>
-                <div class="field-group"><label for="profit-government-note">Ops Note</label><div class="field-shell"><input id="profit-government-note" name="serviceGovernmentNote" type="text" placeholder="RRR-driven payments stay on guarded rollout."></div></div>
-              </article>
-
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">BT</span><div><h3>Betting</h3><p class="mini-note">Wallet funding control.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="betting">₦0</strong><span data-profit-count="betting">0 txns</span><span data-profit-volume="betting">₦0</span></div>
-                <div class="field-group"><label for="profit-betting-status">Status</label><div class="field-shell"><select id="profit-betting-status" name="serviceBettingStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-betting-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-betting-markup" name="serviceBettingMarkup" type="number" min="0" step="1" placeholder="100"></div></div>
-                <div class="field-group"><label for="profit-betting-note">Ops Note</label><div class="field-shell"><input id="profit-betting-note" name="serviceBettingNote" type="text" placeholder="Funding flows remain ID-checked before completion."></div></div>
-              </article>
-
-              <article class="admin-service-card">
-                <div class="admin-service-card__header"><span class="admin-service-card__icon">MP</span><div><h3>Marketplace</h3><p class="mini-note">Daily-needs checkout and cashback.</p></div></div>
-                <div class="admin-service-meta"><strong data-profit-service="marketplace">₦0</strong><span data-profit-count="marketplace">0 txns</span><span data-profit-volume="marketplace">₦0</span></div>
-                <div class="field-group"><label for="profit-marketplace-status">Status</label><div class="field-shell"><select id="profit-marketplace-status" name="serviceMarketplaceStatus"><option value="live">Live</option><option value="featured">Featured</option><option value="soft-launch">Soft Launch</option><option value="maintenance">Maintenance</option><option value="paused">Paused</option></select></div></div>
-                <div class="field-group"><label for="profit-marketplace-markup">Internal Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-marketplace-markup" name="serviceMarketplaceMarkup" type="number" min="0" step="1" placeholder="75"></div></div>
-                <div class="field-group"><label for="profit-marketplace-note">Ops Note</label><div class="field-shell"><input id="profit-marketplace-note" name="serviceMarketplaceNote" type="text" placeholder="Daily needs checkout and cashback loops stay active."></div></div>
-              </article>
-            </div>
-
-            <div class="admin-section-card__header admin-section-card__header--sub">
-              <div>
-                <span class="kicker">Super-App Portfolio</span>
-                <h2>Categorized markups for every new revenue lane.</h2>
+            <article class="service-audit-card">
+              <div class="service-audit-card__header">
+                <h3>Utilities</h3>
+                <span class="service-audit-pill">Live</span>
               </div>
-              <p class="section-copy">These fields prepare the wider BR9ja portfolio for the same one-price checkout logic: Finance, Utilities, Gov & Edu, and Lifestyle all get their own internal markup controls.</p>
+              <ul class="service-audit-list">
+                <li><strong>Airtime</strong><span>MTN, Airtel, Glo, and 9mobile.</span></li>
+                <li><strong>Data</strong><span>SME, gifting, and other network bundle plans.</span></li>
+                <li><strong>Electricity</strong><span>IKEDC, EKEDC, AEDC, KAEDCO, Port Harcourt, and Ibadan.</span></li>
+                <li><strong>Cable TV & Internet</strong><span>DSTV, GOtv, StarTimes, Smile, Spectranet, and similar renewals.</span></li>
+              </ul>
+            </article>
+
+            <article class="service-audit-card">
+              <div class="service-audit-card__header">
+                <h3>Education & Public</h3>
+                <span class="service-audit-pill">Guided</span>
+              </div>
+              <ul class="service-audit-list">
+                <li><strong>Education</strong><span>WAEC, WAEC GCE, JAMB UTME, JAMB Direct Entry, NECO, and NABTEB.</span></li>
+                <li><strong>Government</strong><span>RRR plus supervised civic-payment lanes.</span></li>
+                <li><strong>Transport</strong><span>LCC live now, bus-request lanes staged for later release.</span></li>
+              </ul>
+            </article>
+
+            <article class="service-audit-card">
+              <div class="service-audit-card__header">
+                <h3>Lifestyle & Rewards</h3>
+                <span class="service-audit-pill">Soft Launch</span>
+              </div>
+              <ul class="service-audit-list">
+                <li><strong>Betting Wallet Funding</strong><span>SportyBet, Bet9ja, 1XBet, BetKing, MSport, and 22Bet.</span></li>
+                <li><strong>Subscriptions</strong><span>Netflix, Showmax, and Spotify stay visible for pricing decisions.</span></li>
+                <li><strong>Gaming Cards & Tickets</strong><span>Paused lifestyle lanes ready for pricing or removal.</span></li>
+                <li><strong>BR9 Gold & Games</strong><span>Market Runner, rewards, and app-only engagement stay outside the pricing engine.</span></li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">Live Products</span>
+              <h2>Inline pricing for every sellable product.</h2>
             </div>
+            <p class="section-copy">Rows turn red if you price below cost, and the profit shield blocks anything under a 2% cushion.</p>
+          </div>
 
-            <div class="admin-category-grid">
-              <section class="admin-category-card">
-                <span class="kicker">Finance</span>
-                <h3>Wallet-led money movement</h3>
-                <div class="admin-subservice-grid">
-                  <div class="field-group"><label for="profit-virtual-cards-markup">Virtual Cards Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-virtual-cards-markup" name="serviceVirtualCardsMarkup" type="number" min="0" step="1" placeholder="250"></div></div>
-                  <div class="field-group"><label for="profit-gold-savings-markup">BR9 Gold Savings Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-gold-savings-markup" name="serviceGoldSavingsMarkup" type="number" min="0" step="1" placeholder="0"></div></div>
-                </div>
-              </section>
-
-              <section class="admin-category-card">
-                <span class="kicker">Utilities</span>
-                <h3>Daily bills and household usage</h3>
-                <div class="admin-subservice-grid">
-                  <div class="field-group"><label for="profit-5g-data-markup">5G Data Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-5g-data-markup" name="serviceFiveGDataMarkup" type="number" min="0" step="1" placeholder="75"></div></div>
-                  <div class="field-group"><label for="profit-disco-markup">11 DISCOs Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-disco-markup" name="serviceDiscoMarkup" type="number" min="0" step="1" placeholder="120"></div></div>
-                </div>
-              </section>
-
-              <section class="admin-category-card">
-                <span class="kicker">Gov & Edu</span>
-                <h3>Public-sector and school payments</h3>
-                <div class="admin-subservice-grid">
-                  <div class="field-group"><label for="profit-driver-license-markup">Driver's License Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-driver-license-markup" name="serviceDriverLicenseMarkup" type="number" min="0" step="1" placeholder="250"></div></div>
-                </div>
-              </section>
-
-              <section class="admin-category-card">
-                <span class="kicker">Lifestyle</span>
-                <h3>Entertainment, betting, and tickets</h3>
-                <div class="admin-subservice-grid">
-                  <div class="field-group"><label for="profit-netflix-markup">Netflix Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-netflix-markup" name="serviceNetflixMarkup" type="number" min="0" step="1" placeholder="200"></div></div>
-                  <div class="field-group"><label for="profit-showmax-markup">Showmax Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-showmax-markup" name="serviceShowmaxMarkup" type="number" min="0" step="1" placeholder="150"></div></div>
-                  <div class="field-group"><label for="profit-spotify-markup">Spotify Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-spotify-markup" name="serviceSpotifyMarkup" type="number" min="0" step="1" placeholder="120"></div></div>
-                  <div class="field-group"><label for="profit-gaming-cards-markup">Gaming Cards Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-gaming-cards-markup" name="serviceGamingCardsMarkup" type="number" min="0" step="1" placeholder="250"></div></div>
-                  <div class="field-group"><label for="profit-gift-cards-markup">Gift Cards Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-gift-cards-markup" name="serviceGiftCardsMarkup" type="number" min="0" step="1" placeholder="300"></div></div>
-                  <div class="field-group"><label for="profit-event-tickets-markup">Event Tickets Markup (₦)</label><div class="field-shell"><span class="field-prefix">₦</span><input id="profit-event-tickets-markup" name="serviceEventTicketsMarkup" type="number" min="0" step="1" placeholder="200"></div></div>
-                </div>
-              </section>
+          <form class="admin-filter-form admin-catalog-filter" data-form="admin-service-catalog-filter">
+            <div class="field-group">
+              <label for="catalog-search">Search</label>
+              <div class="field-shell">
+                <input id="catalog-search" name="search" type="search" placeholder="MTN, WAEC, electricity, Clubkonnect">
+              </div>
             </div>
-
-            <div class="admin-submit-row">
-              <p class="success-banner" aria-live="polite"></p>
-              <button class="action-button" type="submit">Save Profit Matrix</button>
+            <div class="field-group">
+              <label for="catalog-category">Category</label>
+              <div class="field-shell">
+                <select id="catalog-category" name="category">
+                  <option value="">All categories</option>
+                  <option value="Airtime">Airtime</option>
+                  <option value="Data">Data</option>
+                  <option value="Education">Education</option>
+                  <option value="Electricity">Electricity</option>
+                  <option value="TV">TV</option>
+                  <option value="Internet">Internet</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Government">Government</option>
+                  <option value="Betting">Betting</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Subscription">Subscription</option>
+                  <option value="Lifestyle">Lifestyle</option>
+                </select>
+              </div>
             </div>
-          </section>
-        </form>
+            <div class="field-group">
+              <label for="catalog-provider">Provider</label>
+              <div class="field-shell">
+                <select id="catalog-provider" name="provider">
+                  <option value="">All providers</option>
+                  <option value="clubkonnect">Clubkonnect</option>
+                  <option value="vtpass">VTPass</option>
+                  <option value="remita">Remita</option>
+                  <option value="billpay">Bill Pay</option>
+                  <option value="grey">Grey</option>
+                  <option value="manual">Manual</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="catalog-active">Status</label>
+              <div class="field-shell">
+                <select id="catalog-active" name="activeOnly">
+                  <option value="">All products</option>
+                  <option value="true">Active only</option>
+                  <option value="false">Include paused</option>
+                </select>
+              </div>
+            </div>
+            <button class="ghost-button" type="submit">Filter</button>
+          </form>
+
+          <div class="admin-inline-note">
+            <strong>Profit Shield</strong>
+            <span>If a row falls below cost or below a 2% margin, the user side is blocked until you fix the price. Bulk changes still respect the floor rule of <code>cost + ₦1</code>.</span>
+          </div>
+
+          <p class="success-banner" data-catalog-feedback aria-live="polite"></p>
+
+          <div class="admin-table-shell">
+            <table class="admin-table admin-catalog-table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" data-catalog-select-all aria-label="Select all products"></th>
+                  <th>Product</th>
+                  <th>Provider</th>
+                <th>Cost</th>
+                <th>Selling</th>
+                <th>Margin</th>
+                <th>Reseller</th>
+                <th>Active</th>
+                <th>Action</th>
+              </tr>
+              </thead>
+              <tbody data-admin-service-catalog-table>
+                <tr>
+                  <td colspan="9">Loading service catalog…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="admin-toolbar admin-catalog-toolbar">
+            <p class="mini-note" data-catalog-summary>0 products loaded.</p>
+            <div class="admin-action-grid">
+              <button class="ghost-button" type="button" data-catalog-requery-all-pending>Re-query All Pending</button>
+              <button class="ghost-button" type="button" data-catalog-refresh>Refresh</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-section-card">
+          <div class="admin-section-card__header">
+            <div>
+              <span class="kicker">Audit Trail</span>
+              <h2>Recent pricing moves.</h2>
+            </div>
+            <p class="section-copy">Every inline edit and bulk change is logged so you can track who changed what and when.</p>
+          </div>
+          <div class="admin-log-list" data-admin-catalog-logs>
+            <article class="admin-log-card">
+              <strong>Waiting for pricing activity</strong>
+              <span class="mini-note">Your most recent updates will appear here.</span>
+            </article>
+          </div>
+        </section>
       </section>
     </main>
+  </div>
+
+  <div class="bulk-action-bar" data-catalog-bulk-bar hidden>
+    <div class="bulk-action-bar__copy">
+      <strong data-catalog-bulk-count>0 products selected</strong>
+      <span class="mini-note">Update multiple rows at once without leaving the table.</span>
+    </div>
+    <form class="bulk-action-bar__form" data-form="catalog-bulk-update">
+      <div class="field-shell">
+        <select name="actionType" aria-label="Bulk update action">
+          <option value="flat">Increase/Decrease by ₦</option>
+          <option value="percentage">Increase/Decrease by %</option>
+          <option value="fixed_margin">Set fixed margin</option>
+        </select>
+      </div>
+      <div class="field-shell">
+        <input name="value" type="number" step="0.01" placeholder="Value" aria-label="Bulk update value">
+      </div>
+      <button class="action-button" type="submit">Apply Bulk Update</button>
+    </form>
   </div>
 
   <div data-admin-gate></div>

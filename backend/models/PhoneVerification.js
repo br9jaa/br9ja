@@ -26,7 +26,15 @@ const phoneVerificationSchema = new Schema(
     },
     deliveryMode: {
       type: String,
-      enum: ['sms', 'dev-log'],
+      enum: [
+        'sms',
+        'whatsapp',
+        'email',
+        'sendchamp-sms',
+        'sendchamp-whatsapp',
+        'sendchamp-email',
+        'dev-log',
+      ],
       default: 'dev-log',
     },
     providerMessageId: {

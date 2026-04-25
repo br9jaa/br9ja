@@ -27,6 +27,13 @@
           <p class="section-copy">See how much volume moved today, how strong the P2P loop is, and which service lines are creating the cleanest silent margin.</p>
         </div>
 
+        <div class="admin-command-feed" data-admin-command-feed>
+          <article class="admin-command-feed__item admin-command-feed__item--warning">
+            <strong>Command feed booting</strong>
+            <span>New transaction events will appear here in real time.</span>
+          </article>
+        </div>
+
         <div class="admin-kpi-grid">
           <article class="admin-kpi-card">
             <span class="admin-kpi-card__label">Platform Mode</span>
@@ -47,6 +54,23 @@
             <span class="admin-kpi-card__label">Silent Profit</span>
             <strong data-admin-metric="silentProfitTotal">₦0</strong>
             <p class="mini-note">Projected realized markup from completed service volume.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel admin-section-card" data-critical-delay-section>
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Critical Delays</span>
+            <h2>Anything stuck too long turns red here.</h2>
+          </div>
+          <p class="section-copy">Transactions waiting more than 15 minutes for provider confirmation surface here so you can intervene before the customer chases support.</p>
+        </div>
+
+        <div class="critical-delay-list" data-critical-delay-list>
+          <article class="critical-delay-card">
+            <strong>No critical delays yet</strong>
+            <span class="mini-note">The queue stays quiet until a pending verification crosses the 15-minute mark.</span>
           </article>
         </div>
       </section>
@@ -138,6 +162,68 @@
           </article>
         </div>
       </section>
+
+      <section class="section-panel admin-section-card">
+        <div class="admin-section-card__header">
+          <div>
+            <span class="kicker">Health & Queue</span>
+            <h2>Provider heartbeat and high-risk approvals</h2>
+          </div>
+          <p class="section-copy">These lights and queues help you catch downtime, large deposits, and stuck verifications before they become customer pain.</p>
+        </div>
+
+        <div class="admin-mini-grid">
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Provider Health</span>
+            <strong data-admin-metric="providerHealthSummary">Checking…</strong>
+            <span class="mini-note" data-provider-health-copy>Clubkonnect and VTPass heartbeat status appears here.</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Pending Approvals</span>
+            <strong data-admin-metric="pendingApprovalsCount">0</strong>
+            <span class="mini-note">High-value or mismatched funding events waiting for your decision.</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Live Profit Pulse</span>
+            <strong data-admin-metric="liveProfitNet">₦0</strong>
+            <span class="mini-note" data-admin-metric="liveProfitRevenue">Revenue ₦0</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Reconciliation</span>
+            <strong data-admin-metric="reconciliationStatus">Pending</strong>
+            <span class="mini-note" data-admin-metric="reconciliationDiscrepancy">Discrepancy ₦0</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Gold In Circulation</span>
+            <strong data-admin-metric="goldInCirculation">0</strong>
+            <span class="mini-note" data-admin-metric="goldBurned">Burned 0</span>
+          </article>
+          <article class="admin-mini-card">
+            <span class="admin-mini-card__eyebrow">Gold → Wallet Rule</span>
+            <strong data-admin-metric="goldWalletRuleLabel">5 successful txns</strong>
+            <span class="mini-note">Users must cross this line before converting Gold to wallet balance.</span>
+          </article>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Provider</th>
+                <th>Reason</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody data-dashboard-approvals-table>
+              <tr><td colspan="6">Unlocking this room loads the live approval queue.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
   </div>
 

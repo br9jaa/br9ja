@@ -1,53 +1,53 @@
 'use strict';
 
 const { AppSetting } = require('../models');
+const { getVTpassBaseUrl } = require('./vtpass.service');
 
 const PROVIDER_CONFIG_KEY = 'providerConfig';
 
 const DEFAULT_PROVIDER_CONFIG = {
   funding: {
     primaryProvider: 'squad',
-    backupProvider: 'monnify',
+    backupProvider: 'demo',
     zeroFeeBalance: true,
     providerFeeBps: 10,
     defaultBankLabel: 'GTBank',
   },
   endpoints: {
+    clubkonnectBaseUrl:
+      process.env.CLUBKONNECT_BASE_URL || 'https://www.clubkonnect.com',
     peyflexBaseUrl: process.env.PEYFLEX_BASE_URL || '',
-    vtpassBaseUrl: process.env.VTPASS_BASE_URL || 'https://vtpass.com/api',
+    vtpassBaseUrl: getVTpassBaseUrl(),
     squadBaseUrl:
       process.env.SQUAD_BASE_URL || 'https://sandbox-api-d.squadco.com',
-    monnifyBaseUrl:
-      process.env.MONNIFY_BASE_URL || 'https://sandbox.monnify.com',
     remitaBaseUrl: process.env.REMITA_BASE_URL || '',
-    billPayBaseUrl:
-      process.env.BILLPAY_BASE_URL || process.env.MONNIFY_BASE_URL || '',
+    billPayBaseUrl: process.env.BILLPAY_BASE_URL || '',
     flutterwaveBaseUrl: process.env.FLUTTERWAVE_BASE_URL || '',
   },
   services: {
     airtime: {
-      primaryProvider: 'peyflex',
-      backupProvider: 'vtpass',
+      primaryProvider: 'clubkonnect',
+      backupProvider: 'demo',
       failoverEnabled: true,
     },
     data: {
-      primaryProvider: 'peyflex',
-      backupProvider: 'vtpass',
+      primaryProvider: 'clubkonnect',
+      backupProvider: 'demo',
       failoverEnabled: true,
     },
     electricity: {
-      primaryProvider: 'peyflex',
-      backupProvider: 'vtpass',
+      primaryProvider: 'vtpass',
+      backupProvider: 'clubkonnect',
       failoverEnabled: true,
     },
     cableTv: {
-      primaryProvider: 'peyflex',
-      backupProvider: 'vtpass',
+      primaryProvider: 'clubkonnect',
+      backupProvider: 'demo',
       failoverEnabled: true,
     },
     education: {
-      primaryProvider: 'peyflex',
-      backupProvider: 'vtpass',
+      primaryProvider: 'vtpass',
+      backupProvider: 'peyflex',
       failoverEnabled: true,
     },
     transport: {
@@ -65,19 +65,14 @@ const DEFAULT_PROVIDER_CONFIG = {
       backupProvider: 'demo',
       failoverEnabled: true,
     },
-    marketplace: {
-      primaryProvider: 'demo',
-      backupProvider: 'demo',
-      failoverEnabled: false,
-    },
   },
 };
 
 const SUPPORTED_PROVIDER_NAMES = new Set([
+  'clubkonnect',
   'peyflex',
   'vtpass',
   'squad',
-  'monnify',
   'remita',
   'billpay',
   'flutterwave',

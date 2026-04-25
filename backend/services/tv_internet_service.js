@@ -4,15 +4,16 @@ const crypto = require('crypto');
 
 const axios = require('axios');
 
+const {
+  payCableWithClubkonnect,
+  verifyCableWithClubkonnect,
+} = require('./clubkonnect.service');
 const { executeWithProviderFailover } = require('./provider_failover.service');
-
-function vtpassBaseUrl(config = {}) {
-  return (
-    config.endpoints?.vtpassBaseUrl ||
-    process.env.VTPASS_BASE_URL ||
-    'https://vtpass.com/api'
-  ).replace(/\/$/, '');
-}
+const {
+  normaliseVTpassStatus,
+  payService,
+  verifyMerchant,
+} = require('./vtpass.service');
 
 function peyflexBaseUrl(config = {}) {
   return (config.endpoints?.peyflexBaseUrl || process.env.PEYFLEX_BASE_URL || '').replace(
@@ -21,25 +22,8 @@ function peyflexBaseUrl(config = {}) {
   );
 }
 
-function vtpassHeaders() {
-  return {
-    'api-key': process.env.VTPASS_API_KEY,
-    'public-key': process.env.VTPASS_PUBLIC_KEY,
-    'secret-key': process.env.VTPASS_SECRET_KEY,
-    'Content-Type': 'application/json',
-  };
-}
-
 function shouldUseDemoVendor() {
   return process.env.NODE_ENV !== 'production' && process.env.VENDING_DEMO !== 'false';
-}
-
-function hasVtpassCredentials() {
-  return Boolean(
-    process.env.VTPASS_API_KEY ||
-      process.env.VTPASS_PUBLIC_KEY ||
-      process.env.VTPASS_SECRET_KEY
-  );
 }
 
 function hasPeyflexCredentials(config = {}) {
@@ -69,6 +53,16 @@ function normaliseSmartcardPayload(payload, billersCode, serviceID, provider) {
 function normaliseSubscriptionPayload(payload, amount, provider) {
   const content = payload?.content || payload?.data || payload?.response || payload || {};
   return {
+    status:
+      provider === 'vtpass'
+        ? normaliseVTpassStatus(
+            content.status ||
+              payload?.code ||
+              payload?.response_description ||
+              payload?.message,
+            'success'
+          )
+        : 'success',
     receiptNumber: String(
       content.receiptNumber ||
         content.receipt_number ||
@@ -149,19 +143,18 @@ async function verifySmartCard(billersCode, serviceID) {
   return executeWithProviderFailover({
     serviceKey: 'cableTv',
     attempt: async (provider, { config }) => {
+      if (provider === 'clubkonnect') {
+        return verifyCableWithClubkonnect({
+          serviceId: serviceID,
+          smartcardNumber: billersCode,
+        });
+      }
       if (provider === 'peyflex') {
         return verifySmartCardWithPeyflex(billersCode, serviceID, config);
       }
       if (provider === 'vtpass') {
-        const response = await axios.post(
-          `${vtpassBaseUrl(config)}/merchant-verify`,
-          { billersCode, serviceID },
-          {
-            timeout: Number(process.env.VENDOR_TIMEOUT_MS || 15000),
-            headers: vtpassHeaders(),
-          }
-        );
-        return normaliseSmartcardPayload(response.data, billersCode, serviceID, 'vtpass');
+        const response = await verifyMerchant({ billersCode, serviceID }, { config });
+        return normaliseSmartcardPayload(response, billersCode, serviceID, 'vtpass');
       }
 
       return {
@@ -190,6 +183,15 @@ async function renewSubscription(billersCode, serviceID, variationCode, phone, a
   return executeWithProviderFailover({
     serviceKey: 'cableTv',
     attempt: async (provider, { config }) => {
+      if (provider === 'clubkonnect') {
+        return payCableWithClubkonnect({
+          serviceId: serviceID,
+          smartcardNumber: billersCode,
+          packageCode: variationCode,
+          amount,
+          phoneNumber: phone,
+        });
+      }
       if (provider === 'peyflex') {
         return renewSubscriptionWithPeyflex(
           billersCode,
@@ -201,22 +203,17 @@ async function renewSubscription(billersCode, serviceID, variationCode, phone, a
         );
       }
       if (provider === 'vtpass') {
-        const response = await axios.post(
-          `${vtpassBaseUrl(config)}/pay`,
+        const response = await payService(
           {
-            request_id: `BR9-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
             serviceID,
             billersCode,
-            variation_code: variationCode,
+            variationCode,
             amount,
             phone,
           },
-          {
-            timeout: Number(process.env.VENDOR_TIMEOUT_MS || 15000),
-            headers: vtpassHeaders(),
-          }
+          { config }
         );
-        return normaliseSubscriptionPayload(response.data, amount, 'vtpass');
+        return normaliseSubscriptionPayload(response, amount, 'vtpass');
       }
 
       return {

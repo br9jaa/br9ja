@@ -14,7 +14,15 @@ const educationPinSchema = new Schema(
     },
     service: {
       type: String,
-      enum: ['WAEC_RESULT', 'WAEC_GCE', 'JAMB', 'NECO', 'NABTEB'],
+      enum: [
+        'WAEC_RESULT',
+        'WAEC_GCE',
+        'JAMB',
+        'JAMB_UTME',
+        'JAMB_DIRECT_ENTRY',
+        'NECO',
+        'NABTEB',
+      ],
       required: true,
       index: true,
     },
@@ -40,7 +48,7 @@ const educationPinSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'success', 'failed'],
+      enum: ['pending', 'pending_verification', 'pending_review', 'success', 'failed'],
       default: 'success',
       index: true,
     },

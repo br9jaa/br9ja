@@ -20,46 +20,71 @@
   <div class="site-shell">
     <div data-site-shell></div>
 
-    <main class="auth-shell">
+    <main class="auth-shell auth-shell--login">
       <section class="auth-card auth-card--login" data-auth-card>
-        <div class="auth-card__header">
-          <h1>Login</h1>
-        </div>
-
-        <form class="admin-form" data-form="auth-preview" data-auth-mode="login">
-          <div class="field-group">
-            <label for="login-identity">Username / Email / Phone</label>
-            <div class="field-shell">
-              <span class="field-icon">👤</span>
-              <input id="login-identity" name="identity" type="text" placeholder="Username, email, or phone" required>
-            </div>
+        <form class="admin-form auth-form auth-form--login" data-form="auth-preview" data-auth-mode="login">
+          <div class="auth-card__header" data-login-standard-header>
+            <h1>Login</h1>
           </div>
 
-          <div class="field-group">
-            <label for="login-password">Password / 6-Digit PIN</label>
-            <div class="field-shell field-shell--with-action">
-              <span class="field-icon">🔒</span>
-              <input id="login-password" name="secret" type="password" placeholder="Password or PIN" required>
-              <button class="field-inline-action" type="button" data-quick-login="device unlock" data-quick-login-inline aria-label="Use device unlock">
-                <span class="field-inline-action__icon">◌</span>
+          <section class="returning-login" data-login-returning hidden>
+            <div class="returning-login__top">
+              <div class="returning-login__avatar" aria-hidden="true" data-returning-initial>B</div>
+              <a class="returning-login__lock" href="./contact.html" data-login-lock-account>
+                <span>Lost your phone?</span>
+                <strong>Lock your account</strong>
+              </a>
+            </div>
+
+            <div class="returning-login__welcome">
+              <p>Welcome back,</p>
+              <h1 data-returning-name>BR9ja User</h1>
+            </div>
+
+            <div class="returning-login__unlock-card">
+              <p class="returning-login__unlock-title">Fingerprint Unlock</p>
+              <button class="returning-login__unlock-button" type="button" data-quick-login="fingerprint" aria-label="Use device unlock">
+                <span class="returning-login__unlock-icon">◎</span>
               </button>
+              <p class="success-banner" data-quick-login-feedback aria-live="polite"></p>
+            </div>
+
+            <button class="returning-login__fallback-toggle" type="button" data-login-fallback-toggle>
+              Use Password Instead
+            </button>
+          </section>
+
+          <div class="login-credentials" data-login-credentials>
+            <div class="field-group" data-login-identity-group>
+              <label for="login-identity">Username / Email / Phone</label>
+              <div class="field-shell">
+                <span class="field-icon">👤</span>
+                <input id="login-identity" name="identity" type="text" placeholder="Username, email, or phone" required>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="login-password" data-login-secret-label>Password / 6-Digit PIN</label>
+              <div class="field-shell field-shell--with-action">
+                <span class="field-icon">🔒</span>
+                <input id="login-password" name="secret" type="password" placeholder="Password or PIN" required>
+                <button class="field-inline-action" type="button" data-toggle-password="#login-password" aria-label="Show value">
+                  <span class="field-inline-action__icon">👁</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="login-utility-row" data-login-utility-row>
+              <a class="inline-link" href="./reset-password.html">Forgot Password?</a>
             </div>
           </div>
 
-          <div class="login-utility-row">
-            <label class="password-toggle" for="login-show-password">
-              <input id="login-show-password" type="checkbox" data-toggle-password="#login-password">
-              <span>Show Password</span>
-            </label>
-            <a class="inline-link" href="./reset-password.html">Forgot Password?</a>
-          </div>
-          <p class="success-banner" data-quick-login-feedback aria-live="polite"></p>
+          <p class="success-banner" data-form-feedback aria-live="polite"></p>
 
-          <button class="action-button" type="submit">Login</button>
+          <button class="action-button" type="submit" data-login-submit>Login</button>
 
-          <div class="auth-divider"></div>
-          <p class="auth-footer-note">New here? <a href="./signup.html">Sign Up</a>.</p>
-          <div class="success-banner" aria-live="polite"></div>
+          <div class="auth-divider" data-login-divider></div>
+          <p class="auth-footer-note" data-login-footer>New here? <a href="./signup.html">Sign Up</a>.</p>
         </form>
       </section>
     </main>

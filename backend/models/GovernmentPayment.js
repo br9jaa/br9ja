@@ -35,7 +35,7 @@ const governmentPaymentSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['generated', 'paid', 'failed'],
+      enum: ['generated', 'pending_verification', 'pending_review', 'paid', 'failed'],
       default: 'generated',
       index: true,
     },

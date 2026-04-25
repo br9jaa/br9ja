@@ -50,7 +50,7 @@ const transportBookingSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'fulfilled', 'cancelled'],
+      enum: ['pending', 'pending_verification', 'pending_review', 'fulfilled', 'cancelled'],
       default: 'pending',
       index: true,
     },

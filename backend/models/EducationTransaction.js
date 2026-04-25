@@ -14,7 +14,15 @@ const educationTransactionSchema = new Schema(
     },
     serviceType: {
       type: String,
-      enum: ['WAEC_RESULT', 'WAEC_GCE', 'JAMB', 'NECO', 'NABTEB'],
+      enum: [
+        'WAEC_RESULT',
+        'WAEC_GCE',
+        'JAMB',
+        'JAMB_UTME',
+        'JAMB_DIRECT_ENTRY',
+        'NECO',
+        'NABTEB',
+      ],
       required: true,
       index: true,
     },
@@ -33,9 +41,24 @@ const educationTransactionSchema = new Schema(
       required: true,
       min: 0,
     },
+    costPrice: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    sellingPrice: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    profit: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     status: {
       type: String,
-      enum: ['pending', 'success', 'failed'],
+      enum: ['pending', 'pending_verification', 'pending_review', 'success', 'failed'],
       default: 'success',
       index: true,
     },
